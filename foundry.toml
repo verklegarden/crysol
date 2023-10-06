@@ -1,6 +1,45 @@
 [profile.default]
-src = "src"
-out = "out"
-libs = ["lib"]
+src = 'src'
+out = 'out'
+libs = ['lib']
+ffi = true
 
-# See more config options https://github.com/foundry-rs/foundry/blob/master/crates/config/README.md#all-options
+# Compilation
+evm_version = "shanghai"
+solc_version = "0.8.21"
+via_ir = false
+optimizer = false
+extra_output_files = ["irOptimized"]
+
+[fmt]
+line_length = 80
+int_types = "short"
+number_underscore = "preserve"
+ignore = []
+
+[doc]
+out = "docs_generated" # Note to not overwrite own docs
+
+# Profile to compile without --via-ir and optimizations
+# Run via `FOUNDRY_PROFILE=light forge ...`
+[profile.light]
+via_ir = false
+optimizer = false
+
+# Profile to compile with --via-ir and optimizations
+# Run via `FOUNDRY_PROFILE=release forge ...`
+[profile.release]
+via_ir = true
+optimizer = true
+optimizer_runs = 10_00
+
+# Profile for ci testing
+# Run via `FOUNDRY_PROFILE=ci forge t`
+[profile.ci]
+via_ir = true
+optimizer = true
+optimizer_runs = 10_00
+[profile.ci.fuzz]
+runs = 10_000
+[profile.ci.invariant]
+runs = 10_000
