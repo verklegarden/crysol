@@ -95,7 +95,7 @@ library Secp256k1 {
     /// @custom:vm Random::readUint()(uint)
     function newPrivateKey() internal returns (PrivateKey) {
         // Let scalar ∊ [1, Q) sourced cryptographically secure.
-        uint scalar = (Random.readUint() % Secp256k1Arithmetic.Q) + 1;
+        uint scalar = (Random.readUint() % (Secp256k1Arithmetic.Q - 1)) + 1;
         return PrivateKey.wrap(scalar);
     }
 
