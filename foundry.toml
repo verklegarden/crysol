@@ -31,14 +31,14 @@ optimizer = false
 [profile.release]
 via_ir = true
 optimizer = true
-optimizer_runs = 10_00
+optimizer_runs = 100_000
 
 # Profile for ci testing
 # Run via `FOUNDRY_PROFILE=ci forge t`
 [profile.ci]
 via_ir = true
 optimizer = true
-optimizer_runs = 10_00
+optimizer_runs = 100_000
 [profile.ci.fuzz]
 runs = 10_000
 [profile.ci.invariant]

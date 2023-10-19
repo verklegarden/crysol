@@ -4,9 +4,9 @@ pragma solidity ^0.8.16;
 import {Test} from "forge-std/Test.sol";
 import {console2 as console} from "forge-std/console2.sol";
 
-import {ECDSA, Signature} from "src/ECDSA.sol";
+import {ECDSA, Signature} from "src/signatures/ECDSA.sol";
 
-import {Secp256k1, PrivateKey} from "src/Secp256k1.sol";
+import {Secp256k1, PrivateKey} from "src/curves/Secp256k1.sol";
 
 contract ECDSA_SigningTest is Test {
     using ECDSA for PrivateKey;

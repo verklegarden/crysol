@@ -12,7 +12,7 @@
 pragma solidity ^0.8.16;
 
 /**
- * @notice AffinePoint is a secp256k1 point in Affine coordinates.
+ * @notice AffinePoint is a secp256k1 point in Affine coordinates
  *
  * @dev The point at infinity is represented via:
  *          x = y = type(uint).max
@@ -21,9 +21,10 @@ struct AffinePoint {
     uint x;
     uint y;
 }
+// @todo Represent point at infinity via zero point?
 
 /**
- * @notice JacobianPoint is a secp256k1 point in Jacobian coordinates.
+ * @notice JacobianPoint is a secp256k1 point in Jacobian coordinates
  *
  * @dev Jacobian point represents Affine point (x, y) as (X, Y, Z) satisfying
  *      the following equations:
@@ -151,30 +152,8 @@ library Secp256k1Arithmetic {
         return JacobianPoint(self.x, self.y, 1);
     }
 
-    function mul(AffinePoint memory self, uint scalar)
-        internal
-        pure
-        returns (AffinePoint memory)
-    {
-        return self.toJacobianPoint().mul(scalar).intoAffinePoint();
-    }
-
     //--------------------------------------------------------------------------
     // Jacobian Point
-
-    function mul(JacobianPoint memory self, uint scalar)
-        internal
-        pure
-        returns (JacobianPoint memory)
-    {
-        if (scalar >= Q) revert("TODO(mul): scalar >= Q");
-
-        // @todo Verify whether correct.
-        if (scalar == 0) return ZeroPoint().toJacobianPoint();
-
-        // @todo ...
-        return ZeroPoint().toJacobianPoint();
-    }
 
     function intoAffinePoint(JacobianPoint memory self)
         internal
@@ -209,161 +188,12 @@ library Secp256k1Arithmetic {
         return point;
     }
 
-    // @todo Must be different points?
-    //       If error -> Return PaI, not random stuff!
-    /// @dev Adds Affine point `p` to Jacobian point `self` and stores the
-    ///      result in `self`.
-    ///
-    ///      Failure is defined via the point at infinity and raised if:
-    ///      - AffinePoint not on curve
-    ///
-    ///      Computation based on: https://www.hyperelliptic.org/EFD/g1p/auto-shortw-jacobian.html#addition-madd-2007-bl.
-    ///
-    /// @dev Enables computing the sum of different points with O(1) modular
-    ///      inverse computations.
-    ///
-    /// @custom:invariant Only mutates `self` memory variable.
-    /// @custom:invariant Reverts iff out of gas.
-    /// @custom:invariant Uses constant amount of gas.
-    function intoAddAffinePoint(JacobianPoint memory self, AffinePoint memory p)
-        internal
-        pure
-        returns (JacobianPoint memory)
-    {
-        // Addition formula:
-        //      x = r² - j - (2 * v)             (mod P)
-        //      y = (r * (v - x)) - (2 * y1 * j) (mod P)
-        //      z = (z1 + h)² - z1² - h²         (mod P)
-        //
-        // where:
-        //      r = 2 * (s - y1) (mod P)
-        //      j = h * i        (mod P)
-        //      v = x1 * i       (mod P)
-        //      h = u - x1       (mod P)
-        //      s = y2 * z1³     (mod P)       Called s2 in reference
-        //      i = 4 * h²       (mod P)
-        //      u = x2 * z1²     (mod P)       Called u2 in reference
-        //
-        // and:
-        //      x1 = self.x
-        //      y1 = self.y
-        //      z1 = self.z
-        //      x2 = p.x
-        //      y2 = p.y
-        //
-        // Note that the formula assumes z2 = 1, which always holds if z2's
-        // point is given in Affine coordinates.
-
-        // Fail if p not on curve.
-        if (!p.isOnCurve()) {
-            self = PointAtInfinity().toJacobianPoint();
-            return self;
-        }
-
-        // Cache self's coordinates on stack.
-        uint x1 = self.x;
-        uint y1 = self.y;
-        uint z1 = self.z;
-
-        // Compute z1_2 = z1²     (mod P)
-        //              = z1 * z1 (mod P)
-        uint z1_2 = mulmod(z1, z1, P);
-
-        // Compute h = u        - x1       (mod P)
-        //           = u        + (P - x1) (mod P)
-        //           = x2 * z1² + (P - x1) (mod P)
-        //
-        // Unchecked because the only protected operation performed is P - x1
-        // where x1 is guaranteed by the caller to be an x coordinate belonging
-        // to a point on the curve, i.e. being less than P.
-        uint h;
-        unchecked {
-            h = addmod(mulmod(p.x, z1_2, P), P - x1, P);
-        }
-
-        // Compute h_2 = h²    (mod P)
-        //             = h * h (mod P)
-        uint h_2 = mulmod(h, h, P);
-
-        // Compute i = 4 * h² (mod P)
-        uint i = mulmod(4, h_2, P);
-
-        // Compute z = (z1 + h)² - z1²       - h²       (mod P)
-        //           = (z1 + h)² - z1²       + (P - h²) (mod P)
-        //           = (z1 + h)² + (P - z1²) + (P - h²) (mod P)
-        //             ╰───────╯   ╰───────╯   ╰──────╯
-        //               left         mid       right
-        //
-        // Unchecked because the only protected operations performed are
-        // subtractions from P where the subtrahend is the result of a (mod P)
-        // computation, i.e. the subtrahend being guaranteed to be less than P.
-        unchecked {
-            uint left = mulmod(addmod(z1, h, P), addmod(z1, h, P), P);
-            uint mid = P - z1_2;
-            uint right = P - h_2;
-
-            self.z = addmod(left, addmod(mid, right, P), P);
-        }
-
-        // Compute v = x1 * i (mod P)
-        uint v = mulmod(x1, i, P);
-
-        // Compute j = h * i (mod P)
-        uint j = mulmod(h, i, P);
-
-        // Compute r = 2 * (s               - y1)       (mod P)
-        //           = 2 * (s               + (P - y1)) (mod P)
-        //           = 2 * ((y2 * z1³)      + (P - y1)) (mod P)
-        //           = 2 * ((y2 * z1² * z1) + (P - y1)) (mod P)
-        //
-        // Unchecked because the only protected operation performed is P - y1
-        // where y1 is guaranteed by the caller to be an y coordinate belonging
-        // to a point on the curve, i.e. being less than P.
-        uint r;
-        unchecked {
-            r = mulmod(
-                2, addmod(mulmod(p.y, mulmod(z1_2, z1, P), P), P - y1, P), P
-            );
-        }
-
-        // Compute x = r² - j - (2 * v)             (mod P)
-        //           = r² - j + (P - (2 * v))       (mod P)
-        //           = r² + (P - j) + (P - (2 * v)) (mod P)
-        //                  ╰─────╯   ╰───────────╯
-        //                    mid         right
-        //
-        // Unchecked because the only protected operations performed are
-        // subtractions from P where the subtrahend is the result of a (mod P)
-        // computation, i.e. the subtrahend being guaranteed to be less than P.
-        unchecked {
-            uint r_2 = mulmod(r, r, P);
-            uint mid = P - j;
-            uint right = P - mulmod(2, v, P);
-
-            self.x = addmod(r_2, addmod(mid, right, P), P);
-        }
-
-        // Compute y = (r * (v - x))       - (2 * y1 * j)       (mod P)
-        //           = (r * (v - x))       + (P - (2 * y1 * j)) (mod P)
-        //           = (r * (v + (P - x))) + (P - (2 * y1 * j)) (mod P)
-        //             ╰─────────────────╯   ╰────────────────╯
-        //                    left                 right
-        //
-        // Unchecked because the only protected operations performed are
-        // subtractions from P where the subtrahend is the result of a (mod P)
-        // computation, i.e. the subtrahend being guaranteed to be less than P.
-        unchecked {
-            uint left = mulmod(r, addmod(v, P - self.x, P), P);
-            uint right = P - mulmod(2, mulmod(y1, j, P), P);
-
-            self.y = addmod(left, right, P);
-        }
-
-        return self;
-    }
-
     //--------------------------------------------------------------------------
     // Utils
+
+    // @todo Use Fermats Little Theorem. While generally less performant, it is
+    //       cheaper on EVM due to the modexp precompile.
+    //       See "Speeding up Elliptic Curve Computations for Ethereum Account Abstraction" page 4.
 
     /// @dev Returns the modular inverse of `x` for modulo `P`.
     ///

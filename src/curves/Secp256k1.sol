@@ -18,24 +18,32 @@ import {
     AffinePoint,
     JacobianPoint
 } from "./Secp256k1Arithmetic.sol";
-import {Random} from "./Random.sol";
+
+import {Random} from "../Random.sol";
 
 /**
- * @notice PrivateKey is the secret scalar.
+ * @notice PrivateKey is the secret scalar
+ *
+ * @dev Note that a private key's MUST be a field element,
+ *      ie private key ∊ [1, Q).
  *
  * @dev Note that a private key MUST be created cryptographically sound!
- *      Generally, this means via secure randomness. Secure private keys can
- *      be generated via:
+ *      Generally, this means via secure randomness.
  *
- *          // Entropy sourced via ffi `cast wallet new`.
- *          PrivateKey privKey = Secp256k1.newPrivateKey();
+ * @custom:example Generating a secure private key.
  *
- * @dev Note that a private key's scalar must in [1, Q).
+ *      ```solidity
+ *      import {Secp256k1, PrivateKey} from "crysol/Secp256k1.sol";
+ *      using Secp256k1 for PrivateKey;
+ *
+ *      PrivateKey privKey = Secp256k1.newPrivateKey();
+ *      assert(privKey.isValid());
+ *      ```
  */
 type PrivateKey is uint;
 
 /**
- * @notice PublicKey is a PrivateKey's public identifier.
+ * @notice PublicKey is a PrivateKey's public identifier
  *
  * @dev A public key is derived from a private key via [privKey]G.
  */
@@ -48,7 +56,7 @@ struct PublicKey {
  * @title Secp256k1
  *
  * @notice Library providing common cryptography-related functionality for the
- *         secp256k1 elliptic curve.
+ *         secp256k1 elliptic curve
  *
  * @dev ...
  */
@@ -76,7 +84,7 @@ library Secp256k1 {
         return PublicKey(g.x, g.y);
     }
 
-    /// @dev The order of the group generated via G.
+    /// @dev The order of the group generated via generator G.
     uint internal constant Q = Secp256k1Arithmetic.Q;
 
     //--------------------------------------------------------------------------
@@ -105,59 +113,13 @@ library Secp256k1 {
     ///
     /// @custom:vm vm.createWallet(uint)
     function toPublicKey(PrivateKey self) internal returns (PublicKey memory) {
-        if (!self.isValid()) revert("PrivateKeyInvalid()");
+        if (!self.isValid()) {
+            revert("PrivateKeyInvalid()");
+        }
 
         // Compute pubKey = [self]G via vm.
         Vm.Wallet memory wallet = vm.createWallet(self.asUint());
         return PublicKey(wallet.publicKeyX, wallet.publicKeyY);
-    }
-
-    /// @dev Returns the public key of private key `self`.
-    ///
-    /// @dev Reverts if:
-    ///      - Private key invalid
-    function toPublicKey_evm(PrivateKey self)
-        internal
-        returns (PublicKey memory)
-    {
-        if (!self.isValid()) revert("PrivateKeyInvalid()");
-
-        // Compute pubKey = [self]G.
-        return Secp256k1Arithmetic.G().mul(self.asUint()).intoPublicKey();
-    }
-
-    /// @dev Derives a deterministic nonce from private key `self` and message
-    ///      `message`.
-    ///
-    /// @dev The nonce is derived via:
-    ///         nonce = keccak256(self ‖ keccak256(message))
-    function deriveNonceFrom(PrivateKey self, bytes memory message)
-        internal
-        pure
-        returns (uint)
-    {
-        bytes32 digest = keccak256(message);
-
-        return self.deriveNonceFrom(digest);
-    }
-
-    /// @dev Derives a deterministic nonce from private key `self` and keccak256
-    ///      digest `digest`.
-    ///
-    /// @dev The nonce is derived via:
-    ///         nonce = keccak256(self ‖ digest)
-    function deriveNonceFrom(PrivateKey self, bytes32 digest)
-        internal
-        pure
-        returns (uint)
-    {
-        uint nonce;
-        assembly ("memory-safe") {
-            mstore(0x00, self)
-            mstore(0x20, digest)
-            nonce := keccak256(0x00, 0x40)
-        }
-        return nonce;
     }
 
     //----------------------------------
@@ -172,7 +134,9 @@ library Secp256k1 {
         pure
         returns (PrivateKey)
     {
-        if (scalar == 0 || scalar >= Q) revert("InvalidScalar()");
+        if (scalar == 0 || scalar >= Q) {
+            revert("InvalidScalar()");
+        }
 
         return PrivateKey.wrap(scalar);
     }
@@ -192,7 +156,9 @@ library Secp256k1 {
         pure
         returns (PrivateKey)
     {
-        if (blob.length != 0x20) revert("InvalidLength()");
+        if (blob.length != 0x20) {
+            revert("InvalidLength()");
+        }
 
         uint scalar;
         assembly ("memory-safe") {

@@ -13,11 +13,12 @@ pragma solidity ^0.8.16;
 
 import {Vm} from "forge-std/Vm.sol";
 
-import {Secp256k1, PrivateKey, PublicKey} from "./Secp256k1.sol";
-import {Message} from "./Message.sol";
+import {Message} from "../Message.sol";
+
+import {Secp256k1, PrivateKey, PublicKey} from "../curves/Secp256k1.sol";
 
 /**
- * @notice Signature is an ECDSA signature.
+ * @notice Signature is an ECDSA signature
  */
 struct Signature {
     uint8 v;
@@ -25,10 +26,27 @@ struct Signature {
     bytes32 s;
 }
 
+/*
+ECDSA sig (r, s):
+
+r = ([k]G)_x
+
+s = (H(m) + [p+k]G) / k
+
+where:
+k   = nonce
+m   = message
+H() = keccak256
+P   = public key
+p   = private key
+G   = generator
+_x  = x coordinate of point
+*/
+
 /**
  * @title ECDSA
  *
- * @notice Library providing common ECDSA functionality.
+ * @notice Library providing common ECDSA functionality
  *
  * @dev Provides common functionality for the Elliptic Curve Digital Signature
  *      Algorithm (ECDSA) as defined in [SEC 1 v2] in combination with the
@@ -78,7 +96,9 @@ library ECDSA {
         bytes memory message,
         Signature memory sig
     ) internal pure returns (bool) {
-        if (!pubKey.isValid()) revert("PublicKeyInvalid()");
+        if (!pubKey.isValid()) {
+            revert("PublicKeyInvalid()");
+        }
 
         bytes32 digest = keccak256(message);
 
@@ -99,7 +119,9 @@ library ECDSA {
         bytes32 digest,
         Signature memory sig
     ) internal pure returns (bool) {
-        if (!pubKey.isValid()) revert("PublicKeyInvalid()");
+        if (!pubKey.isValid()) {
+            revert("PublicKeyInvalid()");
+        }
 
         return pubKey.toAddress().verify(digest, sig);
     }
@@ -131,10 +153,14 @@ library ECDSA {
         pure
         returns (bool)
     {
-        if (signer == address(0)) revert("SignerIsZeroAddress()");
+        if (signer == address(0)) {
+            revert("SignerIsZeroAddress()");
+        }
 
-        // Fail if signature is malleable to enforce signature uniqueness.
-        if (sig.isMalleable()) revert("SignatureIsMalleable()");
+        // Fail if signature is malleable.
+        if (sig.isMalleable()) {
+            revert("SignatureIsMalleable()");
+        }
 
         // Note that checking whether v ∊ {27, 28} is waived.
         // For more info, see https://github.com/ethereum/yellowpaper/pull/860.
@@ -170,7 +196,9 @@ library ECDSA {
         pure
         returns (Signature memory)
     {
-        if (!privKey.isValid()) revert("InvalidPrivateKey()");
+        if (!privKey.isValid()) {
+            revert("InvalidPrivateKey()");
+        }
 
         uint8 v;
         bytes32 r;
@@ -268,7 +296,9 @@ library ECDSA {
         pure
         returns (Signature memory)
     {
-        if (blob.length != 65) revert("InvalidLength()");
+        if (blob.length != 65) {
+            revert("InvalidLength()");
+        }
 
         uint8 v;
         bytes32 r;
@@ -325,7 +355,9 @@ library ECDSA {
         pure
         returns (Signature memory)
     {
-        if (blob.length != 64) revert("InvalidLength()");
+        if (blob.length != 64) {
+            revert("InvalidLength()");
+        }
 
         uint8 v;
         bytes32 r;

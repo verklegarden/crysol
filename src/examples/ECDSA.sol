@@ -4,11 +4,11 @@ pragma solidity ^0.8.16;
 import {Script} from "forge-std/Script.sol";
 import {console2 as console} from "forge-std/console2.sol";
 
-import {Secp256k1, PrivateKey, PublicKey} from "src/Secp256k1.sol";
+import {Secp256k1, PrivateKey, PublicKey} from "src/curves/Secp256k1.sol";
 
-import {ECDSA, Signature} from "src/ECDSA.sol";
+import {ECDSA, Signature} from "src/signatures/ECDSA.sol";
 
-contract Example_ECDSA is Script {
+contract ECDSAExample is Script {
     using Secp256k1 for PrivateKey;
     using Secp256k1 for PublicKey;
 
@@ -25,7 +25,7 @@ contract Example_ECDSA is Script {
         // Sign message via ECDSA.
         Signature memory sig = privKey.sign(message);
 
-        // Verify signature verifies message.
+        // Verify signature.
         require(privKey.toPublicKey().verify(message, sig), "Signature invalid");
 
         // Print signature to stdout.
