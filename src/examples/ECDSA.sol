@@ -12,6 +12,7 @@ contract ECDSAExample is Script {
     using Secp256k1 for PrivateKey;
     using Secp256k1 for PublicKey;
 
+    using ECDSA for address;
     using ECDSA for PrivateKey;
     using ECDSA for PublicKey;
     using ECDSA for Signature;
@@ -25,8 +26,11 @@ contract ECDSAExample is Script {
         // Sign message via ECDSA.
         Signature memory sig = privKey.sign(message);
 
-        // Verify signature.
-        require(privKey.toPublicKey().verify(message, sig), "Signature invalid");
+        // Verify signature via public key or address.
+        PublicKey memory pubKey = privKey.toPublicKey();
+        address addr = pubKey.toAddress();
+        require(pubKey.verify(message, sig), "Signature invalid");
+        require(addr.verify(message, sig), "Signature invalid");
 
         // Print signature to stdout.
         console.log(sig.toString());

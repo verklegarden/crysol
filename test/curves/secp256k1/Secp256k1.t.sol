@@ -196,7 +196,7 @@ contract Secp256k1Test is Test {
     }
 
     //----------------------------------
-    // Casting
+    // @todo Casting
 
     // @todo Uncompressed form G. See [Sec 2 v2].
     //       Good for (de)serialization tests.

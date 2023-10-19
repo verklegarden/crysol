@@ -180,7 +180,8 @@ library Secp256k1Arithmetic {
             mstore(add(self, 0x20), y)
         }
 
-        // Return AffinePoint (self.x, self.y).
+        // Return as AffinePoint(self.x, self.y).
+        // Note that self.z is from now on dirty memory!
         AffinePoint memory point;
         assembly ("memory-safe") {
             point := self
@@ -200,13 +201,15 @@ library Secp256k1Arithmetic {
     ///      The modular inverse of `x` is x⁻¹ such that x * x⁻¹ ≡ 1 (mod P).
     ///
     /// @dev Reverts if:
-    ///      - `x` not in [0, P)
+    ///      - x not in [0, P)
     ///
     /// @dev Uses the Extended Euclidean Algorithm.
     ///
     /// @custom:invariant Terminates in finite time.
     function modularInverseOf(uint x) internal pure returns (uint) {
-        if (x >= P) revert("TODO(modularInverse: x >= P)");
+        if (x >= P) {
+            revert("TODO(modularInverse: x >= P)");
+        }
 
         uint t;
         uint q;

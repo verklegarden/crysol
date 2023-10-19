@@ -220,29 +220,32 @@ library Secp256k1 {
     //----------------------------------
     // Casting
 
+    /// @dev ...
+    ///
+    /// @dev Reverts if:
+    ///
+    /// @dev Expects uncompressed 65 bytes encoding:
+    ///         [0x04 prefix][32 bytes x coordinate][32 bytes y coordinate]
     function publicKeyFromBytes(bytes memory blob)
         internal
         pure
         returns (PublicKey memory)
     {
+        // Revert if length not 65.
+        if (blob.length != 65) {
+            revert("InvalidLength()");
+        }
+
         // Read prefix byte.
         bytes32 prefix;
         assembly ("memory-safe") {
             prefix := byte(0, mload(add(blob, 0x20)))
         }
 
-        // Revert if prefix byte not 0x04, ie serialization of uncompressed
-        // point.
-        require(
-            uint(prefix) == 0x04,
-            "Secp256k1::(bytes)::asPublicKey: Non-supported serialization scheme."
-        );
-
-        // Revert if length not 65, ie 1 byte prefix plus two words.
-        require(
-            blob.length == 65,
-            "Secp256k1::(bytes)::asPublicKey: Invalid length."
-        );
+        // Revert if prefix byte not 0x04.
+        if (uint(prefix) != 0x04) {
+            revert("InvalidPrefix()");
+        }
 
         // Read x and y coordinates of public key.
         uint x;
@@ -255,20 +258,61 @@ library Secp256k1 {
         return PublicKey(x, y);
     }
 
-    function publicKeyFromCompressedBytes(bytes memory blob)
-        internal
-        pure
-        returns (PublicKey memory)
-    {
-        revert("HAHA");
-    }
-
     function asBytes(PublicKey memory self)
         internal
         pure
         returns (bytes memory)
     {
         return abi.encodePacked(bytes1(0x04), self.x, self.y);
+    }
+
+    // @todo compressed public keys are 33 bytes:
+    //       (0x02 OR 0x03 prefix + 32 byte x-coordinate,
+    //       where 0x02 means the y value is even, and 0x03 means it's odd
+    function publicKeyFromCompressedBytes(bytes memory blob)
+        internal
+        pure
+        returns (PublicKey memory)
+    {
+        // Revert if length not 33.
+        if (blob.length != 33) {
+            revert("InvalidLength()");
+        }
+
+        // Read prefix byte.
+        bytes32 prefix;
+        assembly ("memory-safe") {
+            prefix := byte(0, mload(add(blob, 0x20)))
+        }
+
+        // Read x coordinate of public key.
+        uint x;
+        assembly ("memory-safe") {
+            x := mload(add(blob, 0x21))
+        }
+
+        // @todo Not nice :(
+        // Compute y coordinate with even parity if prefix is 0x02.
+        // Compute y coordinate with odd parity if prefix is 0x03.
+        // Otherwise revert.
+        if (uint(prefix) == 0x02) {
+            uint y = 0; // @todo Compute y coordinate.
+            return PublicKey(x, y);
+        }
+        if (uint(prefix) == 0x03) {
+            uint y = 0; // @todo Compute y coordinate.
+            return PublicKey(x, y);
+        }
+
+        revert("InvalidPrefix()");
+    }
+
+    function asCompressedBytes(PublicKey memory self)
+        internal
+        pure
+        returns (bytes memory)
+    {
+        revert("asCompressedBytes()");
     }
 
     /// @dev Mutates public key `self` to Affine Point.
