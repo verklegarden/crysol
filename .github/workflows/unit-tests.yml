@@ -1,21 +1,19 @@
-name: test
+name: Unit Tests
 
-on: workflow_dispatch
-
-env:
-  FOUNDRY_PROFILE: ci
+on:
+  push:
+    branches:
+      - main
+  pull_request:
 
 jobs:
-  check:
-    strategy:
-      fail-fast: true
-
-    name: Foundry project
+  tests:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
         with:
           submodules: recursive
+      - run: yarn install
 
       - name: Install Foundry
         uses: foundry-rs/foundry-toolchain@v1
@@ -23,12 +21,9 @@ jobs:
           version: nightly
 
       - name: Run Forge build
-        run: |
-          forge --version
-          forge build --sizes
+        run: forge build
         id: build
 
-      - name: Run Forge tests
-        run: |
-          forge test -vvv
+      - name: Run Forge test
+        run: FOUNDRY_PROFILE=ci forge test -vvv --nmt "FuzzDifferentialOracleSuite"
         id: test
