@@ -1,19 +1,45 @@
+# Crysol • [![Uint Tests](https://github.com/pmerkleplant/crysol/actions/workflows/unit-tests.yml/badge.svg)](https://github.com/pmerkleplant/crysol/actions/workflows/unit-tests.yml) [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
-## Coding Guidelines
+> **Warning**
+>
+> Very much work in progress! Don't use!
 
-into: No new memory allocation. Just assembly { result := self }
+## Installation
 
-as: Type conversion. Can mean new memory allocation.
+Install module via Foundry:
 
-to: Computation. Can mean new memory allocation.
+```bash
+$ forge install pmerkleplant/crysol
+```
 
---
+## Contributing
 
-- `intoXXX()`
-    -> Mutates `self` memory and returns `self`
-- `asXXX()`
-    -> Simple type conversion
-- `toXXX()`
-    -> Computes something from `self`. `self` not mutated
+The project uses the Foundry toolchain. You can find installation instructions [here](https://getfoundry.sh/).
 
-- Use additive notation. Makes clearer "what is hidden"
+Setup:
+
+```bash
+$ git clone https://github.com/pmerkleplant/crysol
+$ cd crysol/
+$ forge install
+```
+
+Run tests:
+
+```bash
+$ forge test
+$ forge test -vvvv # Run with full stack traces
+$ FOUNDRY_PROFILE=intense forge test # Run in intense mode
+```
+
+Lint:
+
+```bash
+$ forge fmt [--check]
+```
+
+Update gas snapshots:
+
+```bash
+$ forge snapshot --nmt "Fuzz" [--check]
+```

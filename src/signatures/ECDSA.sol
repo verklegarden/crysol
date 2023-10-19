@@ -191,6 +191,8 @@ library ECDSA {
     ///
     /// @dev Reverts if:
     ///      - Private key invalid
+    ///
+    /// @custom:vm vm.sign(uint,bytes32)
     function sign(PrivateKey privKey, bytes32 digest)
         internal
         pure
@@ -243,6 +245,8 @@ library ECDSA {
     }
 
     /// @dev Returns a string representation of signature `self`.
+    ///
+    /// @custom:vm vm.toString(uint)
     function toString(Signature memory self)
         internal
         pure
