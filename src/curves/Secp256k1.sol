@@ -149,14 +149,14 @@ library Secp256k1 {
     /// @dev Returns bytes `blob` as private key.
     ///
     /// @dev Reverts if:
-    ///      - Length invalid
-    ///      - Encoded scalar not in [1, Q)
+    ///      - Length not 32 bytes
+    ///      - Deserialized scalar not in [1, Q)
     function privateKeyFromBytes(bytes memory blob)
         internal
         pure
         returns (PrivateKey)
     {
-        if (blob.length != 0x20) {
+        if (blob.length != 32) {
             revert("InvalidLength()");
         }
 
@@ -220,9 +220,12 @@ library Secp256k1 {
     //----------------------------------
     // Casting
 
-    /// @dev ...
+    /// @dev Returns deserialized public key from bytes `blob`.
     ///
     /// @dev Reverts if:
+    ///      - Length not 65 bytes
+    ///      - Prefix byte not 0x04
+    ///      - Deserialized public key invalid
     ///
     /// @dev Expects uncompressed 65 bytes encoding:
     ///         [0x04 prefix][32 bytes x coordinate][32 bytes y coordinate]
@@ -242,7 +245,7 @@ library Secp256k1 {
             prefix := byte(0, mload(add(blob, 0x20)))
         }
 
-        // Revert if prefix byte not 0x04.
+        // Revert if prefix not 0x04.
         if (uint(prefix) != 0x04) {
             revert("InvalidPrefix()");
         }
@@ -255,9 +258,21 @@ library Secp256k1 {
             y := mload(add(blob, 0x41))
         }
 
-        return PublicKey(x, y);
+        // Make public key.
+        PublicKey memory pubKey = PublicKey(x, y);
+
+        // Revert if public key invalid.
+        if (!pubKey.isValid()) {
+            revert("InvalidPublicKey()");
+        }
+
+        return pubKey;
     }
 
+    /// @dev Returns serialized public key `self` as bytes.
+    ///
+    /// @dev Uses uncompressed 65 bytes encoding:
+    ///         [0x04 prefix][32 bytes x coordinate][32 bytes y coordinate]
     function asBytes(PublicKey memory self)
         internal
         pure
@@ -265,6 +280,8 @@ library Secp256k1 {
     {
         return abi.encodePacked(bytes1(0x04), self.x, self.y);
     }
+
+    // --------- @todo Compressed Public Key Serde ----------
 
     // @todo compressed public keys are 33 bytes:
     //       (0x02 OR 0x03 prefix + 32 byte x-coordinate,
@@ -314,6 +331,8 @@ library Secp256k1 {
     {
         revert("asCompressedBytes()");
     }
+
+    // --------- END Compressed Public Key Serde ----------
 
     /// @dev Mutates public key `self` to Affine Point.
     function intoAffinePoint(PublicKey memory self)
