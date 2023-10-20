@@ -33,6 +33,11 @@ via_ir = true
 optimizer = true
 optimizer_runs = 100_000
 
+# Profile for intense testing
+# Run via `FOUNDRY_PROFILE=intense forge t`
+[profile.intense.fuzz]
+runs = 10_000
+
 # Profile for ci testing
 # Run via `FOUNDRY_PROFILE=ci forge t`
 [profile.ci]
