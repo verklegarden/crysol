@@ -108,23 +108,23 @@ contract Secp256k1Test is Test {
         assertEq(privKey.asUint(), scalar);
     }
 
-    function testFuzz_privateKeyFromBytes_RevertsIf_InvalidScalar(uint seed)
-        public
-    {
+    function testFuzz_privateKeyFromBytes_RevertsIf_LengthNot32Bytes(
+        bytes memory seed
+    ) public {
+        vm.assume(seed.length != 32);
+
+        vm.expectRevert("InvalidLength()");
+        Secp256k1.privateKeyFromBytes(seed);
+    }
+
+    function testFuzz_privateKeyFromBytes_RevertsIf_DeserializedScalarInvalid(
+        uint seed
+    ) public {
         uint scalar =
             seed == 0 ? seed : _bound(seed, Secp256k1.Q, type(uint).max);
 
         vm.expectRevert("InvalidScalar()");
         Secp256k1.privateKeyFromBytes(abi.encodePacked(scalar));
-    }
-
-    function testFuzz_privateKeyFromBytes_RevertsIf_InvalidLength(
-        bytes memory seed
-    ) public {
-        vm.assume(seed.length != 0x20);
-
-        vm.expectRevert("InvalidLength()");
-        Secp256k1.privateKeyFromBytes(seed);
     }
 
     // -- asBytes
@@ -198,6 +198,84 @@ contract Secp256k1Test is Test {
     //----------------------------------
     // @todo Casting
 
+    // -- publicKeyFromBytes
+
+    function testFuzz_publicKeyFromBytes(uint seed) public {
+        PrivateKey privKey =
+            Secp256k1.privateKeyFromUint(_bound(seed, 1, Secp256k1.Q - 1));
+
+        PublicKey memory pubKey = privKey.toPublicKey();
+
+        address want = pubKey.toAddress();
+        address got = Secp256k1.publicKeyFromBytes(pubKey.asBytes()).toAddress();
+
+        assertEq(want, got);
+    }
+
+    function test_publicKeyFromBytes_ViaGenerator() public {
+        // Uncompressed Generator G.
+        // Copied from [Sec 2 v2].
+        bytes memory g =
+            hex"0479BE667EF9DCBBAC55A06295CE870B07029BFCDB2DCE28D959F2815B16F81798483ADA7726A3C4655DA4FBFC0E1108A8FD17B448A68554199C47D08FFB10D4B8";
+
+        PublicKey memory want = Secp256k1.G();
+        PublicKey memory got = Secp256k1.publicKeyFromBytes(g);
+
+        assertEq(want.toAddress(), got.toAddress());
+    }
+
+    function testFuzz_publicKeyFromBytes_RevertsIf_LengthNot65Bytes(
+        bytes memory blob
+    ) public {
+        vm.assume(blob.length != 65);
+
+        vm.expectRevert("InvalidLength()");
+        Secp256k1.publicKeyFromBytes(blob);
+    }
+
+    function testFuzz_publicKeyFromBytes_RevertsIf_PrefixByteNot0x04(
+        bytes1 prefix
+    ) public {
+        vm.assume(prefix != bytes1(0x04));
+
+        bytes memory blob = abi.encodePacked(prefix, bytes32(""), bytes32(""));
+
+        vm.expectRevert("InvalidPrefix()");
+        Secp256k1.publicKeyFromBytes(blob);
+    }
+
+    function testFuzz_publicKeyFromBytes_RevertsIf_DeserializedPublicKeyInvalid(
+        PublicKey memory pubKey
+    ) public {
+        vm.assume(!pubKey.isValid());
+
+        vm.expectRevert("InvalidPublicKey()");
+        Secp256k1.publicKeyFromBytes(pubKey.asBytes());
+    }
+
+    // -- asBytes
+
+    function testFuzz_PublicKey_asBytes(uint seed) public {
+        PrivateKey privKey =
+            Secp256k1.privateKeyFromUint(_bound(seed, 1, Secp256k1.Q - 1));
+
+        PublicKey memory pubKey = privKey.toPublicKey();
+
+        address want = pubKey.toAddress();
+        address got = Secp256k1.publicKeyFromBytes(pubKey.asBytes()).toAddress();
+
+        assertEq(want, got);
+    }
+
+    function test_PublicKey_asBytes_ViaGenerator() public {
+        // Uncompressed Generator G.
+        // Copied from [Sec 2 v2].
+        bytes memory want =
+            hex"0479BE667EF9DCBBAC55A06295CE870B07029BFCDB2DCE28D959F2815B16F81798483ADA7726A3C4655DA4FBFC0E1108A8FD17B448A68554199C47D08FFB10D4B8";
+        bytes memory got = Secp256k1.G().asBytes();
+
+        assertEq(want, got);
+    }
     // @todo Uncompressed form G. See [Sec 2 v2].
     //       Good for (de)serialization tests.
     //04 79BE667E F9DCBBAC 55A06295 CE870B07 029BFCDB 2DCE28D9
