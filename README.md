@@ -1,4 +1,4 @@
-# Crysol • [![Uint Tests](https://github.com/pmerkleplant/crysol/actions/workflows/unit-tests.yml/badge.svg)](https://github.com/pmerkleplant/crysol/actions/workflows/unit-tests.yml) [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+# Crysol • [![Unit Tests][tests-shield]][tests-shield-url] [![License: MIT][license-shield]][license-shield-url] [![Solidity][solidity-shield]][solidity-shield-url]
 
 > **Warning**
 >
@@ -43,3 +43,12 @@ Update gas snapshots:
 ```bash
 $ forge snapshot --nmt "Fuzz" [--check]
 ```
+
+[tests-shield]: https://github.com/pmerkleplant/crysol/actions/workflows/unit-tests.yml/badge.svg
+[tests-shield-url]: https://github.com/pmerkleplant/crysol/actions/workflows/unit-tests.yml
+
+[license-shield]: https://img.shields.io/badge/License-MIT-yellow.svg
+[license-shield-url]: https://opensource.org/licenses/MIT
+
+[solidity-shield]: https://img.shields.io/badge/solidity-%3E=0.8.16%20%3C=0.8.21-aa6746
+[solidity-shield-url]: https://github.com/pmerkleplant/crysol/actions/workflows/solc-version-tests.yml
