@@ -162,7 +162,7 @@ library ECDSA {
         returns (bool)
     {
         if (signer == address(0)) {
-            revert("SignerIsZeroAddress()");
+            revert("SignerZeroAddress()");
         }
 
         // Fail if signature is malleable.
@@ -184,9 +184,12 @@ library ECDSA {
     ///
     /// @dev Reverts if:
     ///      - Private key invalid
+    ///
+    /// @custom:vm vm.sign(uint,bytes32)
     function sign(PrivateKey privKey, bytes memory message)
         internal
         view
+        vmed
         returns (Signature memory)
     {
         bytes32 digest = keccak256(message);
@@ -208,8 +211,10 @@ library ECDSA {
         returns (Signature memory)
     {
         if (!privKey.isValid()) {
-            revert("InvalidPrivateKey()");
+            revert("PrivateKeyInvalid()");
         }
+
+        // @todo Should revert if digest is zero?
 
         uint8 v;
         bytes32 r;
@@ -225,6 +230,7 @@ library ECDSA {
     function signEthereumSignedMessage(PrivateKey privKey, bytes memory message)
         internal
         view
+        vmed
         returns (Signature memory)
     {
         bytes32 digest = Message.deriveEthereumSignedMessage(message);
@@ -235,6 +241,7 @@ library ECDSA {
     function signEthereumSignedMessageHash(PrivateKey privKey, bytes32 digest)
         internal
         view
+        vmed
         returns (Signature memory)
     {
         bytes32 digest2 = Message.deriveEthereumSignedMessageHash(digest);
