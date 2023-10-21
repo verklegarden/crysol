@@ -25,9 +25,7 @@ library Random {
     // forgefmt: disable-start
     Vm private constant vm = Vm(address(uint160(uint(keccak256("hevm cheat code")))));
     modifier vmed() {
-        if (block.chainid != 31337) {
-            revert("requireVm");
-        }
+        if (block.chainid != 31337) revert("requireVm");
         _;
     }
     // forgefmt: disable-end

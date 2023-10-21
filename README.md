@@ -44,6 +44,18 @@ Update gas snapshots:
 $ forge snapshot --nmt "Fuzz" [--check]
 ```
 
+## 👩🏼‍⚖️ Tests
+
+| **Library**                  | **Unit Tests** | **Property-Based Tests** | **Invariant Tests** |
+|:---------------------------- |:--------------:|:------------------------:|:-------------------:|
+| `Random`                     |        ✅       |             ❓            |          ❓          |
+| `Message`                    |        ❌       |             ❌            |          ❌          |
+| `curves/Secp256k1`           |        ✅       |             ❌            |          ❌          |
+| `curves/Secp256k1Arithmetic` |        ❌       |             ❌            |          ❌          |
+| `signatures/ECDSA`           |        ❌       |             ❌            |          ❌          |
+
+✅ Test Type Implemented &emsp; ❌ Test Type Not Implemented &emsp; ❓ Test Type Not Applicable
+
 [tests-shield]: https://github.com/pmerkleplant/crysol/actions/workflows/unit-tests.yml/badge.svg
 [tests-shield-url]: https://github.com/pmerkleplant/crysol/actions/workflows/unit-tests.yml
 
