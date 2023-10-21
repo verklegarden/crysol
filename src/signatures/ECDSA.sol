@@ -67,8 +67,17 @@ library ECDSA {
     using Secp256k1 for PrivateKey;
     using Secp256k1 for PublicKey;
 
-    Vm private constant vm =
-        Vm(address(uint160(uint(keccak256("hevm cheat code")))));
+    // ~~~~~~~ Prelude ~~~~~~~
+    // forgefmt: disable-start
+    Vm private constant vm = Vm(address(uint160(uint(keccak256("hevm cheat code")))));
+    modifier vmed() {
+        if (block.chainid != 31337) {
+            revert("requireVm");
+        }
+        _;
+    }
+    // forgefmt: disable-end
+    // ~~~~~~~~~~~~~~~~~~~~~~~
 
     /// @dev Mask to receive an ECDSA's s value from an EIP-2098 compact
     ///      signature representation.
@@ -178,7 +187,7 @@ library ECDSA {
     ///      - Private key invalid
     function sign(PrivateKey privKey, bytes memory message)
         internal
-        pure
+        view
         returns (Signature memory)
     {
         bytes32 digest = keccak256(message);
@@ -195,7 +204,8 @@ library ECDSA {
     /// @custom:vm vm.sign(uint,bytes32)
     function sign(PrivateKey privKey, bytes32 digest)
         internal
-        pure
+        view
+        vmed
         returns (Signature memory)
     {
         if (!privKey.isValid()) {
@@ -215,7 +225,7 @@ library ECDSA {
 
     function signEthereumSignedMessage(PrivateKey privKey, bytes memory message)
         internal
-        pure
+        view
         returns (Signature memory)
     {
         bytes32 digest = Message.deriveEthereumSignedMessage(message);
@@ -225,7 +235,7 @@ library ECDSA {
 
     function signEthereumSignedMessageHash(PrivateKey privKey, bytes32 digest)
         internal
-        pure
+        view
         returns (Signature memory)
     {
         bytes32 digest2 = Message.deriveEthereumSignedMessageHash(digest);
@@ -249,7 +259,7 @@ library ECDSA {
     /// @custom:vm vm.toString(uint)
     function toString(Signature memory self)
         internal
-        pure
+        vmed
         returns (string memory)
     {
         string memory str = "ECDSA::Signature { \n";

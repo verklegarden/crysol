@@ -66,8 +66,20 @@ library Secp256k1 {
     using Secp256k1 for AffinePoint;
     using Secp256k1Arithmetic for AffinePoint;
 
-    Vm private constant vm =
-        Vm(address(uint160(uint(keccak256("hevm cheat code")))));
+    // ~~~~~~~ Prelude ~~~~~~~
+    // forgefmt: disable-start
+    Vm private constant vm = Vm(address(uint160(uint(keccak256("hevm cheat code")))));
+    modifier vmed() {
+        if (block.chainid != 31337) {
+            revert("requireVm");
+        }
+        _;
+    }
+    // forgefmt: disable-end
+    // ~~~~~~~~~~~~~~~~~~~~~~~
+
+    //--------------------------------------------------------------------------
+    // Private Constants
 
     uint private constant _ADDRESS_MASK =
         0x000000000000000000000000FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF;
@@ -93,7 +105,7 @@ library Secp256k1 {
     /// @dev Returns a new cryptographically secure private key.
     ///
     /// @custom:vm Random::readUint()(uint)
-    function newPrivateKey() internal returns (PrivateKey) {
+    function newPrivateKey() internal vmed returns (PrivateKey) {
         // Let scalar ∊ [1, Q) sourced cryptographically secure.
         uint scalar = (Random.readUint() % (Secp256k1Arithmetic.Q - 1)) + 1;
         return PrivateKey.wrap(scalar);
@@ -112,7 +124,11 @@ library Secp256k1 {
     ///      - Private key invalid
     ///
     /// @custom:vm vm.createWallet(uint)
-    function toPublicKey(PrivateKey self) internal returns (PublicKey memory) {
+    function toPublicKey(PrivateKey self)
+        internal
+        vmed
+        returns (PublicKey memory)
+    {
         if (!self.isValid()) {
             revert("PrivateKeyInvalid()");
         }
