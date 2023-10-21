@@ -274,7 +274,8 @@ library ECDSA {
 
     /// @dev Returns signature `self` as bytes.
     ///
-    ///      Format: [256-bit r value][256-bit s value][8-bit v value]
+    /// @dev Provides following encoding:
+    ///         [256-bit r value][256-bit s value][8-bit v value]
     function toBytes(Signature memory self)
         internal
         pure
@@ -283,7 +284,7 @@ library ECDSA {
         bytes memory blob;
 
         // @todo Use direct access in assembly.
-        uint8 v = self.v;
+        uint8 v = self.v; // @todo Does this use one word or a single byte?
         bytes32 r = self.r;
         bytes32 s = self.s;
         assembly ("memory-safe") {
@@ -298,12 +299,13 @@ library ECDSA {
         return blob;
     }
 
-    /// @dev Returns Signature deserialized from bytes `blob`.
-    ///
-    /// @dev Expected format: [256-bit r value][256-bit s value][8-bit v value]
+    /// @dev Returns Signature from bytes `blob`.
     ///
     /// @dev Reverts if:
     ///      - Blob not exactly 65 bytes
+    ///
+    /// @dev Expects following encoding:
+    ///         [256-bit r value][256-bit s value][8-bit v value]
     function signatureFromBytes(bytes memory blob)
         internal
         pure
@@ -326,9 +328,10 @@ library ECDSA {
     }
 
     /// @dev Returns signature `self` as bytes in compact signature
-    ///      representation as defined in EIP-2098.
+    ///      encoding defined via EIP-2098.
     ///
-    ///      Format: [256-bit r value][1-bit yParity value][255-bit s value]
+    /// @dev Provides following encoding:
+    ///         [256-bit r value][1-bit yParity value][255-bit s value]
     function toCompactBytes(Signature memory self)
         internal
         pure
@@ -355,14 +358,14 @@ library ECDSA {
         return blob;
     }
 
-    /// @dev Returns Signature deserialized from bytes `blob`.
-    ///      Expects `blob` to be a compact signature representation as defined
-    ///      in EIP-2098.
-    ///
-    /// @dev Expected format: [256-bit r value][1-bit yParity value][255-bit s value]
+    /// @dev Returns Signature from bytes `blob`.
+    ///      Expects `blob` to be compact signature encoded defined via EIP-2098.
     ///
     /// @dev Reverts if:
     ///      - Blob not exactly 64 bytes
+    ///
+    /// @dev Expects following encoding:
+    ///         [256-bit r value][1-bit yParity value][255-bit s value]
     function signatureFromCompactBytes(bytes memory blob)
         internal
         pure

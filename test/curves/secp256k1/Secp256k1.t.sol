@@ -5,6 +5,11 @@ import {Test} from "forge-std/Test.sol";
 import {console2 as console} from "forge-std/console2.sol";
 
 import {Secp256k1, PrivateKey, PublicKey} from "src/curves/Secp256k1.sol";
+import {
+    Secp256k1Arithmetic,
+    AffinePoint,
+    JacobianPoint
+} from "src/curves/Secp256k1Arithmetic.sol";
 
 contract Secp256k1Test is Test {
     using Secp256k1 for PrivateKey;
@@ -201,7 +206,37 @@ contract Secp256k1Test is Test {
         assertEq(want, got);
     }
 
-    // @todo Test: Arithmetic conversions
+    // -- intoAffinePoint
+
+    // @todo Test no new memory allocation.
+    function testFuzz_PublicKey_intoAffinePoint(PublicKey memory pubKey)
+        public
+    {
+        AffinePoint memory point = pubKey.intoAffinePoint();
+
+        assertEq(point.x, pubKey.x);
+        assertEq(point.y, pubKey.y);
+    }
+
+    // @todo Test no new memory allocation.
+    function testFuzz_AffinePoint_intoPublicKey(AffinePoint memory point)
+        public
+    {
+        PublicKey memory pubKey = Secp256k1.intoPublicKey(point);
+
+        assertEq(pubKey.x, point.x);
+        assertEq(pubKey.y, point.y);
+    }
+
+    function testFuzz_PublicKey_toJacobianPoint(PublicKey memory pubKey)
+        public
+    {
+        JacobianPoint memory jacPoint = pubKey.toJacobianPoint();
+
+        assertEq(jacPoint.x, pubKey.x);
+        assertEq(jacPoint.y, pubKey.y);
+        assertEq(jacPoint.z, 1);
+    }
 
     //----------------------------------
     // Test: (De)Serialization

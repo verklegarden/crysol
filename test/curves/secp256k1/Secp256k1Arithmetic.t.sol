@@ -95,4 +95,20 @@ contract Secp256k1ArithmeticTest is Test {
 
     //--------------------------------------------------------------------------
     // Test: Jacobian Point
+
+    // @todo Test no new memory allocation.
+    function test_JacobianPoint_intoAffinePoint(PrivateKey privKey) public {
+        vm.assume(privKey.isValid());
+
+        AffinePoint memory want = privKey.toPublicKey().intoAffinePoint();
+        AffinePoint memory got = want.toJacobianPoint().intoAffinePoint();
+
+        assertEq(want.x, got.x);
+        assertEq(want.y, got.y);
+    }
+
+    //--------------------------------------------------------------------------
+    // Test: Utils
+
+    // @todo Test: modularInverseOf()
 }

@@ -244,6 +244,7 @@ library Secp256k1 {
         return point;
     }
 
+    // @todo Docs: Secp256k1 intoPublicKey
     function intoPublicKey(AffinePoint memory self)
         internal
         pure
@@ -319,7 +320,7 @@ library Secp256k1 {
 
     /// @dev Returns serialized public key `self` as bytes.
     ///
-    /// @dev Uses uncompressed 65 bytes encoding:
+    /// @dev Provides uncompressed 65 bytes encoding:
     ///         [0x04 prefix][32 bytes x coordinate][32 bytes y coordinate]
     function asBytes(PublicKey memory self)
         internal
@@ -377,6 +378,18 @@ library Secp256k1 {
         pure
         returns (bytes memory)
     {
-        revert("asCompressedBytes()");
+        uint yParity_ = self.yParity();
+
+        bytes memory blob;
+        assembly ("memory-safe") {
+            mstore(blob, 33)
+
+            let prefix := add(0x02, yParity_)
+            mstore(add(blob, 0x20), prefix)
+
+            let x := mload(self)
+            mstore(add(blob, 0x21), x)
+        }
+        return blob;
     }
 }
