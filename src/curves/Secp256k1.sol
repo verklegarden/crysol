@@ -136,9 +136,6 @@ library Secp256k1 {
         return PublicKey(wallet.publicKeyX, wallet.publicKeyY);
     }
 
-    //----------------------------------
-    // Casting
-
     /// @dev Returns uint `scalar` as private key.
     ///
     /// @dev Reverts if:
@@ -159,6 +156,9 @@ library Secp256k1 {
     function asUint(PrivateKey self) internal pure returns (uint) {
         return PrivateKey.unwrap(self);
     }
+
+    //----------------------------------
+    // (De)Serialization
 
     /// @dev Returns bytes `blob` as private key.
     ///
@@ -231,8 +231,42 @@ library Secp256k1 {
         return self.intoAffinePoint().yParity();
     }
 
+    /// @dev Mutates public key `self` to Affine Point.
+    function intoAffinePoint(PublicKey memory self)
+        internal
+        pure
+        returns (AffinePoint memory)
+    {
+        AffinePoint memory point;
+        assembly ("memory-safe") {
+            point := self
+        }
+        return point;
+    }
+
+    function intoPublicKey(AffinePoint memory self)
+        internal
+        pure
+        returns (PublicKey memory)
+    {
+        PublicKey memory pubKey;
+        assembly ("memory-safe") {
+            pubKey := self
+        }
+        return pubKey;
+    }
+
+    /// @dev Returns public key `self` as Jacobian Point.
+    function toJacobianPoint(PublicKey memory self)
+        internal
+        pure
+        returns (JacobianPoint memory)
+    {
+        return JacobianPoint(self.x, self.y, 1);
+    }
+
     //----------------------------------
-    // Casting
+    // (De)Serialization
 
     /// @dev Returns deserialized public key from bytes `blob`.
     ///
@@ -344,41 +378,5 @@ library Secp256k1 {
         returns (bytes memory)
     {
         revert("asCompressedBytes()");
-    }
-
-    // --------- END Compressed Public Key Serde ----------
-
-    /// @dev Mutates public key `self` to Affine Point.
-    function intoAffinePoint(PublicKey memory self)
-        internal
-        pure
-        returns (AffinePoint memory)
-    {
-        AffinePoint memory point;
-        assembly ("memory-safe") {
-            point := self
-        }
-        return point;
-    }
-
-    function intoPublicKey(AffinePoint memory self)
-        internal
-        pure
-        returns (PublicKey memory)
-    {
-        PublicKey memory pubKey;
-        assembly ("memory-safe") {
-            pubKey := self
-        }
-        return pubKey;
-    }
-
-    /// @dev Returns public key `self` as Jacobian Point.
-    function toJacobianPoint(PublicKey memory self)
-        internal
-        pure
-        returns (JacobianPoint memory)
-    {
-        return JacobianPoint(self.x, self.y, 1);
     }
 }

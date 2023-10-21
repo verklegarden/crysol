@@ -10,6 +10,11 @@ contract Secp256k1Test is Test {
     using Secp256k1 for PrivateKey;
     using Secp256k1 for PublicKey;
 
+    // Uncompressed Generator G.
+    // Copied from [Sec 2 v2].
+    bytes constant GENERATOR_BYTES_UNCOMPRESSED =
+        hex"0479BE667EF9DCBBAC55A06295CE870B07029BFCDB2DCE28D959F2815B16F81798483ADA7726A3C4655DA4FBFC0E1108A8FD17B448A68554199C47D08FFB10D4B8";
+
     //--------------------------------------------------------------------------
     // Test: Private Key
 
@@ -63,7 +68,8 @@ contract Secp256k1Test is Test {
         privKey.toPublicKey();
     }
 
-    // -- Casting --
+    //----------------------------------
+    // Test: (De)Serialization
 
     // -- privateKeyFromUint
 
@@ -195,8 +201,10 @@ contract Secp256k1Test is Test {
         assertEq(want, got);
     }
 
+    // @todo Test: Arithmetic conversions
+
     //----------------------------------
-    // @todo Casting
+    // Test: (De)Serialization
 
     // -- publicKeyFromBytes
 
@@ -213,13 +221,9 @@ contract Secp256k1Test is Test {
     }
 
     function test_publicKeyFromBytes_ViaGenerator() public {
-        // Uncompressed Generator G.
-        // Copied from [Sec 2 v2].
-        bytes memory g =
-            hex"0479BE667EF9DCBBAC55A06295CE870B07029BFCDB2DCE28D959F2815B16F81798483ADA7726A3C4655DA4FBFC0E1108A8FD17B448A68554199C47D08FFB10D4B8";
-
         PublicKey memory want = Secp256k1.G();
-        PublicKey memory got = Secp256k1.publicKeyFromBytes(g);
+        PublicKey memory got =
+            Secp256k1.publicKeyFromBytes(GENERATOR_BYTES_UNCOMPRESSED);
 
         assertEq(want.toAddress(), got.toAddress());
     }
@@ -268,17 +272,8 @@ contract Secp256k1Test is Test {
     }
 
     function test_PublicKey_asBytes_ViaGenerator() public {
-        // Uncompressed Generator G.
-        // Copied from [Sec 2 v2].
-        bytes memory want =
-            hex"0479BE667EF9DCBBAC55A06295CE870B07029BFCDB2DCE28D959F2815B16F81798483ADA7726A3C4655DA4FBFC0E1108A8FD17B448A68554199C47D08FFB10D4B8";
-        bytes memory got = Secp256k1.G().asBytes();
-
-        assertEq(want, got);
+        assertEq(GENERATOR_BYTES_UNCOMPRESSED, Secp256k1.G().asBytes());
     }
-    // @todo Uncompressed form G. See [Sec 2 v2].
-    //       Good for (de)serialization tests.
-    //04 79BE667E F9DCBBAC 55A06295 CE870B07 029BFCDB 2DCE28D9
-    //59F2815B 16F81798 483ADA77 26A3C465 5DA4FBFC 0E1108A8 FD17B448
-    //A6855419 9C47D08F FB10D4B8
+
+    // @todo Test: Compressed bytes serde
 }

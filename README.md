@@ -48,13 +48,13 @@ $ forge snapshot --nmt "Fuzz" [--check]
 
 | **Library**                  | **Unit Tests** | **Property-Based Tests** | **Invariant Tests** |
 |:---------------------------- |:--------------:|:------------------------:|:-------------------:|
-| `Random`                     |        ✅       |             ❓            |          ❓          |
+| `Random`                     |        ✅       |             ❌            |          ❌          |
 | `Message`                    |        ❌       |             ❌            |          ❌          |
 | `curves/Secp256k1`           |        ✅       |             ❌            |          ❌          |
 | `curves/Secp256k1Arithmetic` |        ❌       |             ❌            |          ❌          |
 | `signatures/ECDSA`           |        ❌       |             ❌            |          ❌          |
 
-✅ Test Type Implemented &emsp; ❌ Test Type Not Implemented &emsp; ❓ Test Type Not Applicable
+✅ Test Type Implemented &emsp; ❌ Test Type Not Implemented
 
 [tests-shield]: https://github.com/pmerkleplant/crysol/actions/workflows/unit-tests.yml/badge.svg
 [tests-shield-url]: https://github.com/pmerkleplant/crysol/actions/workflows/unit-tests.yml
