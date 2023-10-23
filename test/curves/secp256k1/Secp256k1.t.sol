@@ -11,6 +11,8 @@ import {
     JacobianPoint
 } from "src/curves/Secp256k1Arithmetic.sol";
 
+import {Secp256k1Spec} from "spec/curves/Secp256k1Spec.sol";
+
 contract Secp256k1Test is Test {
     using Secp256k1 for PrivateKey;
     using Secp256k1 for PublicKey;
@@ -19,6 +21,21 @@ contract Secp256k1Test is Test {
     // Copied from [Sec 2 v2].
     bytes constant GENERATOR_BYTES_UNCOMPRESSED =
         hex"0479BE667EF9DCBBAC55A06295CE870B07029BFCDB2DCE28D959F2815B16F81798483ADA7726A3C4655DA4FBFC0E1108A8FD17B448A68554199C47D08FFB10D4B8";
+
+    //--------------------------------------------------------------------------
+    // @todo Spec tests
+
+    /*
+    function testSpec_PrivateKey_toPublicKey(PrivateKey privKey) public {
+        vm.assume(privKey.isValid());
+
+        PublicKey memory got = privKey.toPublicKey();
+        PublicKey memory want = Secp256k1Spec.privateKeyToPublicKey(privKey);
+
+        assertEq(got.x, want.x);
+        assertEq(got.y, want.y);
+    }
+    */
 
     //--------------------------------------------------------------------------
     // Test: Private Key

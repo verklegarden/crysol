@@ -11,9 +11,9 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.16;
 
-import {ECDSA, Signature} from "./ECDSA.sol";
-import {Secp256k1, PrivateKey, PublicKey} from "../curves/Secp256k1.sol";
-import {Secp256k1Arithmetic} from "../curves/Secp256k1Arithmetic.sol";
+import {ECDSA, Signature} from "src/signatures/ECDSA.sol";
+import {Secp256k1, PrivateKey, PublicKey} from "src/curves/Secp256k1.sol";
+import {Secp256k1Arithmetic} from "src/curves/Secp256k1Arithmetic.sol";
 
 /**
  * @title ECDSAUnsafe

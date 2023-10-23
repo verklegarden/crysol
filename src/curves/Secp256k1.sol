@@ -209,11 +209,11 @@ library Secp256k1 {
 
     /// @dev Returns the keccak256 hash of public key `self`.
     function toHash(PublicKey memory self) internal pure returns (bytes32) {
-        bytes32 hash_;
+        bytes32 digest;
         assembly ("memory-safe") {
-            hash_ := keccak256(self, 0x40)
+            digest := keccak256(self, 0x40)
         }
-        return hash_;
+        return digest;
     }
 
     /// @dev Returns whether public key `self` is a valid secp256k1 public key.
@@ -269,7 +269,7 @@ library Secp256k1 {
     //----------------------------------
     // (De)Serialization
 
-    /// @dev Returns deserialized public key from bytes `blob`.
+    /// @dev Returns public key from bytes `blob`.
     ///
     /// @dev Reverts if:
     ///      - Length not 65 bytes
@@ -318,7 +318,7 @@ library Secp256k1 {
         return pubKey;
     }
 
-    /// @dev Returns serialized public key `self` as bytes.
+    /// @dev Returns public key `self` as bytes.
     ///
     /// @dev Provides uncompressed 65 bytes encoding:
     ///         [0x04 prefix][32 bytes x coordinate][32 bytes y coordinate]
@@ -357,20 +357,17 @@ library Secp256k1 {
             x := mload(add(blob, 0x21))
         }
 
-        // @todo Not nice :(
-        // Compute y coordinate with even parity if prefix is 0x02.
-        // Compute y coordinate with odd parity if prefix is 0x03.
-        // Otherwise revert.
-        if (uint(prefix) == 0x02) {
-            uint y = 0; // @todo Compute y coordinate.
-            return PublicKey(x, y);
-        }
-        if (uint(prefix) == 0x03) {
-            uint y = 0; // @todo Compute y coordinate.
-            return PublicKey(x, y);
+        // Revert if prefix not 0x02 or 0x03.
+        if (uint(prefix) != 0x02 && uint(prefix) != 0x03) {
+            revert("InvalidPrefix()");
         }
 
-        revert("InvalidPrefix()");
+        PublicKey memory pubKey;
+        pubKey.x = x;
+        // @todo Compute y coordinate.
+        pubKey.y = uint(prefix) == 0x02 ? 0 : 1;
+
+        return pubKey;
     }
 
     function asCompressedBytes(PublicKey memory self)

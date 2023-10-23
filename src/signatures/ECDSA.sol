@@ -165,7 +165,6 @@ library ECDSA {
             revert("SignerZeroAddress()");
         }
 
-        // Fail if signature is malleable.
         if (sig.isMalleable()) {
             revert("SignatureIsMalleable()");
         }
@@ -362,6 +361,7 @@ library ECDSA {
             mstore(add(blob, 0x20), r)
             mstore(add(blob, 0x40), yParityAndS)
         }
+
         return blob;
     }
 

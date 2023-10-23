@@ -5,7 +5,7 @@ import {Test} from "forge-std/Test.sol";
 import {console2 as console} from "forge-std/console2.sol";
 
 import {ECDSA, Signature} from "src/signatures/ECDSA.sol";
-import {ECDSAUnsafe} from "src/signatures/ECDSAUnsafe.sol";
+import {ECDSAUnsafe} from "unsafe/ECDSAUnsafe.sol";
 import {Secp256k1, PrivateKey, PublicKey} from "src/curves/Secp256k1.sol";
 
 contract ECDSATest is Test {
@@ -65,7 +65,7 @@ contract ECDSATest is Test {
         Signature memory sig = Signature(v, r, s);
 
         // Note that verify() reverts if signature is malleable.
-        vm.assume(!sig.isMalleable());
+        sig.intoNonMalleable();
 
         assertFalse(pubKey.verify(message, sig));
         assertFalse(pubKey.verify(digest, sig));
@@ -161,6 +161,21 @@ contract ECDSATest is Test {
         privKey.sign(keccak256(message));
     }
 
+    // @todo Test signEthereum...
+
     //--------------------------------------------------------------------------
     // Test: Utils
+
+    function testFuzz_isMalleable(bool malleable, Signature memory sig)
+        public
+    {
+        if (malleable) {
+            assertTrue(sig.intoMalleable().isMalleable());
+        } else {
+            assertFalse(sig.intoNonMalleable().isMalleable());
+        }
+    }
+
+    //--------------------------------------------------------------------------
+    // Test: (De)Serialization
 }
