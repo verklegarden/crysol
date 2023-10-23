@@ -96,82 +96,6 @@ contract Secp256k1Test is Test {
         wrapper.toPublicKey(privKey);
     }
 
-    //----------------------------------
-    // Test: (De)Serialization
-
-    // -- privateKeyFromUint
-
-    function testFuzz_privateKeyFromUint(uint seed) public {
-        uint scalar = _bound(seed, 1, Secp256k1.Q - 1);
-
-        PrivateKey privKey = wrapper.privateKeyFromUint(scalar);
-
-        assertEq(privKey.asUint(), scalar);
-        assertTrue(privKey.isValid());
-    }
-
-    function testFuzz_privateKeyFromUint_RevertsIf_ScalarZero() public {
-        vm.expectRevert("InvalidScalar()");
-        wrapper.privateKeyFromUint(0);
-    }
-
-    function testFuzz_privateKeyFromUint_RevertsIf_ScalarGreaterOrEqualToQ(
-        uint seed
-    ) public {
-        uint scalar = _bound(seed, Secp256k1.Q, type(uint).max);
-
-        vm.expectRevert("InvalidScalar()");
-        wrapper.privateKeyFromUint(scalar);
-    }
-
-    // -- asUint
-
-    function testFuzz_PrivateKey_asUint(uint seed) public {
-        assertEq(seed, wrapper.asUint(PrivateKey.wrap(seed)));
-    }
-
-    // -- privateKeyFromBytes
-
-    function testFuzz_privateKeyFromBytes(uint seed) public {
-        uint scalar = _bound(seed, 1, Secp256k1.Q - 1);
-
-        PrivateKey privKey =
-            wrapper.privateKeyFromBytes(abi.encodePacked(scalar));
-
-        assertTrue(privKey.isValid());
-        assertEq(privKey.asUint(), scalar);
-    }
-
-    function testFuzz_privateKeyFromBytes_RevertsIf_LengthNot32Bytes(
-        bytes memory seed
-    ) public {
-        vm.assume(seed.length != 32);
-
-        vm.expectRevert("InvalidLength()");
-        wrapper.privateKeyFromBytes(seed);
-    }
-
-    function testFuzz_privateKeyFromBytes_RevertsIf_DeserializedScalarInvalid(
-        uint seed
-    ) public {
-        uint scalar =
-            seed == 0 ? seed : _bound(seed, Secp256k1.Q, type(uint).max);
-
-        vm.expectRevert("InvalidScalar()");
-        wrapper.privateKeyFromBytes(abi.encodePacked(scalar));
-    }
-
-    // -- asBytes
-
-    function testFuzz_PrivateKey_asBytes(PrivateKey privKey) public {
-        vm.assume(privKey.isValid());
-
-        assertEq(
-            privKey.asUint(),
-            wrapper.privateKeyFromBytes(wrapper.asBytes(privKey)).asUint()
-        );
-    }
-
     //--------------------------------------------------------------------------
     // Test: Public Key
 
@@ -265,8 +189,87 @@ contract Secp256k1Test is Test {
         assertEq(jacPoint.z, 1);
     }
 
-    //----------------------------------
+    //--------------------------------------------------------------------------
     // Test: (De)Serialization
+
+    //----------------------------------
+    // Private Key
+
+    // -- privateKeyFromUint
+
+    function testFuzz_privateKeyFromUint(uint seed) public {
+        uint scalar = _bound(seed, 1, Secp256k1.Q - 1);
+
+        PrivateKey privKey = wrapper.privateKeyFromUint(scalar);
+
+        assertEq(privKey.asUint(), scalar);
+        assertTrue(privKey.isValid());
+    }
+
+    function testFuzz_privateKeyFromUint_RevertsIf_ScalarZero() public {
+        vm.expectRevert("InvalidScalar()");
+        wrapper.privateKeyFromUint(0);
+    }
+
+    function testFuzz_privateKeyFromUint_RevertsIf_ScalarGreaterOrEqualToQ(
+        uint seed
+    ) public {
+        uint scalar = _bound(seed, Secp256k1.Q, type(uint).max);
+
+        vm.expectRevert("InvalidScalar()");
+        wrapper.privateKeyFromUint(scalar);
+    }
+
+    // -- asUint
+
+    function testFuzz_PrivateKey_asUint(uint seed) public {
+        assertEq(seed, wrapper.asUint(PrivateKey.wrap(seed)));
+    }
+
+    // -- privateKeyFromBytes
+
+    function testFuzz_privateKeyFromBytes(uint seed) public {
+        uint scalar = _bound(seed, 1, Secp256k1.Q - 1);
+
+        PrivateKey privKey =
+            wrapper.privateKeyFromBytes(abi.encodePacked(scalar));
+
+        assertTrue(privKey.isValid());
+        assertEq(privKey.asUint(), scalar);
+    }
+
+    function testFuzz_privateKeyFromBytes_RevertsIf_LengthNot32Bytes(
+        bytes memory seed
+    ) public {
+        vm.assume(seed.length != 32);
+
+        vm.expectRevert("InvalidLength()");
+        wrapper.privateKeyFromBytes(seed);
+    }
+
+    function testFuzz_privateKeyFromBytes_RevertsIf_DeserializedScalarInvalid(
+        uint seed
+    ) public {
+        uint scalar =
+            seed == 0 ? seed : _bound(seed, Secp256k1.Q, type(uint).max);
+
+        vm.expectRevert("InvalidScalar()");
+        wrapper.privateKeyFromBytes(abi.encodePacked(scalar));
+    }
+
+    // -- asBytes
+
+    function testFuzz_PrivateKey_asBytes(PrivateKey privKey) public {
+        vm.assume(privKey.isValid());
+
+        assertEq(
+            privKey.asUint(),
+            wrapper.privateKeyFromBytes(wrapper.asBytes(privKey)).asUint()
+        );
+    }
+
+    //----------------------------------
+    // Public Key
 
     // -- publicKeyFromBytes
 
@@ -337,6 +340,4 @@ contract Secp256k1Test is Test {
     function test_PublicKey_asBytes_ViaGenerator() public {
         assertEq(GENERATOR_BYTES_UNCOMPRESSED, wrapper.asBytes(Secp256k1.G()));
     }
-
-    // @todo Test: Compressed bytes serde
 }

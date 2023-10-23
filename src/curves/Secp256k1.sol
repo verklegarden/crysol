@@ -172,36 +172,6 @@ library Secp256k1 {
         return PrivateKey.unwrap(self);
     }
 
-    //----------------------------------
-    // (De)Serialization
-
-    /// @dev Returns bytes `blob` as private key.
-    ///
-    /// @dev Reverts if:
-    ///      - Length not 32 bytes
-    ///      - Deserialized scalar not in [1, Q)
-    function privateKeyFromBytes(bytes memory blob)
-        internal
-        pure
-        returns (PrivateKey)
-    {
-        if (blob.length != 32) {
-            revert("InvalidLength()");
-        }
-
-        uint scalar;
-        assembly ("memory-safe") {
-            scalar := mload(add(blob, 0x20))
-        }
-
-        return privateKeyFromUint(scalar);
-    }
-
-    /// @dev Returns private key `self` as bytes.
-    function asBytes(PrivateKey self) internal pure returns (bytes memory) {
-        return abi.encodePacked(self.asUint());
-    }
-
     //--------------------------------------------------------------------------
     // Public Key
 
@@ -281,8 +251,41 @@ library Secp256k1 {
         return JacobianPoint(self.x, self.y, 1);
     }
 
-    //----------------------------------
+    //--------------------------------------------------------------------------
     // (De)Serialization
+
+    //----------------------------------
+    // Private Key
+
+    /// @dev Returns bytes `blob` as private key.
+    ///
+    /// @dev Reverts if:
+    ///      - Length not 32 bytes
+    ///      - Deserialized scalar not in [1, Q)
+    function privateKeyFromBytes(bytes memory blob)
+        internal
+        pure
+        returns (PrivateKey)
+    {
+        if (blob.length != 32) {
+            revert("InvalidLength()");
+        }
+
+        uint scalar;
+        assembly ("memory-safe") {
+            scalar := mload(add(blob, 0x20))
+        }
+
+        return privateKeyFromUint(scalar);
+    }
+
+    /// @dev Returns private key `self` as bytes.
+    function asBytes(PrivateKey self) internal pure returns (bytes memory) {
+        return abi.encodePacked(self.asUint());
+    }
+
+    //----------------------------------
+    // Public Key
 
     /// @dev Returns public key from bytes `blob`.
     ///
@@ -345,6 +348,11 @@ library Secp256k1 {
         return abi.encodePacked(bytes1(0x04), self.x, self.y);
     }
 
+    //--------------------------------------------------------------------------
+    //------------------------  END  -------------------------------------------
+    //--------------------------------------------------------------------------
+
+    /*
     // --------- @todo Compressed Public Key Serde ----------
 
     // @todo compressed public keys are 33 bytes:
@@ -404,4 +412,5 @@ library Secp256k1 {
         }
         return blob;
     }
+    */
 }

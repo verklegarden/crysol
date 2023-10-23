@@ -8,6 +8,8 @@ import {ECDSA, Signature} from "src/signatures/ECDSA.sol";
 import {ECDSAUnsafe} from "unsafe/ECDSAUnsafe.sol";
 import {Secp256k1, PrivateKey, PublicKey} from "src/curves/Secp256k1.sol";
 
+import {ECDSAWrapper} from "./ECDSAWrapper.sol";
+
 contract ECDSATest is Test {
     using ECDSA for address;
     using ECDSA for PrivateKey;
@@ -17,6 +19,12 @@ contract ECDSATest is Test {
 
     using Secp256k1 for PrivateKey;
     using Secp256k1 for PublicKey;
+
+    ECDSAWrapper wrapper;
+
+    function setUp() public {
+        wrapper = new ECDSAWrapper();
+    }
 
     //--------------------------------------------------------------------------
     // Test: Signature Verification
@@ -34,10 +42,10 @@ contract ECDSATest is Test {
 
         Signature memory sig = Signature(v, r, s);
 
-        assertTrue(pubKey.verify(message, sig));
-        assertTrue(pubKey.verify(digest, sig));
-        assertTrue(pubKey.toAddress().verify(message, sig));
-        assertTrue(pubKey.toAddress().verify(digest, sig));
+        assertTrue(wrapper.verify(pubKey, message, sig));
+        assertTrue(wrapper.verify(pubKey, digest, sig));
+        assertTrue(wrapper.verify(pubKey.toAddress(), message, sig));
+        assertTrue(wrapper.verify(pubKey.toAddress(), digest, sig));
     }
 
     function testFuzz_verify_FailsIf_SignatureInvalid(

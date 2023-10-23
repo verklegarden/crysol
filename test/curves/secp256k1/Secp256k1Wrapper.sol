@@ -54,21 +54,6 @@ contract Secp256k1Wrapper {
         return privKey.asUint();
     }
 
-    //----------------------------------
-    // (De)Serialization
-
-    function privateKeyFromBytes(bytes memory blob)
-        public
-        view
-        returns (PrivateKey)
-    {
-        return Secp256k1.privateKeyFromBytes(blob);
-    }
-
-    function asBytes(PrivateKey privKey) public view returns (bytes memory) {
-        return privKey.asBytes();
-    }
-
     //--------------------------------------------------------------------------
     // Public Key
 
@@ -112,8 +97,26 @@ contract Secp256k1Wrapper {
         return pubKey.toJacobianPoint();
     }
 
-    //----------------------------------
+    //--------------------------------------------------------------------------
     // (De)Serialization
+
+    //----------------------------------
+    // Private Key
+
+    function privateKeyFromBytes(bytes memory blob)
+        public
+        view
+        returns (PrivateKey)
+    {
+        return Secp256k1.privateKeyFromBytes(blob);
+    }
+
+    function asBytes(PrivateKey privKey) public view returns (bytes memory) {
+        return privKey.asBytes();
+    }
+
+    //----------------------------------
+    // Public Key
 
     function publicKeyFromBytes(bytes memory blob)
         public

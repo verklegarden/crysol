@@ -226,6 +226,7 @@ library ECDSA {
         return sig;
     }
 
+    // @todo Docs signEthereumSignedMessage
     function signEthereumSignedMessage(PrivateKey privKey, bytes memory message)
         internal
         view
@@ -237,6 +238,7 @@ library ECDSA {
         return privKey.sign(digest);
     }
 
+    // @todo Docs signEthereumSignedMessageHash
     function signEthereumSignedMessageHash(PrivateKey privKey, bytes32 digest)
         internal
         view
