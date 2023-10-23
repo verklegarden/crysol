@@ -24,7 +24,7 @@ import {Random} from "../Random.sol";
 /**
  * @notice PrivateKey is the secret scalar
  *
- * @dev Note that a private key's MUST be a field element,
+ * @dev Note that a private key MUST be a field element,
  *      ie private key ∊ [1, Q).
  *
  * @dev Note that a private key MUST be created cryptographically sound!
@@ -33,7 +33,7 @@ import {Random} from "../Random.sol";
  * @custom:example Generating a secure private key.
  *
  *      ```solidity
- *      import {Secp256k1, PrivateKey} from "crysol/Secp256k1.sol";
+ *      import {Secp256k1, PrivateKey} from "crysol/curves/Secp256k1.sol";
  *      using Secp256k1 for PrivateKey;
  *
  *      PrivateKey privKey = Secp256k1.newPrivateKey();
@@ -46,6 +46,21 @@ type PrivateKey is uint;
  * @notice PublicKey is a PrivateKey's public identifier
  *
  * @dev A public key is derived from a private key via [privKey]G.
+ *
+ * @custom:example Deriving a private key's public key.
+ *
+ *      ```solidity
+ *      import {Secp256k1, PrivateKey, PublicKey} from "crysol/curves/Secp256k1.sol";
+ *      using Secp256k1 for PrivateKey;
+ *      using Secp256k1 for PublicKey;
+ *
+ *      PrivateKey privKey = Secp256k1.newPrivateKey();
+ *
+ *      PublicKey memory pubKey = privKey.toPublicKey();
+ *      assert(pubKey.isValid());
+ *
+ *      address addr = pubKey.toAddress();
+ *      ```
  */
 struct PublicKey {
     uint x;

@@ -11,7 +11,7 @@ import {
     JacobianPoint
 } from "src/curves/Secp256k1Arithmetic.sol";
 
-import {Secp256k1Spec} from "spec/curves/Secp256k1Spec.sol";
+import {Secp256k1Wrapper} from "./Secp256k1Wrapper.sol";
 
 contract Secp256k1Test is Test {
     using Secp256k1 for PrivateKey;
@@ -22,20 +22,23 @@ contract Secp256k1Test is Test {
     bytes constant GENERATOR_BYTES_UNCOMPRESSED =
         hex"0479BE667EF9DCBBAC55A06295CE870B07029BFCDB2DCE28D959F2815B16F81798483ADA7726A3C4655DA4FBFC0E1108A8FD17B448A68554199C47D08FFB10D4B8";
 
+    Secp256k1Wrapper wrapper;
+
+    function setUp() public {
+        wrapper = new Secp256k1Wrapper();
+    }
+
     //--------------------------------------------------------------------------
-    // @todo Spec tests
+    // Test: Constants
 
-    /*
-    function testSpec_PrivateKey_toPublicKey(PrivateKey privKey) public {
-        vm.assume(privKey.isValid());
-
-        PublicKey memory got = privKey.toPublicKey();
-        PublicKey memory want = Secp256k1Spec.privateKeyToPublicKey(privKey);
+    function test_G() public {
+        PublicKey memory got = wrapper.G();
+        PublicKey memory want =
+            Secp256k1.publicKeyFromBytes(GENERATOR_BYTES_UNCOMPRESSED);
 
         assertEq(got.x, want.x);
         assertEq(got.y, want.y);
     }
-    */
 
     //--------------------------------------------------------------------------
     // Test: Private Key
@@ -43,7 +46,7 @@ contract Secp256k1Test is Test {
     // -- newPrivateKey
 
     function test_newPrivateKey() public {
-        PrivateKey privKey = Secp256k1.newPrivateKey();
+        PrivateKey privKey = wrapper.newPrivateKey();
 
         assertTrue(privKey.isValid());
 
@@ -56,11 +59,11 @@ contract Secp256k1Test is Test {
     function testFuzz_PrivateKey_isValid(uint seed) public {
         uint privKey = _bound(seed, 1, Secp256k1.Q - 1);
 
-        assertTrue(PrivateKey.wrap(privKey).isValid());
+        assertTrue(wrapper.isValid(PrivateKey.wrap(privKey)));
     }
 
     function test_PrivateKey_isValid_FalseIf_PrivateKeyIsZero() public {
-        assertFalse(PrivateKey.wrap(0).isValid());
+        assertFalse(wrapper.isValid(PrivateKey.wrap(0)));
     }
 
     function testFuzz_PrivateKey_isValid_FalseIf_PrivateKeyGreaterOrEqualToQ(
@@ -68,7 +71,7 @@ contract Secp256k1Test is Test {
     ) public {
         uint privKey = _bound(seed, Secp256k1.Q, type(uint).max);
 
-        assertFalse(PrivateKey.wrap(privKey).isValid());
+        assertFalse(wrapper.isValid(PrivateKey.wrap(privKey)));
     }
 
     // -- toPublicKey
@@ -77,7 +80,10 @@ contract Secp256k1Test is Test {
         PrivateKey privKey =
             Secp256k1.privateKeyFromUint(_bound(seed, 1, Secp256k1.Q - 1));
 
-        assertEq(privKey.toPublicKey().toAddress(), vm.addr(privKey.asUint()));
+        address got = wrapper.toPublicKey(privKey).toAddress();
+        address want = vm.addr(privKey.asUint());
+
+        assertEq(got, want);
     }
 
     function testFuzz_PrivateKey_toPublicKey_RevertsIf_PrivateKeyInvalid(
@@ -87,7 +93,7 @@ contract Secp256k1Test is Test {
             PrivateKey.wrap(_bound(seed, Secp256k1.Q, type(uint).max));
 
         vm.expectRevert("PrivateKeyInvalid()");
-        privKey.toPublicKey();
+        wrapper.toPublicKey(privKey);
     }
 
     //----------------------------------
@@ -98,7 +104,7 @@ contract Secp256k1Test is Test {
     function testFuzz_privateKeyFromUint(uint seed) public {
         uint scalar = _bound(seed, 1, Secp256k1.Q - 1);
 
-        PrivateKey privKey = Secp256k1.privateKeyFromUint(scalar);
+        PrivateKey privKey = wrapper.privateKeyFromUint(scalar);
 
         assertEq(privKey.asUint(), scalar);
         assertTrue(privKey.isValid());
@@ -106,7 +112,7 @@ contract Secp256k1Test is Test {
 
     function testFuzz_privateKeyFromUint_RevertsIf_ScalarZero() public {
         vm.expectRevert("InvalidScalar()");
-        Secp256k1.privateKeyFromUint(0);
+        wrapper.privateKeyFromUint(0);
     }
 
     function testFuzz_privateKeyFromUint_RevertsIf_ScalarGreaterOrEqualToQ(
@@ -115,13 +121,13 @@ contract Secp256k1Test is Test {
         uint scalar = _bound(seed, Secp256k1.Q, type(uint).max);
 
         vm.expectRevert("InvalidScalar()");
-        Secp256k1.privateKeyFromUint(scalar);
+        wrapper.privateKeyFromUint(scalar);
     }
 
     // -- asUint
 
     function testFuzz_PrivateKey_asUint(uint seed) public {
-        assertEq(seed, PrivateKey.wrap(seed).asUint());
+        assertEq(seed, wrapper.asUint(PrivateKey.wrap(seed)));
     }
 
     // -- privateKeyFromBytes
@@ -130,7 +136,7 @@ contract Secp256k1Test is Test {
         uint scalar = _bound(seed, 1, Secp256k1.Q - 1);
 
         PrivateKey privKey =
-            Secp256k1.privateKeyFromBytes(abi.encodePacked(scalar));
+            wrapper.privateKeyFromBytes(abi.encodePacked(scalar));
 
         assertTrue(privKey.isValid());
         assertEq(privKey.asUint(), scalar);
@@ -142,7 +148,7 @@ contract Secp256k1Test is Test {
         vm.assume(seed.length != 32);
 
         vm.expectRevert("InvalidLength()");
-        Secp256k1.privateKeyFromBytes(seed);
+        wrapper.privateKeyFromBytes(seed);
     }
 
     function testFuzz_privateKeyFromBytes_RevertsIf_DeserializedScalarInvalid(
@@ -152,7 +158,7 @@ contract Secp256k1Test is Test {
             seed == 0 ? seed : _bound(seed, Secp256k1.Q, type(uint).max);
 
         vm.expectRevert("InvalidScalar()");
-        Secp256k1.privateKeyFromBytes(abi.encodePacked(scalar));
+        wrapper.privateKeyFromBytes(abi.encodePacked(scalar));
     }
 
     // -- asBytes
@@ -162,7 +168,7 @@ contract Secp256k1Test is Test {
 
         assertEq(
             privKey.asUint(),
-            Secp256k1.privateKeyFromBytes(privKey.asBytes()).asUint()
+            wrapper.privateKeyFromBytes(wrapper.asBytes(privKey)).asUint()
         );
     }
 
@@ -175,13 +181,16 @@ contract Secp256k1Test is Test {
         PrivateKey privKey =
             Secp256k1.privateKeyFromUint(_bound(seed, 1, Secp256k1.Q - 1));
 
-        assertEq(privKey.toPublicKey().toAddress(), vm.addr(privKey.asUint()));
+        assertEq(
+            wrapper.toAddress(Secp256k1.toPublicKey(privKey)),
+            vm.addr(privKey.asUint())
+        );
     }
 
     // -- toHash
 
     function testFuzz_PublicKey_toHash(PublicKey memory pubKey) public {
-        bytes32 got = pubKey.toHash();
+        bytes32 got = wrapper.toHash(pubKey);
         bytes32 want = keccak256(abi.encodePacked(pubKey.x, pubKey.y));
 
         assertEq(got, want);
@@ -194,7 +203,7 @@ contract Secp256k1Test is Test {
             Secp256k1.privateKeyFromUint(_bound(seed, 1, Secp256k1.Q - 1));
 
         // Every public key created via valid private key is valid.
-        assertTrue(privKey.toPublicKey().isValid());
+        assertTrue(wrapper.isValid(privKey.toPublicKey()));
     }
 
     function test_PublicKey_isValid_FalseIf_PointNotOnCurve() public {
@@ -202,15 +211,15 @@ contract Secp256k1Test is Test {
 
         pubKey.x = 0;
         pubKey.y = 0;
-        assertFalse(pubKey.isValid());
+        assertFalse(wrapper.isValid(pubKey));
 
         pubKey.x = 1;
         pubKey.x = 3;
-        assertFalse(pubKey.isValid());
+        assertFalse(wrapper.isValid(pubKey));
 
         pubKey.x = type(uint).max;
         pubKey.x = type(uint).max;
-        assertFalse(pubKey.isValid());
+        assertFalse(wrapper.isValid(pubKey));
     }
 
     // -- yParity
@@ -218,28 +227,29 @@ contract Secp256k1Test is Test {
     function testFuzz_PublicKey_yParity(uint x, uint y) public {
         // yParity is 0 if y is even and 1 if y is odd.
         uint want = y % 2 == 0 ? 0 : 1;
-        uint got = PublicKey(x, y).yParity();
+        uint got = wrapper.yParity(PublicKey(x, y));
 
         assertEq(want, got);
     }
 
     // -- intoAffinePoint
 
-    // @todo Test no new memory allocation.
+    // @todo Add no memory expansion tests for `into__()` functions.
+    //       Must directly use library, not wrapper.
+
     function testFuzz_PublicKey_intoAffinePoint(PublicKey memory pubKey)
         public
     {
-        AffinePoint memory point = pubKey.intoAffinePoint();
+        AffinePoint memory point = wrapper.intoAffinePoint(pubKey);
 
         assertEq(point.x, pubKey.x);
         assertEq(point.y, pubKey.y);
     }
 
-    // @todo Test no new memory allocation.
     function testFuzz_AffinePoint_intoPublicKey(AffinePoint memory point)
         public
     {
-        PublicKey memory pubKey = Secp256k1.intoPublicKey(point);
+        PublicKey memory pubKey = wrapper.intoPublicKey(point);
 
         assertEq(pubKey.x, point.x);
         assertEq(pubKey.y, point.y);
@@ -248,7 +258,7 @@ contract Secp256k1Test is Test {
     function testFuzz_PublicKey_toJacobianPoint(PublicKey memory pubKey)
         public
     {
-        JacobianPoint memory jacPoint = pubKey.toJacobianPoint();
+        JacobianPoint memory jacPoint = wrapper.toJacobianPoint(pubKey);
 
         assertEq(jacPoint.x, pubKey.x);
         assertEq(jacPoint.y, pubKey.y);
@@ -267,7 +277,7 @@ contract Secp256k1Test is Test {
         PublicKey memory pubKey = privKey.toPublicKey();
 
         address want = pubKey.toAddress();
-        address got = Secp256k1.publicKeyFromBytes(pubKey.asBytes()).toAddress();
+        address got = wrapper.publicKeyFromBytes(pubKey.asBytes()).toAddress();
 
         assertEq(want, got);
     }
@@ -275,7 +285,7 @@ contract Secp256k1Test is Test {
     function test_publicKeyFromBytes_ViaGenerator() public {
         PublicKey memory want = Secp256k1.G();
         PublicKey memory got =
-            Secp256k1.publicKeyFromBytes(GENERATOR_BYTES_UNCOMPRESSED);
+            wrapper.publicKeyFromBytes(GENERATOR_BYTES_UNCOMPRESSED);
 
         assertEq(want.toAddress(), got.toAddress());
     }
@@ -286,7 +296,7 @@ contract Secp256k1Test is Test {
         vm.assume(blob.length != 65);
 
         vm.expectRevert("InvalidLength()");
-        Secp256k1.publicKeyFromBytes(blob);
+        wrapper.publicKeyFromBytes(blob);
     }
 
     function testFuzz_publicKeyFromBytes_RevertsIf_PrefixByteNot0x04(
@@ -297,7 +307,7 @@ contract Secp256k1Test is Test {
         bytes memory blob = abi.encodePacked(prefix, bytes32(""), bytes32(""));
 
         vm.expectRevert("InvalidPrefix()");
-        Secp256k1.publicKeyFromBytes(blob);
+        wrapper.publicKeyFromBytes(blob);
     }
 
     function testFuzz_publicKeyFromBytes_RevertsIf_DeserializedPublicKeyInvalid(
@@ -306,7 +316,7 @@ contract Secp256k1Test is Test {
         vm.assume(!pubKey.isValid());
 
         vm.expectRevert("InvalidPublicKey()");
-        Secp256k1.publicKeyFromBytes(pubKey.asBytes());
+        wrapper.publicKeyFromBytes(pubKey.asBytes());
     }
 
     // -- asBytes
@@ -318,13 +328,14 @@ contract Secp256k1Test is Test {
         PublicKey memory pubKey = privKey.toPublicKey();
 
         address want = pubKey.toAddress();
-        address got = Secp256k1.publicKeyFromBytes(pubKey.asBytes()).toAddress();
+        address got =
+            Secp256k1.publicKeyFromBytes(wrapper.asBytes(pubKey)).toAddress();
 
         assertEq(want, got);
     }
 
     function test_PublicKey_asBytes_ViaGenerator() public {
-        assertEq(GENERATOR_BYTES_UNCOMPRESSED, Secp256k1.G().asBytes());
+        assertEq(GENERATOR_BYTES_UNCOMPRESSED, wrapper.asBytes(Secp256k1.G()));
     }
 
     // @todo Test: Compressed bytes serde

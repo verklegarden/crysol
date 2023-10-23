@@ -169,6 +169,8 @@ contract ECDSATest is Test {
     function testFuzz_isMalleable(bool malleable, Signature memory sig)
         public
     {
+        vm.assume(uint(sig.s) < Secp256k1.Q);
+
         if (malleable) {
             assertTrue(sig.intoMalleable().isMalleable());
         } else {
