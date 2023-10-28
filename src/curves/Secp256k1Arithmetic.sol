@@ -143,6 +143,17 @@ library Secp256k1Arithmetic {
         return self.y & 1;
     }
 
+    //--------------------------------------------------------------------------
+    // Jacobian Point
+    //
+    // Coming soon...
+
+    //--------------------------------------------------------------------------
+    // (De)Serialization
+
+    //----------------------------------
+    // Affine Point
+
     /// @dev Returns Affine point `self` as Jacobian point.
     function toJacobianPoint(AffinePoint memory self)
         internal
@@ -152,7 +163,7 @@ library Secp256k1Arithmetic {
         return JacobianPoint(self.x, self.y, 1);
     }
 
-    //--------------------------------------------------------------------------
+    //----------------------------------
     // Jacobian Point
 
     function intoAffinePoint(JacobianPoint memory self)
