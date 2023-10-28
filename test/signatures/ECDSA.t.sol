@@ -75,10 +75,10 @@ contract ECDSATest is Test {
         // Note that verify() reverts if signature is malleable.
         sig.intoNonMalleable();
 
-        assertFalse(pubKey.verify(message, sig));
-        assertFalse(pubKey.verify(digest, sig));
-        assertFalse(pubKey.toAddress().verify(message, sig));
-        assertFalse(pubKey.toAddress().verify(digest, sig));
+        assertFalse(wrapper.verify(pubKey, message, sig));
+        assertFalse(wrapper.verify(pubKey, digest, sig));
+        assertFalse(wrapper.verify(pubKey.toAddress(), message, sig));
+        assertFalse(wrapper.verify(pubKey.toAddress(), digest, sig));
     }
 
     function testFuzz_verify_RevertsIf_SignatureMalleable(
@@ -98,16 +98,16 @@ contract ECDSATest is Test {
         Signature memory badSig = Signature(v, r, s).intoMalleable();
 
         vm.expectRevert("SignatureIsMalleable()");
-        pubKey.verify(message, badSig);
+        wrapper.verify(pubKey, message, badSig);
 
         vm.expectRevert("SignatureIsMalleable()");
-        pubKey.verify(digest, badSig);
+        wrapper.verify(pubKey, digest, badSig);
 
         vm.expectRevert("SignatureIsMalleable()");
-        pubKey.toAddress().verify(message, badSig);
+        wrapper.verify(pubKey.toAddress(), message, badSig);
 
         vm.expectRevert("SignatureIsMalleable()");
-        pubKey.toAddress().verify(digest, badSig);
+        wrapper.verify(pubKey.toAddress(), digest, badSig);
     }
 
     function testFuzz_verify_RevertsIf_PublicKeyInvalid(
@@ -118,10 +118,10 @@ contract ECDSATest is Test {
         vm.assume(!pubKey.isValid());
 
         vm.expectRevert("PublicKeyInvalid()");
-        pubKey.verify(message, sig);
+        wrapper.verify(pubKey, message, sig);
 
         vm.expectRevert("PublicKeyInvalid()");
-        pubKey.verify(keccak256(message), sig);
+        wrapper.verify(pubKey, keccak256(message), sig);
     }
 
     function testFuzz_verify_RevertsIf_SignerZeroAddress(
@@ -131,10 +131,10 @@ contract ECDSATest is Test {
         address signer = address(0);
 
         vm.expectRevert("SignerZeroAddress()");
-        signer.verify(message, sig);
+        wrapper.verify(signer, message, sig);
 
         vm.expectRevert("SignerZeroAddress()");
-        signer.verify(keccak256(message), sig);
+        wrapper.verify(signer, keccak256(message), sig);
     }
 
     //--------------------------------------------------------------------------
@@ -145,8 +145,8 @@ contract ECDSATest is Test {
 
         PublicKey memory pubKey = privKey.toPublicKey();
 
-        Signature memory sig1 = privKey.sign(message);
-        Signature memory sig2 = privKey.sign(keccak256(message));
+        Signature memory sig1 = wrapper.sign(privKey, message);
+        Signature memory sig2 = wrapper.sign(privKey, keccak256(message));
 
         assertEq(sig1.v, sig2.v);
         assertEq(sig1.r, sig2.r);
@@ -163,10 +163,10 @@ contract ECDSATest is Test {
         vm.assume(!privKey.isValid());
 
         vm.expectRevert("PrivateKeyInvalid()");
-        privKey.sign(message);
+        wrapper.sign(privKey, message);
 
         vm.expectRevert("PrivateKeyInvalid()");
-        privKey.sign(keccak256(message));
+        wrapper.sign(privKey, keccak256(message));
     }
 
     // @todo Test signEthereum...
@@ -174,17 +174,23 @@ contract ECDSATest is Test {
     //--------------------------------------------------------------------------
     // Test: Utils
 
-    function testFuzz_isMalleable(bool malleable, Signature memory sig)
-        public
-    {
-        vm.assume(uint(sig.s) < Secp256k1.Q);
+    // -- Signature::isMalleable
 
-        if (malleable) {
-            assertTrue(sig.intoMalleable().isMalleable());
-        } else {
-            assertFalse(sig.intoNonMalleable().isMalleable());
-        }
+    function testFuzz_Signature_isMalleable(Signature memory sig) public {
+        vm.assume(uint(sig.s) > Secp256k1.Q / 2);
+
+        assertTrue(wrapper.isMalleable(sig));
     }
+
+    function testFuzz_Signature_isMalleable_FailsIf_SignatureNotMalleable(
+        Signature memory sig
+    ) public {
+        vm.assume(uint(sig.s) <= Secp256k1.Q / 2);
+
+        assertFalse(wrapper.isMalleable(sig));
+    }
+
+    // -- @todo Test: Signature::toString
 
     //--------------------------------------------------------------------------
     // Test: (De)Serialization

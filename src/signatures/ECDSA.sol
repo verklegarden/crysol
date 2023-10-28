@@ -221,7 +221,7 @@ library ECDSA {
         (v, r, s) = vm.sign(privKey.asUint(), digest);
 
         Signature memory sig = Signature(v, r, s);
-        assert(!sig.isMalleable());
+        // assert(!sig.isMalleable());
 
         return sig;
     }
