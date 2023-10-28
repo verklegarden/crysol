@@ -27,10 +27,10 @@ import {Random} from "../Random.sol";
  * @dev Note that a private key MUST be a field element,
  *      ie private key ∊ [1, Q).
  *
- * @dev Note that a private key MUST be created cryptographically sound!
- *      Generally, this means via secure randomness.
+ * @dev Note that a private key MUST be created cryptographically secure!
+ *      Generally, this means via randomness sourced from an CSPRNG.
  *
- * @custom:example Generating a secure private key.
+ * @custom:example Generating a secure private key:
  *
  *      ```solidity
  *      import {Secp256k1, PrivateKey} from "crysol/curves/Secp256k1.sol";
@@ -43,11 +43,11 @@ import {Random} from "../Random.sol";
 type PrivateKey is uint;
 
 /**
- * @notice PublicKey is a PrivateKey's public identifier
+ * @notice PublicKey is a private key's public identifier
  *
- * @dev A public key is derived from a private key via [privKey]G.
+ * @dev A public key is a point on the secp256k1 curve computed via [privKey]G.
  *
- * @custom:example Deriving a private key's public key.
+ * @custom:example Deriving a public key from a private key:
  *
  *      ```solidity
  *      import {Secp256k1, PrivateKey, PublicKey} from "crysol/curves/Secp256k1.sol";
@@ -119,9 +119,12 @@ library Secp256k1 {
     ///
     /// @custom:vm Random::readUint()(uint)
     function newPrivateKey() internal vmed returns (PrivateKey) {
-        // Let scalar ∊ [1, Q) sourced cryptographically secure.
-        uint scalar = (Random.readUint() % (Secp256k1Arithmetic.Q - 1)) + 1;
-        return PrivateKey.wrap(scalar);
+        uint scalar = Random.readUint();
+        while (scalar == 0 || scalar >= Secp256k1.Q) {
+            // Note to not introduce potential bias via bounding operation.
+            scalar = Random.readUint();
+        }
+        return privateKeyFromUint(scalar);
     }
 
     /// @dev Returns whether private key `self` is valid.
