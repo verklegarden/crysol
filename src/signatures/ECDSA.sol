@@ -253,26 +253,27 @@ library ECDSA {
     //--------------------------------------------------------------------------
     // Utils
 
-    /// @dev Returns whether signature `self` is malleable.
+    /// @dev Returns whether signature `sig` is malleable.
     ///
-    /// @dev A signature is malleable if `self.s > Secp256k1.Q / 2`.
-    function isMalleable(Signature memory self) internal pure returns (bool) {
-        return self.s
+    /// @dev A signature is malleable if `sig.s > Secp256k1.Q / 2`.
+    function isMalleable(Signature memory sig) internal pure returns (bool) {
+        return sig.s
             > 0x7FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF5D576E7357A4501DDFE92F46681B20A0;
     }
 
-    /// @dev Returns a string representation of signature `self`.
+    /// @dev Returns a string representation of signature `sig`.
     ///
     /// @custom:vm vm.toString(uint)
-    function toString(Signature memory self)
+    function toString(Signature memory sig)
         internal
+        view
         vmed
         returns (string memory)
     {
         string memory str = "ECDSA::Signature { \n";
-        str = string.concat(str, "    v: ", vm.toString(self.v), ",\n");
-        str = string.concat(str, "    r: ", vm.toString(self.r), ",\n");
-        str = string.concat(str, "    s: ", vm.toString(self.s), "\n");
+        str = string.concat(str, "    v: ", vm.toString(sig.v), ",\n");
+        str = string.concat(str, "    r: ", vm.toString(sig.r), ",\n");
+        str = string.concat(str, "    s: ", vm.toString(sig.s), "\n");
         str = string.concat(str, "  }");
         return str;
     }
@@ -280,11 +281,11 @@ library ECDSA {
     //--------------------------------------------------------------------------
     // (De)Serialization
 
-    /// @dev Returns signature `self` as bytes.
+    /// @dev Returns signature `sig` as bytes.
     ///
     /// @dev Provides following encoding:
     ///         [256-bit r value][256-bit s value][8-bit v value]
-    function toBytes(Signature memory self)
+    function toBytes(Signature memory sig)
         internal
         pure
         returns (bytes memory)
@@ -292,9 +293,9 @@ library ECDSA {
         bytes memory blob;
 
         // @todo Use direct access in assembly.
-        uint8 v = self.v; // @todo Does this use one word or a single byte?
-        bytes32 r = self.r;
-        bytes32 s = self.s;
+        uint8 v = sig.v; // @todo Does this use one word or a single byte?
+        bytes32 r = sig.r;
+        bytes32 s = sig.s;
         assembly ("memory-safe") {
             // Signature consists of two words and one byte.
             mstore(blob, 0x41)
@@ -335,12 +336,12 @@ library ECDSA {
         return Signature(v, r, s);
     }
 
-    /// @dev Returns signature `self` as bytes in compact signature
-    ///      encoding defined via EIP-2098.
+    /// @dev Returns signature `sig` as bytes in compact signature encoding
+    ///      defined via EIP-2098.
     ///
     /// @dev Provides following encoding:
     ///         [256-bit r value][1-bit yParity value][255-bit s value]
-    function toCompactBytes(Signature memory self)
+    function toCompactBytes(Signature memory sig)
         internal
         pure
         returns (bytes memory)
@@ -348,9 +349,9 @@ library ECDSA {
         bytes memory blob;
 
         // @todo Use direct access in assembly.
-        uint8 v = self.v;
-        bytes32 r = self.r;
-        bytes32 s = self.s;
+        uint8 v = sig.v;
+        bytes32 r = sig.r;
+        bytes32 s = sig.s;
         assembly ("memory-safe") {
             // Signature consists of two words.
             mstore(blob, 0x40)

@@ -127,30 +127,30 @@ library Secp256k1 {
         return privateKeyFromUint(scalar);
     }
 
-    /// @dev Returns whether private key `self` is valid.
+    /// @dev Returns whether private key `privKey` is valid.
     ///
     /// @dev A valid secp256k1 private key ∊ [1, Q).
-    function isValid(PrivateKey self) internal pure returns (bool) {
-        return self.asUint() != 0 && self.asUint() < Secp256k1Arithmetic.Q;
+    function isValid(PrivateKey privKey) internal pure returns (bool) {
+        return privKey.asUint() != 0 && privKey.asUint() < Secp256k1Arithmetic.Q;
     }
 
-    /// @dev Returns the public key of private key `self`.
+    /// @dev Returns the public key of private key `privKey`.
     ///
     /// @dev Reverts if:
     ///      - Private key invalid
     ///
     /// @custom:vm vm.createWallet(uint)
-    function toPublicKey(PrivateKey self)
+    function toPublicKey(PrivateKey privKey)
         internal
         vmed
         returns (PublicKey memory)
     {
-        if (!self.isValid()) {
+        if (!privKey.isValid()) {
             revert("PrivateKeyInvalid()");
         }
 
-        // Compute pubKey = [self]G via vm.
-        Vm.Wallet memory wallet = vm.createWallet(self.asUint());
+        // Compute pubKey = [privKey]G via vm.
+        Vm.Wallet memory wallet = vm.createWallet(privKey.asUint());
         return PublicKey(wallet.publicKeyX, wallet.publicKeyY);
     }
 
@@ -170,23 +170,27 @@ library Secp256k1 {
         return PrivateKey.wrap(scalar);
     }
 
-    /// @dev Returns private key `self` as uint.
-    function asUint(PrivateKey self) internal pure returns (uint) {
-        return PrivateKey.unwrap(self);
+    /// @dev Returns private key `privKey` as uint.
+    function asUint(PrivateKey privKey) internal pure returns (uint) {
+        return PrivateKey.unwrap(privKey);
     }
 
     //--------------------------------------------------------------------------
     // Public Key
 
-    /// @dev Returns the address of public key `self`.
+    /// @dev Returns the address of public key `pubKey`.
     ///
     /// @dev An Ethereum address is defined as the rightmost 160 bits of the
     ///      keccak256 hash of the concatenation of the hex-encoded x and y
     ///      coordinates of the corresponding ECDSA public key.
     ///
     ///      See "Appendix F: Signing Transactions" §134 in the Yellow Paper.
-    function toAddress(PublicKey memory self) internal pure returns (address) {
-        bytes32 digest = self.toHash();
+    function toAddress(PublicKey memory pubKey)
+        internal
+        pure
+        returns (address)
+    {
+        bytes32 digest = pubKey.toHash();
 
         address addr;
         assembly ("memory-safe") {
@@ -195,63 +199,63 @@ library Secp256k1 {
         return addr;
     }
 
-    /// @dev Returns the keccak256 hash of public key `self`.
-    function toHash(PublicKey memory self) internal pure returns (bytes32) {
+    /// @dev Returns the keccak256 hash of public key `pubKey`.
+    function toHash(PublicKey memory pubKey) internal pure returns (bytes32) {
         bytes32 digest;
         assembly ("memory-safe") {
-            digest := keccak256(self, 0x40)
+            digest := keccak256(pubKey, 0x40)
         }
         return digest;
     }
 
-    /// @dev Returns whether public key `self` is a valid secp256k1 public key.
-    function isValid(PublicKey memory self) internal pure returns (bool) {
-        return self.intoAffinePoint().isOnCurve();
+    /// @dev Returns whether public key `pubKey` is a valid secp256k1 public key.
+    function isValid(PublicKey memory pubKey) internal pure returns (bool) {
+        return pubKey.intoAffinePoint().isOnCurve();
     }
 
-    /// @dev Returns the y parity of public key `self`.
+    /// @dev Returns the y parity of public key `pubKey`.
     ///
     /// @dev The value 0 represents an even y value and 1 represents an odd y
     ///      value.
     ///
     ///      See "Appendix F: Signing Transactions" in the Yellow Paper.
-    function yParity(PublicKey memory self) internal pure returns (uint) {
-        return self.intoAffinePoint().yParity();
+    function yParity(PublicKey memory pubKey) internal pure returns (uint) {
+        return pubKey.intoAffinePoint().yParity();
     }
 
-    /// @dev Mutates public key `self` to Affine Point.
-    function intoAffinePoint(PublicKey memory self)
+    /// @dev Mutates public key `pubKey` to Affine Point.
+    function intoAffinePoint(PublicKey memory pubKey)
         internal
         pure
         returns (AffinePoint memory)
     {
         AffinePoint memory point;
         assembly ("memory-safe") {
-            point := self
+            point := pubKey
         }
         return point;
     }
 
-    // @todo Docs: Secp256k1 intoPublicKey
-    function intoPublicKey(AffinePoint memory self)
+    /// @dev Mutates Affine point `point` to Public Key.
+    function intoPublicKey(AffinePoint memory point)
         internal
         pure
         returns (PublicKey memory)
     {
         PublicKey memory pubKey;
         assembly ("memory-safe") {
-            pubKey := self
+            pubKey := point
         }
         return pubKey;
     }
 
-    /// @dev Returns public key `self` as Jacobian Point.
-    function toJacobianPoint(PublicKey memory self)
+    /// @dev Returns public key `pubKey` as Jacobian Point.
+    function toJacobianPoint(PublicKey memory pubKey)
         internal
         pure
         returns (JacobianPoint memory)
     {
-        return JacobianPoint(self.x, self.y, 1);
+        return JacobianPoint(pubKey.x, pubKey.y, 1);
     }
 
     //--------------------------------------------------------------------------
@@ -282,9 +286,9 @@ library Secp256k1 {
         return privateKeyFromUint(scalar);
     }
 
-    /// @dev Returns private key `self` as bytes.
-    function asBytes(PrivateKey self) internal pure returns (bytes memory) {
-        return abi.encodePacked(self.asUint());
+    /// @dev Returns private key `privKey` as bytes.
+    function asBytes(PrivateKey privKey) internal pure returns (bytes memory) {
+        return abi.encodePacked(privKey.asUint());
     }
 
     //----------------------------------
@@ -339,16 +343,16 @@ library Secp256k1 {
         return pubKey;
     }
 
-    /// @dev Returns public key `self` as bytes.
+    /// @dev Returns public key `pubKey` as bytes.
     ///
     /// @dev Provides uncompressed 65 bytes encoding:
     ///         [0x04 prefix][32 bytes x coordinate][32 bytes y coordinate]
-    function asBytes(PublicKey memory self)
+    function asBytes(PublicKey memory pubKey)
         internal
         pure
         returns (bytes memory)
     {
-        return abi.encodePacked(bytes1(0x04), self.x, self.y);
+        return abi.encodePacked(bytes1(0x04), pubKey.x, pubKey.y);
     }
 
     //--------------------------------------------------------------------------

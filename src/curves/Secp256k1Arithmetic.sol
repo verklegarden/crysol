@@ -91,56 +91,58 @@ library Secp256k1Arithmetic {
         return AffinePoint(0, 0);
     }
 
-    /// @dev Returns whether `self` is the zero point.
-    function isZeroPoint(AffinePoint memory self)
+    /// @dev Returns whether Affine point `point` is the zero point.
+    function isZeroPoint(AffinePoint memory point)
         internal
         pure
         returns (bool)
     {
-        return (self.x | self.y) == 0;
+        return (point.x | point.y) == 0;
     }
 
     /// @dev Returns the point at infinity.
     ///
     /// @dev Note that point at infinity is represented via:
-    ///         self.x = self.y = type(uint).max
+    ///         point.x = point.y = type(uint).max
     function PointAtInfinity() internal pure returns (AffinePoint memory) {
         return AffinePoint(type(uint).max, type(uint).max);
     }
 
-    /// @dev Returns whether `self` is the point at infinity.
+    /// @dev Returns whether Affine point `point` is the point at infinity.
     ///
     /// @dev Note that point at infinity is represented via:
-    ///         self.x = self.y = type(uint).max
-    function isPointAtInfinity(AffinePoint memory self)
+    ///         point.x = point.y = type(uint).max
+    function isPointAtInfinity(AffinePoint memory point)
         internal
         pure
         returns (bool)
     {
-        return (self.x & self.y) == type(uint).max;
+        return (point.x & point.y) == type(uint).max;
     }
 
-    /// @dev Returns whether `self` is a point on the curve.
+    /// @dev Returns whether Affine point `point` is a point on the curve.
     ///
     /// @dev Note that secp256k1 curve is specified as y² ≡ x³ + ax + b (mod P)
     ///      where:
     ///         a = 0
     ///         b = 7
-    function isOnCurve(AffinePoint memory self) internal pure returns (bool) {
-        uint left = mulmod(self.y, self.y, P);
+    function isOnCurve(AffinePoint memory point) internal pure returns (bool) {
+        uint left = mulmod(point.y, point.y, P);
         // Note that adding a * x can be waived as ∀x: a * x = 0.
-        uint right = addmod(mulmod(self.x, mulmod(self.x, self.x, P), P), B, P);
+        uint right =
+            addmod(mulmod(point.x, mulmod(point.x, point.x, P), P), B, P);
 
         return left == right;
     }
 
-    /// @dev Returns the parity of `self`'s y coordinate.
+    /// @dev Returns the parity of Affine point `point`'s y coordinate.
     ///
     /// @dev The value 0 represents an even y value and 1 represents an odd y
     ///      value.
+    ///
     ///      See "Appendix F: Signing Transactions" in [Yellow Paper].
-    function yParity(AffinePoint memory self) internal pure returns (uint) {
-        return self.y & 1;
+    function yParity(AffinePoint memory point) internal pure returns (uint) {
+        return point.y & 1;
     }
 
     //--------------------------------------------------------------------------
@@ -154,48 +156,49 @@ library Secp256k1Arithmetic {
     //----------------------------------
     // Affine Point
 
-    /// @dev Returns Affine point `self` as Jacobian point.
-    function toJacobianPoint(AffinePoint memory self)
+    /// @dev Returns Affine point `point` as Jacobian point.
+    function toJacobianPoint(AffinePoint memory point)
         internal
         pure
         returns (JacobianPoint memory)
     {
-        return JacobianPoint(self.x, self.y, 1);
+        return JacobianPoint(point.x, point.y, 1);
     }
 
     //----------------------------------
     // Jacobian Point
 
-    function intoAffinePoint(JacobianPoint memory self)
+    /// @dev Mutates Jacobian point `jacPoint` to Affine point.
+    function intoAffinePoint(JacobianPoint memory jacPoint)
         internal
         pure
         returns (AffinePoint memory)
     {
-        // Compute z⁻¹, i.e. the modular inverse of self.z.
-        uint zInv = modularInverseOf(self.z);
+        // Compute z⁻¹, i.e. the modular inverse of jacPoint.z.
+        uint zInv = modularInverseOf(jacPoint.z);
 
         // Compute (z⁻¹)² (mod P)
         uint zInv_2 = mulmod(zInv, zInv, P);
 
-        // Compute self.x * (z⁻¹)² (mod P), i.e. the x coordinate of given
+        // Compute jacPoint.x * (z⁻¹)² (mod P), i.e. the x coordinate of given
         // Jacobian point in Affine representation.
-        uint x = mulmod(self.x, zInv_2, P);
+        uint x = mulmod(jacPoint.x, zInv_2, P);
 
-        // Compute self.y * (z⁻¹)³ (mod P), i.e. the y coordinate of given
+        // Compute jacPoint.y * (z⁻¹)³ (mod P), i.e. the y coordinate of given
         // Jacobian point in Affine representation.
-        uint y = mulmod(self.y, mulmod(zInv, zInv_2, P), P);
+        uint y = mulmod(jacPoint.y, mulmod(zInv, zInv_2, P), P);
 
-        // Store x and y in self.
+        // Store x and y in jacPoint.
         assembly ("memory-safe") {
-            mstore(self, x)
-            mstore(add(self, 0x20), y)
+            mstore(jacPoint, x)
+            mstore(add(jacPoint, 0x20), y)
         }
 
-        // Return as AffinePoint(self.x, self.y).
-        // Note that self.z is from now on dirty memory!
+        // Return as AffinePoint(jacPoint.x, jacPoint.y).
+        // Note that jacPoint.z is from now on dirty memory!
         AffinePoint memory point;
         assembly ("memory-safe") {
-            point := self
+            point := jacPoint
         }
         return point;
     }

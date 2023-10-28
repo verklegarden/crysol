@@ -29,7 +29,7 @@ contract ECDSAWrapper {
         PublicKey memory pubKey,
         bytes memory message,
         Signature memory sig
-    ) public view returns (bool) {
+    ) public pure returns (bool) {
         return pubKey.verify(message, sig);
     }
 
@@ -37,13 +37,13 @@ contract ECDSAWrapper {
         PublicKey memory pubKey,
         bytes32 digest,
         Signature memory sig
-    ) public view returns (bool) {
+    ) public pure returns (bool) {
         return pubKey.verify(digest, sig);
     }
 
     function verify(address signer, bytes memory message, Signature memory sig)
         public
-        view
+        pure
         returns (bool)
     {
         return signer.verify(message, sig);
@@ -51,7 +51,7 @@ contract ECDSAWrapper {
 
     function verify(address signer, bytes32 digest, Signature memory sig)
         public
-        view
+        pure
         returns (bool)
     {
         return signer.verify(digest, sig);
@@ -95,14 +95,46 @@ contract ECDSAWrapper {
     //--------------------------------------------------------------------------
     // Utils
 
-    function isMalleable(Signature memory sig) public view returns (bool) {
+    function isMalleable(Signature memory sig) public pure returns (bool) {
         return sig.isMalleable();
     }
 
-    function toString(Signature memory sig) public returns (string memory) {
+    function toString(Signature memory sig)
+        public
+        view
+        returns (string memory)
+    {
         return sig.toString();
     }
 
     //--------------------------------------------------------------------------
     // (De)Serialization
+
+    function toBytes(Signature memory sig) public pure returns (bytes memory) {
+        return sig.toBytes();
+    }
+
+    function signatureFromBytes(bytes memory blob)
+        public
+        pure
+        returns (Signature memory)
+    {
+        return ECDSA.signatureFromBytes(blob);
+    }
+
+    function toCompactBytes(Signature memory sig)
+        public
+        pure
+        returns (bytes memory)
+    {
+        return sig.toCompactBytes();
+    }
+
+    function signatureFromCompactBytes(bytes memory blob)
+        public
+        pure
+        returns (Signature memory)
+    {
+        return ECDSA.signatureFromCompactBytes(blob);
+    }
 }

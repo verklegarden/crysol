@@ -24,7 +24,7 @@ contract Secp256k1Wrapper {
     //--------------------------------------------------------------------------
     // Constants
 
-    function G() public view returns (PublicKey memory) {
+    function G() public pure returns (PublicKey memory) {
         return Secp256k1.G();
     }
 
@@ -35,7 +35,7 @@ contract Secp256k1Wrapper {
         return Secp256k1.newPrivateKey();
     }
 
-    function isValid(PrivateKey privKey) public view returns (bool) {
+    function isValid(PrivateKey privKey) public pure returns (bool) {
         return privKey.isValid();
     }
 
@@ -46,36 +46,36 @@ contract Secp256k1Wrapper {
         return privKey.toPublicKey();
     }
 
-    function privateKeyFromUint(uint scalar) public view returns (PrivateKey) {
+    function privateKeyFromUint(uint scalar) public pure returns (PrivateKey) {
         return Secp256k1.privateKeyFromUint(scalar);
     }
 
-    function asUint(PrivateKey privKey) public view returns (uint) {
+    function asUint(PrivateKey privKey) public pure returns (uint) {
         return privKey.asUint();
     }
 
     //--------------------------------------------------------------------------
     // Public Key
 
-    function toAddress(PublicKey memory pubKey) public view returns (address) {
+    function toAddress(PublicKey memory pubKey) public pure returns (address) {
         return pubKey.toAddress();
     }
 
-    function toHash(PublicKey memory pubKey) public view returns (bytes32) {
+    function toHash(PublicKey memory pubKey) public pure returns (bytes32) {
         return pubKey.toHash();
     }
 
-    function isValid(PublicKey memory pubKey) public view returns (bool) {
+    function isValid(PublicKey memory pubKey) public pure returns (bool) {
         return pubKey.isValid();
     }
 
-    function yParity(PublicKey memory pubKey) public view returns (uint) {
+    function yParity(PublicKey memory pubKey) public pure returns (uint) {
         return pubKey.yParity();
     }
 
     function intoAffinePoint(PublicKey memory pubKey)
         public
-        view
+        pure
         returns (AffinePoint memory)
     {
         return pubKey.intoAffinePoint();
@@ -83,7 +83,7 @@ contract Secp256k1Wrapper {
 
     function intoPublicKey(AffinePoint memory point)
         public
-        view
+        pure
         returns (PublicKey memory)
     {
         return point.intoPublicKey();
@@ -91,7 +91,7 @@ contract Secp256k1Wrapper {
 
     function toJacobianPoint(PublicKey memory pubKey)
         public
-        view
+        pure
         returns (JacobianPoint memory)
     {
         return pubKey.toJacobianPoint();
@@ -105,13 +105,13 @@ contract Secp256k1Wrapper {
 
     function privateKeyFromBytes(bytes memory blob)
         public
-        view
+        pure
         returns (PrivateKey)
     {
         return Secp256k1.privateKeyFromBytes(blob);
     }
 
-    function asBytes(PrivateKey privKey) public view returns (bytes memory) {
+    function asBytes(PrivateKey privKey) public pure returns (bytes memory) {
         return privKey.asBytes();
     }
 
@@ -120,7 +120,7 @@ contract Secp256k1Wrapper {
 
     function publicKeyFromBytes(bytes memory blob)
         public
-        view
+        pure
         returns (PublicKey memory)
     {
         return Secp256k1.publicKeyFromBytes(blob);
@@ -128,7 +128,7 @@ contract Secp256k1Wrapper {
 
     function asBytes(PublicKey memory pubKey)
         public
-        view
+        pure
         returns (bytes memory)
     {
         return pubKey.asBytes();
