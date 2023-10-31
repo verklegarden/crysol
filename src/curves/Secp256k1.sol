@@ -22,7 +22,7 @@ import {
 import {Random} from "../Random.sol";
 
 /**
- * @notice PrivateKey is the secret scalar
+ * @notice PrivateKey is a secret scalar
  *
  * @dev Note that a private key MUST be a field element,
  *      ie private key ∊ [1, Q).

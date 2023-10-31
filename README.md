@@ -46,21 +46,21 @@ $ forge snapshot --nmt "Fuzz" [--check]
 
 ## 👩🏼‍⚖️ Tests
 
-| **Library**                  | **Unit Tests** | **Property-Based Tests** | **Invariant Tests** |
-|:---------------------------- |:--------------:|:------------------------:|:-------------------:|
-| `Random`                     |        ✅       |             ❌            |          ❌          |
-| `Message`                    |        ❌       |             ❌            |          ❌          |
-| `curves/Secp256k1`           |        ✅       |             ❌            |          ❌          |
-| `curves/Secp256k1Arithmetic` |        ❌       |             ❌            |          ❌          |
-| `signatures/ECDSA`           |        ❌       |             ❌            |          ❌          |
+| **Library**                  | **Unit Tests** | **Property-Based Tests** | **Specification-Based Differential Tests** | **Vector Tests** |
+| ---------------------------- | -------------- | ------------------------ | ------------------ | ---------------- |
+| `curves/Secp256k1`           | ✅              | ❌                        | ❌                  | ❌                |
+| `curves/Secp256k1Arithmetic` | ❌              | ❌                        | ❌                  | ❌                |
+| `signatures/ECDSA`           | ❌              | ❌                        | ❌                  | ❌                |
+| `Random`                     | ✅              | ❌                        | ❌                  | ❌                |
+| `Message`                    | ❌              | ❌                        | ❌                  | ❌                |
 
 ✅ Test Type Implemented &emsp; ❌ Test Type Not Implemented
 
+
+<!--- Shields -->
 [tests-shield]: https://github.com/pmerkleplant/crysol/actions/workflows/unit-tests.yml/badge.svg
 [tests-shield-url]: https://github.com/pmerkleplant/crysol/actions/workflows/unit-tests.yml
-
 [license-shield]: https://img.shields.io/badge/License-MIT-yellow.svg
 [license-shield-url]: https://opensource.org/licenses/MIT
-
 [solidity-shield]: https://img.shields.io/badge/solidity-%3E=0.8.16%20%3C=0.8.21-aa6746
 [solidity-shield-url]: https://github.com/pmerkleplant/crysol/actions/workflows/solc-version-tests.yml

@@ -98,7 +98,7 @@ library ECDSA {
     ///      - Signature malleable
     ///
     /// @custom:invariant No valid public key's address is zero.
-    ///     ∀x pubKey ∊ (Uint, Uint): pubKey.isValid() → pubKey.toAddress() != address(0)
+    ///     ∀ pubKey ∊ PublicKey: pubKey.isValid() → pubKey.toAddress() != address(0)
     function verify(
         PublicKey memory pubKey,
         bytes memory message,
@@ -121,7 +121,7 @@ library ECDSA {
     ///      - Signature malleable
     ///
     /// @custom:invariant No valid public key's address is zero.
-    ///     ∀x pubKey ∊ (Uint, Uint): pubKey.isValid() → pubKey.toAddress() != address(0)
+    ///     ∀ pubKey ∊ PublicKey: pubKey.isValid() → pubKey.toAddress() != address(0)
     function verify(
         PublicKey memory pubKey,
         bytes32 digest,
