@@ -287,7 +287,7 @@ library Secp256k1 {
     }
 
     /// @dev Returns private key `privKey` as bytes.
-    function asBytes(PrivateKey privKey) internal pure returns (bytes memory) {
+    function toBytes(PrivateKey privKey) internal pure returns (bytes memory) {
         return abi.encodePacked(privKey.asUint());
     }
 
@@ -347,7 +347,7 @@ library Secp256k1 {
     ///
     /// @dev Provides uncompressed 65 bytes encoding:
     ///         [0x04 prefix][32 bytes x coordinate][32 bytes y coordinate]
-    function asBytes(PublicKey memory pubKey)
+    function toBytes(PublicKey memory pubKey)
         internal
         pure
         returns (bytes memory)

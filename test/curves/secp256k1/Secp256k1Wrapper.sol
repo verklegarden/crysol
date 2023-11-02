@@ -111,8 +111,8 @@ contract Secp256k1Wrapper {
         return Secp256k1.privateKeyFromBytes(blob);
     }
 
-    function asBytes(PrivateKey privKey) public pure returns (bytes memory) {
-        return privKey.asBytes();
+    function toBytes(PrivateKey privKey) public pure returns (bytes memory) {
+        return privKey.toBytes();
     }
 
     //----------------------------------
@@ -126,11 +126,11 @@ contract Secp256k1Wrapper {
         return Secp256k1.publicKeyFromBytes(blob);
     }
 
-    function asBytes(PublicKey memory pubKey)
+    function toBytes(PublicKey memory pubKey)
         public
         pure
         returns (bytes memory)
     {
-        return pubKey.asBytes();
+        return pubKey.toBytes();
     }
 }
