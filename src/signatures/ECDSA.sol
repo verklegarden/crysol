@@ -185,6 +185,7 @@ library ECDSA {
     ///      - Private key invalid
     ///
     /// @custom:vm vm.sign(uint,bytes32)
+    /// @custom:invariant Returned signature is non-malleable.
     function sign(PrivateKey privKey, bytes memory message)
         internal
         view
@@ -203,6 +204,7 @@ library ECDSA {
     ///      - Private key invalid
     ///
     /// @custom:vm vm.sign(uint,bytes32)
+    /// @custom:invariant Returned signature is non-malleable.
     function sign(PrivateKey privKey, bytes32 digest)
         internal
         view
@@ -227,6 +229,7 @@ library ECDSA {
     }
 
     // @todo Docs signEthereumSignedMessage
+    /// @custom:invariant Returned signature is non-malleable.
     function signEthereumSignedMessage(PrivateKey privKey, bytes memory message)
         internal
         view
@@ -239,6 +242,7 @@ library ECDSA {
     }
 
     // @todo Docs signEthereumSignedMessageHash
+    /// @custom:invariant Returned signature is non-malleable.
     function signEthereumSignedMessageHash(PrivateKey privKey, bytes32 digest)
         internal
         view

@@ -169,6 +169,8 @@ contract ECDSATest is Test {
         wrapper.sign(privKey, keccak256(message));
     }
 
+    // @todo Test property: Signature is non-malleable.
+
     // @todo Test signEthereum...
 
     //--------------------------------------------------------------------------
