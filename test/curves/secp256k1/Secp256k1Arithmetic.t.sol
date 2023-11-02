@@ -123,30 +123,20 @@ contract Secp256k1ArithmeticTest is Test {
     //--------------------------------------------------------------------------
     // Test: Utils
 
-    // @todo Test: modularInverseOf: Differential fuzz against sage?
-    function testVectors_modularInverseOf() public {
-        uint x;
-        uint want;
-        uint got;
+    function testFuzz_modularInverseOf(uint x) public {
+        vm.assume(x != 0);
+        vm.assume(x < Secp256k1Arithmetic.P);
 
-        // sage: inverse_mod(1, P) == 1
-        x = 1;
-        want = 1;
-        got = wrapper.modularInverseOf(x);
-        assertEq(want, got);
+        uint xInv = Secp256k1Arithmetic.modularInverseOf(x);
 
-        // sage: inverse_mod(P - 1, P) == P -1
-        x = Secp256k1Arithmetic.P - 1;
-        want = Secp256k1Arithmetic.P - 1;
-        got = wrapper.modularInverseOf(x);
-        assertEq(want, got);
+        // Verify x * xInv ≡ 1 (mod P).
+        assertEq(mulmod(x, xInv, Secp256k1Arithmetic.P), 1);
+    }
 
-        // sage: inverse_mod(10, P) == 34737626771194858627071295502606372355980995399692169211837275202372650401499
-        x = 10;
-        want =
-            34737626771194858627071295502606372355980995399692169211837275202372650401499;
-        got = wrapper.modularInverseOf(x);
-        assertEq(want, got);
+    function test_modularInverseOf_RevertsIf_XIsZero() public {
+        // @todo Test for proper error message.
+        vm.expectRevert();
+        wrapper.modularInverseOf(0);
     }
 
     function testFuzz_modularInverseOf_RevertsIf_XEqualToOrBiggerThanP(uint x)

@@ -215,12 +215,15 @@ library Secp256k1Arithmetic {
     ///      The modular inverse of `x` is x⁻¹ such that x * x⁻¹ ≡ 1 (mod P).
     ///
     /// @dev Reverts if:
-    ///      - x not in [0, P)
+    ///      - x not in [1, P)
     ///
     /// @dev Uses the Extended Euclidean Algorithm.
     ///
     /// @custom:invariant Terminates in finite time.
     function modularInverseOf(uint x) internal pure returns (uint) {
+        if (x == 0) {
+            revert("Modular inverse of zero does not exist");
+        }
         if (x >= P) {
             revert("TODO(modularInverse: x >= P)");
         }
