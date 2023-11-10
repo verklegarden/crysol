@@ -6,10 +6,18 @@ import {console2 as console} from "forge-std/console2.sol";
 
 import {Random} from "src/Random.sol";
 
+import {RandomWrapper} from "./RandomWrapper.sol";
+
 contract RandomTest is Test {
+    RandomWrapper wrapper;
+
+    function setUp() public {
+        wrapper = new RandomWrapper();
+    }
+
     function test_readUint() public {
-        uint a = Random.readUint();
-        uint b = Random.readUint();
+        uint a = wrapper.readUint();
+        uint b = wrapper.readUint();
 
         assertNotEq(a, b);
     }
