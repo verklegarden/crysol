@@ -46,14 +46,15 @@ _x  = x coordinate of point
 /**
  * @title ECDSA
  *
- * @notice Library providing common ECDSA functionality
+ * @notice Library providing ECDSA signature functionality
  *
- * @dev Provides common functionality for the Elliptic Curve Digital Signature
- *      Algorithm (ECDSA) as defined in [SEC 1 v2] in combination with the
+ * @dev Provides an Elliptic Curve Digital Signature Algorithm (ECDSA)
+ *      implementation as defined in [SEC 1 v2] in combination with the
  *      secp256k1 elliptic curve and keccak256 hash function.
  *
- *      ...
+ * @dev ECDSA Signature Specification
  *
+ *      TODO
  *
  * @custom:references
  *      - [SEC 1 v2]: https://www.secg.org/sec1-v2.pdf
@@ -166,7 +167,7 @@ library ECDSA {
         }
 
         if (sig.isMalleable()) {
-            revert("SignatureIsMalleable()");
+            revert("SignatureMalleable()");
         }
 
         // Note that checking whether v ∊ {27, 28} is waived.
