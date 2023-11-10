@@ -58,8 +58,6 @@ type PrivateKey is uint;
  *
  *      PublicKey memory pubKey = privKey.toPublicKey();
  *      assert(pubKey.isValid());
- *
- *      address addr = pubKey.toAddress();
  *      ```
  */
 struct PublicKey {
@@ -72,8 +70,6 @@ struct PublicKey {
  *
  * @notice Library providing common cryptography-related functionality for the
  *         secp256k1 elliptic curve
- *
- * @dev ...
  */
 library Secp256k1 {
     using Secp256k1 for PrivateKey;
@@ -119,7 +115,7 @@ library Secp256k1 {
     ///
     /// @custom:vm Random::readUint()(uint)
     function newPrivateKey() internal vmed returns (PrivateKey) {
-        uint scalar = Random.readUint();
+        uint scalar;
         while (scalar == 0 || scalar >= Secp256k1.Q) {
             // Note to not introduce potential bias via bounding operation.
             scalar = Random.readUint();
@@ -354,70 +350,4 @@ library Secp256k1 {
     {
         return abi.encodePacked(bytes1(0x04), pubKey.x, pubKey.y);
     }
-
-    //--------------------------------------------------------------------------
-    //------------------------  END  -------------------------------------------
-    //--------------------------------------------------------------------------
-
-    /*
-    // --------- @todo Compressed Public Key Serde ----------
-
-    // @todo compressed public keys are 33 bytes:
-    //       (0x02 OR 0x03 prefix + 32 byte x-coordinate,
-    //       where 0x02 means the y value is even, and 0x03 means it's odd
-    function publicKeyFromCompressedBytes(bytes memory blob)
-        internal
-        pure
-        returns (PublicKey memory)
-    {
-        // Revert if length not 33.
-        if (blob.length != 33) {
-            revert("InvalidLength()");
-        }
-
-        // Read prefix byte.
-        bytes32 prefix;
-        assembly ("memory-safe") {
-            prefix := byte(0, mload(add(blob, 0x20)))
-        }
-
-        // Read x coordinate of public key.
-        uint x;
-        assembly ("memory-safe") {
-            x := mload(add(blob, 0x21))
-        }
-
-        // Revert if prefix not 0x02 or 0x03.
-        if (uint(prefix) != 0x02 && uint(prefix) != 0x03) {
-            revert("InvalidPrefix()");
-        }
-
-        PublicKey memory pubKey;
-        pubKey.x = x;
-        // @todo Compute y coordinate.
-        pubKey.y = uint(prefix) == 0x02 ? 0 : 1;
-
-        return pubKey;
-    }
-
-    function asCompressedBytes(PublicKey memory self)
-        internal
-        pure
-        returns (bytes memory)
-    {
-        uint yParity_ = self.yParity();
-
-        bytes memory blob;
-        assembly ("memory-safe") {
-            mstore(blob, 33)
-
-            let prefix := add(0x02, yParity_)
-            mstore(add(blob, 0x20), prefix)
-
-            let x := mload(self)
-            mstore(add(blob, 0x21), x)
-        }
-        return blob;
-    }
-    */
 }

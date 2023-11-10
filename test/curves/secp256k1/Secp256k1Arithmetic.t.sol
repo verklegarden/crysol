@@ -150,4 +150,17 @@ contract Secp256k1ArithmeticTest is Test {
         vm.expectRevert();
         wrapper.modularInverseOf(x);
     }
+
+    // -- areModularInverse
+
+    function testFuzz_areModularInverse(uint x) public {
+        vm.assume(x != 0);
+        vm.assume(x < Secp256k1Arithmetic.P);
+
+        assertTrue(
+            wrapper.areModularInverse(
+                x, Secp256k1Arithmetic.modularInverseOf(x)
+            )
+        );
+    }
 }

@@ -88,4 +88,8 @@ contract Secp256k1ArithmeticWrapper {
     function modularInverseOf(uint x) public pure returns (uint) {
         return Secp256k1Arithmetic.modularInverseOf(x);
     }
+
+    function areModularInverse(uint x, uint xInv) public pure returns (bool) {
+        return Secp256k1Arithmetic.areModularInverse(x, xInv);
+    }
 }

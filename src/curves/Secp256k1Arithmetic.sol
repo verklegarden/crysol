@@ -21,7 +21,6 @@ struct AffinePoint {
     uint x;
     uint y;
 }
-// @todo Represent point at infinity via zero point?
 
 /**
  * @notice JacobianPoint is a secp256k1 point in Jacobian coordinates
@@ -42,8 +41,6 @@ struct JacobianPoint {
  *
  * @notice Library providing common arithmetic-related functionality for the
  *         secp256k1 elliptic curve
- *
- * @dev ...
  *
  * @custom:references
  *      - [SEC 2 v2]: https://www.secg.org/sec2-v2.pdf
@@ -270,5 +267,13 @@ library Secp256k1Arithmetic {
         }
 
         return t;
+    }
+
+    function areModularInverse(uint x, uint xInv)
+        internal
+        pure
+        returns (bool)
+    {
+        return mulmod(x, xInv, P) == 1;
     }
 }
