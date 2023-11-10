@@ -46,6 +46,8 @@ $ forge snapshot --nmt "Fuzz" [--check]
 
 ## 👩🏼‍⚖️ Tests
 
+TODO: Section about installing `requirements.txt` python packages to run `spec/` tests. Otherwise use `forge t --nmt "Spec"`.
+
 | **Library**                  | **Unit Tests** | **Property-Based Tests** | **Specification-Based Differential Tests** | **Vector Tests** |
 | ---------------------------- | -------------- | ------------------------ | ------------------ | ---------------- |
 | `curves/Secp256k1`           | ✅              | ❌                        | ❌                  | ❌                |
@@ -62,5 +64,5 @@ $ forge snapshot --nmt "Fuzz" [--check]
 [tests-shield-url]: https://github.com/pmerkleplant/crysol/actions/workflows/unit-tests.yml
 [license-shield]: https://img.shields.io/badge/License-MIT-yellow.svg
 [license-shield-url]: https://opensource.org/licenses/MIT
-[solidity-shield]: https://img.shields.io/badge/solidity-%3E=0.8.16%20%3C=0.8.21-aa6746
+[solidity-shield]: https://img.shields.io/badge/solidity-%3E=0.8.16%20%3C=0.8.23-aa6746
 [solidity-shield-url]: https://github.com/pmerkleplant/crysol/actions/workflows/solc-version-tests.yml

@@ -27,4 +27,6 @@ jobs:
           forge test --use 0.8.18 &&
           forge test --use 0.8.19 &&
           forge test --use 0.8.20 &&
-          forge test --use 0.8.21
+          forge test --use 0.8.21 &&
+          forge test --use 0.8.22 &&
+          forge test --use 0.8.23
