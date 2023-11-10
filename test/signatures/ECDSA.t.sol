@@ -97,16 +97,16 @@ contract ECDSATest is Test {
 
         Signature memory badSig = Signature(v, r, s).intoMalleable();
 
-        vm.expectRevert("SignatureIsMalleable()");
+        vm.expectRevert("SignatureMalleable()");
         wrapper.verify(pubKey, message, badSig);
 
-        vm.expectRevert("SignatureIsMalleable()");
+        vm.expectRevert("SignatureMalleable()");
         wrapper.verify(pubKey, digest, badSig);
 
-        vm.expectRevert("SignatureIsMalleable()");
+        vm.expectRevert("SignatureMalleable()");
         wrapper.verify(pubKey.toAddress(), message, badSig);
 
-        vm.expectRevert("SignatureIsMalleable()");
+        vm.expectRevert("SignatureMalleable()");
         wrapper.verify(pubKey.toAddress(), digest, badSig);
     }
 
