@@ -28,7 +28,7 @@ struct Signature {
 /**
  * @title Schnorr
  *
- * @notice Library providing Schnorr signature functionality
+ * @notice Provides Schnorr signature functionality
  *
  * @dev Provides a Schnorr signature implementation in combination with the
  *      secp256k1 elliptic curve and keccak256 hash function.

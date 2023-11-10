@@ -14,7 +14,7 @@ pragma solidity ^0.8.16;
 /**
  * @title Message
  *
- * @notice ??
+ * @notice Functionality for constructing Ethereum signed messages
  */
 library Message {
     function deriveEthereumSignedMessage(bytes memory blob)

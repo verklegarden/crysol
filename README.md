@@ -4,6 +4,20 @@
 >
 > Very much work in progress! Don't use!
 
+## Libraries
+
+```ml
+src
+├─ Random - "Provides access to cryptographically secure randomness"
+├─ Message - "Functionality for constructing Ethereum signed messages"
+├─ curves
+│   ├─ Secp256k1 - "Provides common cryptography-related functionality for the secp256k1 elliptic curve"
+│   └─ Secp256k1Arithmetic — "Provides common arithmetic-related functionality for the secp256k1 elliptic curve"
+└─ signatures
+    ├─ ECDSA — "Provides ECDSA signature functionality"
+    └─ Schnorr — "Provides Schnorr signature functionality"
+```
+
 ## Installation
 
 Install module via Foundry:

@@ -39,8 +39,8 @@ struct JacobianPoint {
 /**
  * @title Secp256k1Arithmetic
  *
- * @notice Library providing common arithmetic-related functionality for the
- *         secp256k1 elliptic curve
+ * @notice Provides common arithmetic-related functionality for the secp256k1
+ *         elliptic curve
  *
  * @custom:references
  *      - [SEC 2 v2]: https://www.secg.org/sec2-v2.pdf

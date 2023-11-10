@@ -46,7 +46,7 @@ _x  = x coordinate of point
 /**
  * @title ECDSA
  *
- * @notice Library providing ECDSA signature functionality
+ * @notice Provides ECDSA signature functionality
  *
  * @dev Provides an Elliptic Curve Digital Signature Algorithm (ECDSA)
  *      implementation as defined in [SEC 1 v2] in combination with the

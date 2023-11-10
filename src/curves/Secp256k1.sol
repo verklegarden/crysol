@@ -68,8 +68,8 @@ struct PublicKey {
 /**
  * @title Secp256k1
  *
- * @notice Library providing common cryptography-related functionality for the
- *         secp256k1 elliptic curve
+ * @notice Providing common cryptography-related functionality for the secp256k1
+ *         elliptic curve
  */
 library Secp256k1 {
     using Secp256k1 for PrivateKey;
