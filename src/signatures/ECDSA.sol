@@ -237,7 +237,7 @@ library ECDSA {
         vmed
         returns (Signature memory)
     {
-        bytes32 digest = Message.deriveEthereumSignedMessage(message);
+        bytes32 digest = Message.deriveEthereumMessageHash(message);
 
         return privKey.sign(digest);
     }
@@ -250,7 +250,7 @@ library ECDSA {
         vmed
         returns (Signature memory)
     {
-        bytes32 digest2 = Message.deriveEthereumSignedMessageHash(digest);
+        bytes32 digest2 = Message.deriveEthereumMessageHash(digest);
 
         return privKey.sign(digest2);
     }
