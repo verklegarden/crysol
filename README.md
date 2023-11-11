@@ -9,7 +9,7 @@
 ```ml
 src
 ├─ Random - "Provides access to cryptographically secure randomness"
-├─ Message - "Functionality for constructing Ethereum signed messages"
+├─ Message - "Functionality for constructing Ethereum Message Hashes"
 ├─ curves
 │   ├─ Secp256k1 - "Provides common cryptography-related functionality for the secp256k1 elliptic curve"
 │   └─ Secp256k1Arithmetic — "Provides common arithmetic-related functionality for the secp256k1 elliptic curve"
@@ -52,23 +52,16 @@ Lint:
 $ forge fmt [--check]
 ```
 
-Update gas snapshots:
-
-```bash
-$ forge snapshot --nmt "Fuzz" [--check]
-```
-
 ## 👩🏼‍⚖️ Tests
 
-TODO: Section about installing `requirements.txt` python packages to run `spec/` tests. Otherwise use `forge t --nmt "Spec"`.
-
 | **Library**                  | **Unit Tests** | **Property-Based Tests** | **Specification-Based Differential Tests** | **Vector Tests** |
-| ---------------------------- | -------------- | ------------------------ | ------------------ | ---------------- |
-| `curves/Secp256k1`           | ✅              | ❌                        | ❌                  | ❌                |
-| `curves/Secp256k1Arithmetic` | ❌              | ❌                        | ❌                  | ❌                |
-| `signatures/ECDSA`           | ❌              | ❌                        | ❌                  | ❌                |
-| `Random`                     | ✅              | ❌                        | ❌                  | ❌                |
-| `Message`                    | ❌              | ❌                        | ❌                  | ❌                |
+| ---------------------------- | -------------- | ------------------------ | ------------------------------------------ | ---------------- |
+| `curves/Secp256k1`           | ✅              | ❌                        | ❌                                          | ❌                |
+| `curves/Secp256k1Arithmetic` | ✅              | ❌                        | ❌                                          | ❌                |
+| `signatures/ECDSA`           | ❌              | ❌                        | ❌                                          | ❌                |
+| `signatures/Schnorr`         | ❌              | ❌                        | ❌                                          | ❌                |
+| `Random`                     | ✅              | ❌                        | ❌                                          | ❌                |
+| `Message`                    | ❌              | ❌                        | ❌                                          | ❌                |
 
 ✅ Test Type Implemented &emsp; ❌ Test Type Not Implemented
 
