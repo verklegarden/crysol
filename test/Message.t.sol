@@ -15,7 +15,5 @@ contract MessageTest is Test {
         wrapper = new MessageWrapper();
     }
 
-    function test_X() public {
-
-    }
+    function test_X() public {}
 }

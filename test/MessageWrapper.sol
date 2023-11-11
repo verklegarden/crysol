@@ -14,11 +14,19 @@ import {Message} from "src/Message.sol";
  * @dev For more info, see https://github.com/foundry-rs/foundry/pull/3128#issuecomment-1241245086.
  */
 contract MessageWrapper {
-    function deriveEthereumMessageHash(bytes memory message) public pure returns (bytes32) {
+    function deriveEthereumMessageHash(bytes memory message)
+        public
+        pure
+        returns (bytes32)
+    {
         return Message.deriveEthereumMessageHash(message);
     }
 
-    function deriveEthereumMessageHash(bytes32 digest) public pure returns (bytes32) {
+    function deriveEthereumMessageHash(bytes32 digest)
+        public
+        pure
+        returns (bytes32)
+    {
         return Message.deriveEthereumMessageHash(digest);
     }
 }
