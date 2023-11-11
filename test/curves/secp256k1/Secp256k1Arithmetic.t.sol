@@ -163,4 +163,50 @@ contract Secp256k1ArithmeticTest is Test {
             )
         );
     }
+
+    function testFuzz_areModularInverse_FailsIf_NotModularInverse(
+        uint x,
+        uint xInv
+    ) public {
+        vm.assume(x != 0);
+        vm.assume(x < Secp256k1Arithmetic.P);
+        vm.assume(xInv != 0);
+        vm.assume(xInv < Secp256k1Arithmetic.P);
+
+        vm.assume(mulmod(x, xInv, Secp256k1Arithmetic.P) != 1);
+
+        assertFalse(wrapper.areModularInverse(x, xInv));
+    }
+
+    function test_areModularInverse_RevertsIf_XIsZero() public {
+        // @todo Test for proper error message.
+        vm.expectRevert();
+        wrapper.areModularInverse(0, 1);
+    }
+
+    function test_areModularInverse_RevertsIf_XInvIsZero() public {
+        // @todo Test for proper error message.
+        vm.expectRevert();
+        wrapper.areModularInverse(1, 0);
+    }
+
+    function testFuzz_areModularInverse_RevertsIf_XEqualToOrBiggerThanP(uint x)
+        public
+    {
+        vm.assume(x >= Secp256k1Arithmetic.P);
+
+        // @todo Test for proper error message.
+        vm.expectRevert();
+        wrapper.areModularInverse(x, 1);
+    }
+
+    function testFuzz_areModularInverse_RevertsIf_XInvEqualToOrBiggerThanP(
+        uint xInv
+    ) public {
+        vm.assume(xInv >= Secp256k1Arithmetic.P);
+
+        // @todo Test for proper error message.
+        vm.expectRevert();
+        wrapper.areModularInverse(1, xInv);
+    }
 }

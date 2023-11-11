@@ -274,6 +274,13 @@ library Secp256k1Arithmetic {
         pure
         returns (bool)
     {
+        if (x == 0 || xInv == 0) {
+            revert("Modular inverse of zero does not exist");
+        }
+        if (x >= P || xInv >= P) {
+            revert("TODO(modularInverse: x >= P)");
+        }
+
         return mulmod(x, xInv, P) == 1;
     }
 }
