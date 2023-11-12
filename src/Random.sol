@@ -18,7 +18,7 @@ import {Vm} from "forge-std/Vm.sol";
  *
  * @notice Provides access to cryptographically secure randomness
  *
- * @dev Randomness is sourced from cast's `new wallet` command.
+ * @dev Randomness is sourced from cast's `wallet new` command.
  */
 library Random {
     // ~~~~~~~ Prelude ~~~~~~~

@@ -23,7 +23,7 @@ pragma solidity ^0.8.16;
  *      An Ethereum Message Hash is defined via the [`eth_sign`] RPC call as:
  *          keccak256("\x19Ethereum Signed Message:\n" + len(message) + message)
  *
- *      Note that this library only provides functionality to create Ethereum
+ *      Note that this library only provides functionality for creating Ethereum
  *      Message Hashes from keccak256 digests and not arbitrary bytes.
  *
  * @custom:references

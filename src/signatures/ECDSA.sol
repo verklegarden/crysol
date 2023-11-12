@@ -26,23 +26,8 @@ struct Signature {
     bytes32 s;
 }
 
-/*
-ECDSA sig (r, s):
-
-r = ([k]G)_x
-
-s = (H(m) + [p+k]G) / k
-
-where:
-k   = nonce
-m   = message
-H() = keccak256
-P   = public key
-p   = private key
-G   = generator
-_x  = x coordinate of point
-*/
-
+// TODO: Specification not complete nor correct!!!!
+//       Everything still WIP!
 /**
  * @title ECDSA
  *
@@ -52,12 +37,101 @@ _x  = x coordinate of point
  *      implementation as defined in [SEC 1 v2] in combination with the
  *      secp256k1 elliptic curve and keccak256 hash function.
  *
+ * @dev Note about ECDSA Malleability
+ *
+ *      Note that ECDSA signatures are malleable, meaning every valid ECDSA
+ *      signature has two distinct representations. Furthermore, computing the
+ *      second valid signature can be done without knowledge of the signer's
+ *      private key. This weakness has lead to numerous bugs in smart contract
+ *      systems.
+ *
+ *      Therefore, this library only creates and accepts signatures in one of
+ *      these representations. Signatures in the second representation are deemed
+ *      invalid. For more info, see function `isMalleable(Signature)(bool)`.
+ *
+ *      This behaviour is sync with the broader Ethereum ecosystem as a general
+ *      defensive mechanism against ECDSA's weakness.
+ *      For more info, see eg [EIP-2].
+ *
+ *
  * @dev ECDSA Signature Specification
  *
- *      TODO
+ *      Terminology
+ *      ~~~~~~~~~~~
+ *
+ *      - H()       Keccak256 hash function
+ *      - G         Generator of secp256k1
+ *      - Q         Order of secp256k1
+ *      - x         The signer's private key as type uint256
+ *      - m         Keccak256 hash of message as type bytes32
+ *      - k         Nonce as type uint256
+ *      - R         The nonce's public key, ie [k]G, as type (uint256, uint256)
+ *      - ()ₓ       Function returning a public key's x coordinate as type uint256
+ *      - ()ₚ       Function returning a public key's y coordinate's parity, ie 0 if even and 1 if odd, as type uint256
+ *      - ()ₑ       Function returning a public key's Ethereum address as type address
+ *
+ *
+ *      Signature Creation
+ *      ~~~~~~~~~~~~~~~~~~
+ *
+ *      1. Select cryptographically secure nonce
+ *          k ∊ [1, Q)
+ *
+ *      2. Compute nonce's public key
+ *          R = [k]G
+ *
+ *      3. Compute r
+ *          r = Rₓ (mod Q)
+ *
+ *      4. If r = 0
+ *          Return to step 1
+ *
+ *      5. Compute s
+ *          s = k⁻¹ * (m + (x * Rₓ)) (mod Q)
+ *
+ *      6. If s = 0
+ *          Return to step 1
+ *
+ *      7. If s > Q/2
+ *          s = Q - s
+ *
+ *      8. Compute s's public key
+ *          S = [s]G
+ *
+ *      9. Compute v
+ *          v = 27 + Sₚ
+ *
+ *      => Let triplet (r, s, v) be the ECDSA signature
+ *
+ *
+ *      Signature Verification
+ *      ~~~~~~~~~~~~~~~~~~~~~~
+ *
+ *      Input : (Pₑ, m, r, s, v)
+ *      Output: True if signature verification succeeds, false otherwise
+ *
+ *      1. If not r ∊ [1, Q)
+ *          Return false
+ *
+ *      2. If not s ∊ [1, Q/2]
+ *          Return false
+ *
+ *      3. Compute u₁ and u₂
+ *          u₁ = m * s⁻¹ (mod Q)
+ *          u₂ = r * s⁻¹ (mod Q)
+ *
+ *      4. Compute public key R
+ *          R = [u₁]G + [u₂]P           TODO: Error. Where does P come from?
+ *
+ *      5. If R is point at infinity
+ *          Return false
+ *
+ *      6. Verification succeeds iff Rₓ == r (mod Q)
+ *
  *
  * @custom:references
  *      - [SEC 1 v2]: https://www.secg.org/sec1-v2.pdf
+ *      - [EIP-2]: https://eips.ethereum.org/EIPS/eip-2
  *      - [EIP-2098]: https://eips.ethereum.org/EIPS/eip-2098
  */
 library ECDSA {

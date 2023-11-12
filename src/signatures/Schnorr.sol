@@ -25,6 +25,10 @@ struct Signature {
     address commitment;
 }
 
+// TODO: Define ₓ, ₚ, and ₑ as functions. See ECDSA.
+// TODO: Don't use signature and commitment as terms.
+//       Stay in sync with ECDSA and use s and r. Note though that
+//       r is here the address of the public key, not the x coordinate.
 /**
  * @title Schnorr
  *
@@ -35,7 +39,7 @@ struct Signature {
  *
  * @dev Schnorr Signature Specification
  *
- *      Terminology:
+ *      Terminology
  *      ~~~~~~~~~~~
  *
  *      - H()       Keccak256 hash function
@@ -50,7 +54,7 @@ struct Signature {
  *      - k         Nonce as type uint256
  *
  *
- *      Signature Creation:
+ *      Signature Creation
  *      ~~~~~~~~~~~~~~~~~~
  *
  *      1. Select a cryptographically secure nonce
@@ -71,7 +75,7 @@ struct Signature {
  *      => Let tuple (s, Rₑ) be the Schnorr signature
  *
  *
- *      Signature Verification:
+ *      Signature Verification
  *      ~~~~~~~~~~~~~~~~~~~~~~
  *
  *      Input : (P, m, s, Rₑ)
