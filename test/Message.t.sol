@@ -6,6 +6,9 @@ import {console2 as console} from "forge-std/console2.sol";
 
 import {Message} from "src/Message.sol";
 
+/**
+ * @notice Message Unit Tests
+ */
 contract MessageTest is Test {
     MessageWrapper wrapper;
 
@@ -23,8 +26,6 @@ contract MessageTest is Test {
 }
 
 /**
- * @title MessageWrapper
- *
  * @notice Library wrapper to enable forge coverage reporting
  *
  * @dev For more info, see https://github.com/foundry-rs/foundry/pull/3128#issuecomment-1241245086.

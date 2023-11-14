@@ -11,6 +11,9 @@ import {
 } from "src/curves/Secp256k1Arithmetic.sol";
 import {Secp256k1, PrivateKey, PublicKey} from "src/curves/Secp256k1.sol";
 
+/**
+ * @notice Secp256k1Arithmetic Unit Tests
+ */
 contract Secp256k1ArithmeticTest is Test {
     using Secp256k1Arithmetic for AffinePoint;
     using Secp256k1Arithmetic for JacobianPoint;
@@ -210,8 +213,6 @@ contract Secp256k1ArithmeticTest is Test {
 }
 
 /**
- * @title Secp256k1ArithmeticWrapper
- *
  * @notice Library wrapper to enable forge coverage reporting
  *
  * @dev For more info, see https://github.com/foundry-rs/foundry/pull/3128#issuecomment-1241245086.

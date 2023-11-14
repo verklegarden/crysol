@@ -6,6 +6,9 @@ import {console2 as console} from "forge-std/console2.sol";
 
 import {Random} from "src/Random.sol";
 
+/**
+ * @notice Random Unit Tests
+ */
 contract RandomTest is Test {
     RandomWrapper wrapper;
 
@@ -22,8 +25,6 @@ contract RandomTest is Test {
 }
 
 /**
- * @title RandomWrapper
- *
  * @notice Library wrapper to enable forge coverage reporting
  *
  * @dev For more info, see https://github.com/foundry-rs/foundry/pull/3128#issuecomment-1241245086.

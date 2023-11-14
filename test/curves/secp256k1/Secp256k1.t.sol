@@ -11,6 +11,9 @@ import {
     JacobianPoint
 } from "src/curves/Secp256k1Arithmetic.sol";
 
+/**
+ * @notice Secp256k1 Unit Tests
+ */
 contract Secp256k1Test is Test {
     using Secp256k1 for PrivateKey;
     using Secp256k1 for PublicKey;
@@ -60,11 +63,11 @@ contract Secp256k1Test is Test {
         assertTrue(wrapper.isValid(PrivateKey.wrap(privKey)));
     }
 
-    function test_PrivateKey_isValid_FalseIf_PrivateKeyIsZero() public {
+    function test_PrivateKey_isValid_FailsIf_PrivateKeyIsZero() public {
         assertFalse(wrapper.isValid(PrivateKey.wrap(0)));
     }
 
-    function testFuzz_PrivateKey_isValid_FalseIf_PrivateKeyGreaterOrEqualToQ(
+    function testFuzz_PrivateKey_isValid_FailsIf_PrivateKeyGreaterOrEqualToQ(
         uint seed
     ) public {
         uint privKey = _bound(seed, Secp256k1.Q, type(uint).max);
@@ -128,7 +131,7 @@ contract Secp256k1Test is Test {
         assertTrue(wrapper.isValid(privKey.toPublicKey()));
     }
 
-    function test_PublicKey_isValid_FalseIf_PointNotOnCurve() public {
+    function test_PublicKey_isValid_FailsIf_PointNotOnCurve() public {
         PublicKey memory pubKey;
 
         pubKey.x = 0;
@@ -341,8 +344,6 @@ contract Secp256k1Test is Test {
 }
 
 /**
- * @title Secp256k1Wrapper
- *
  * @notice Library wrapper to enable forge coverage reporting
  *
  * @dev For more info, see https://github.com/foundry-rs/foundry/pull/3128#issuecomment-1241245086.

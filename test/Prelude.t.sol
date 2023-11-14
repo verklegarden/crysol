@@ -4,6 +4,9 @@ pragma solidity ^0.8.16;
 import {Test} from "forge-std/Test.sol";
 import {console2 as console} from "forge-std/console2.sol";
 
+/**
+ * @notice Prelude Unit Tests
+ */
 contract PreludeTest is Test {
     // ~~~~~~~ Prelude ~~~~~~~
     // forgefmt: disable-start

@@ -8,6 +8,9 @@ import {ECDSA, Signature} from "src/signatures/ECDSA.sol";
 import {ECDSAUnsafe} from "unsafe/ECDSAUnsafe.sol";
 import {Secp256k1, PrivateKey, PublicKey} from "src/curves/Secp256k1.sol";
 
+/**
+ * @notice ECDSA Unit Tests
+ */
 contract ECDSATest is Test {
     using ECDSA for address;
     using ECDSA for PrivateKey;
@@ -197,8 +200,6 @@ contract ECDSATest is Test {
 }
 
 /**
- * @title ECDSAWrapper
- *
  * @notice Library wrapper to enable forge coverage reporting
  *
  * @dev For more info, see https://github.com/foundry-rs/foundry/pull/3128#issuecomment-1241245086.
