@@ -21,9 +21,9 @@ contract MessageSpecTest is Test {
         assertEq(got, want);
     }
 
-    function testSpec_deriveEthereumSignedMessageHash_From_Digest(bytes32 digest)
-        public
-    {
+    function testSpec_deriveEthereumSignedMessageHash_From_Digest(
+        bytes32 digest
+    ) public {
         bytes32 got = Message.deriveEthereumSignedMessageHash(digest);
         bytes32 want = MessageSpec.deriveEthereumSignedMessageHash(digest);
 

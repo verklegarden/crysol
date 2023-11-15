@@ -303,20 +303,34 @@ library ECDSA {
         return sig;
     }
 
-    // @todo Docs signEthereumSignedMessage
+    /// @dev Returns an ECDSA signature signed by private key `privKey` singing
+    ///      message `message`'s keccak256 digest as Ethereum Signed Message.
+    ///
+    /// @dev For more info regarding Ethereum Signed Messages, see {Message.sol}.
+    ///
+    /// @dev Reverts if:
+    ///      - Private key invalid
+    ///
+    /// @custom:vm vm.sign(uint,bytes32)
     /// @custom:invariant Returned signature is non-malleable.
-    function signEthereumSignedMessage(PrivateKey privKey, bytes memory message)
-        internal
-        view
-        vmed
-        returns (Signature memory)
-    {
+    function signEthereumSignedMessageHash(
+        PrivateKey privKey,
+        bytes memory message
+    ) internal view vmed returns (Signature memory) {
         bytes32 digest = Message.deriveEthereumSignedMessageHash(message);
 
         return privKey.sign(digest);
     }
 
-    // @todo Docs signEthereumSignedMessageHash
+    /// @dev Returns an ECDSA signature signed by private key `privKey` singing
+    ///      has digest `digest` as Ethereum Signed Message.
+    ///
+    /// @dev For more info regarding Ethereum Signed Messages, see {Message.sol}.
+    ///
+    /// @dev Reverts if:
+    ///      - Private key invalid
+    ///
+    /// @custom:vm vm.sign(uint,bytes32)
     /// @custom:invariant Returned signature is non-malleable.
     function signEthereumSignedMessageHash(PrivateKey privKey, bytes32 digest)
         internal
@@ -349,7 +363,7 @@ library ECDSA {
         vmed
         returns (string memory)
     {
-        string memory str = "ECDSA::Signature { \n";
+        string memory str = "ECDSA::Signature {\n";
         str = string.concat(str, "    v: ", vm.toString(sig.v), ",\n");
         str = string.concat(str, "    r: ", vm.toString(sig.r), ",\n");
         str = string.concat(str, "    s: ", vm.toString(sig.s), "\n");
@@ -400,16 +414,16 @@ library ECDSA {
         returns (Signature memory)
     {
         if (blob.length != 65) {
-            revert("InvalidLength()");
+            revert("LengthInvalid()");
         }
 
         uint8 v;
         bytes32 r;
         bytes32 s;
         assembly ("memory-safe") {
-            r := mload(blob)
-            s := mload(add(blob, 0x20))
-            v := byte(0, mload(add(blob, 0x40)))
+            r := mload(add(blob, 0x20))
+            s := mload(add(blob, 0x40))
+            v := byte(0, mload(add(blob, 0x60)))
         }
 
         return Signature(v, r, s);
@@ -461,15 +475,15 @@ library ECDSA {
         returns (Signature memory)
     {
         if (blob.length != 64) {
-            revert("InvalidLength()");
+            revert("LengthInvalid()");
         }
 
         uint8 v;
         bytes32 r;
         bytes32 s;
         assembly ("memory-safe") {
-            r := mload(blob)
-            let yParityAndS := mload(add(blob, 0x20))
+            r := mload(add(blob, 0x20))
+            let yParityAndS := mload(add(blob, 0x40))
 
             // Receive s via masking yParityAndS with EIP-2098 mask.
             s := and(yParityAndS, _EIP2098_MASK)

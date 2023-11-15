@@ -6,7 +6,10 @@ import {console2 as console} from "forge-std/console2.sol";
 
 import {ECDSA, Signature} from "src/signatures/ECDSA.sol";
 import {ECDSAUnsafe} from "unsafe/ECDSAUnsafe.sol";
+
 import {Secp256k1, PrivateKey, PublicKey} from "src/curves/Secp256k1.sol";
+
+import {Message} from "src/Message.sol";
 
 /**
  * @notice ECDSA Unit Tests
@@ -170,9 +173,48 @@ contract ECDSATest is Test {
         wrapper.sign(privKey, keccak256(message));
     }
 
-    // @todo Test property: Signature is non-malleable.
+    function testFuzz_signEthereumSignedMessageHash(
+        PrivateKey privKey,
+        bytes memory message
+    ) public {
+        vm.assume(privKey.isValid());
 
-    // @todo Test signEthereum...
+        PublicKey memory pubKey = privKey.toPublicKey();
+
+        Signature memory sig1 =
+            wrapper.signEthereumSignedMessageHash(privKey, message);
+        Signature memory sig2 =
+            wrapper.signEthereumSignedMessageHash(privKey, keccak256(message));
+
+        assertEq(sig1.v, sig2.v);
+        assertEq(sig1.r, sig2.r);
+        assertEq(sig1.s, sig2.s);
+
+        assertTrue(
+            pubKey.verify(
+                Message.deriveEthereumSignedMessageHash(message), sig1
+            )
+        );
+        assertTrue(
+            pubKey.verify(
+                Message.deriveEthereumSignedMessageHash(keccak256(message)),
+                sig2
+            )
+        );
+    }
+
+    function testFuzz_signEthereumSignedMessageHash_RevertsIf_PrivateKeyInvalid(
+        PrivateKey privKey,
+        bytes memory message
+    ) public {
+        vm.assume(!privKey.isValid());
+
+        vm.expectRevert("PrivateKeyInvalid()");
+        wrapper.signEthereumSignedMessageHash(privKey, message);
+
+        vm.expectRevert("PrivateKeyInvalid()");
+        wrapper.signEthereumSignedMessageHash(privKey, keccak256(message));
+    }
 
     //--------------------------------------------------------------------------
     // Test: Utils
@@ -193,10 +235,140 @@ contract ECDSATest is Test {
         assertFalse(wrapper.isMalleable(sig));
     }
 
-    // -- @todo Test: Signature::toString
+    function test_Signature_toString() public {
+        Signature memory sig = Signature({
+            v: 27,
+            r: bytes32(type(uint).max),
+            s: bytes32(type(uint).max)
+        });
+
+        string memory got = wrapper.toString(sig);
+        string memory want = string.concat(
+            "ECDSA::Signature {\n",
+            "    v: 27,\n",
+            "    r: 0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff,\n",
+            "    s: 0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff\n",
+            "  }"
+        );
+
+        assertEq(got, want);
+    }
 
     //--------------------------------------------------------------------------
     // Test: (De)Serialization
+
+    function testFuzz_Signature_toBytes(Signature memory sig) public {
+        bytes memory got = wrapper.toBytes(sig);
+        bytes memory want = abi.encodePacked(sig.r, sig.s, sig.v);
+
+        assertEq(got, want);
+    }
+
+    function testFuzz_signatureFromBytes(bytes memory blob) public {
+        vm.assume(blob.length >= 3 * 32);
+
+        (bytes32 r, bytes32 s, uint lastWord) =
+            abi.decode(blob, (bytes32, bytes32, uint));
+
+        // V is encoded in first byte of last word.
+        uint8 v;
+        assembly ("memory-safe") {
+            v := byte(0, lastWord)
+        }
+
+        console.log(v);
+
+        assembly ("memory-safe") {
+            mstore(blob, 65)
+        }
+        Signature memory got = wrapper.signatureFromBytes(blob);
+
+        assertEq(got.v, v);
+        assertEq(got.r, r);
+        assertEq(got.s, s);
+    }
+
+    function testFuzz_signatureFromBytes_RevertsIf_LengthInvalid(
+        bytes memory blob
+    ) public {
+        vm.assume(blob.length != 65);
+
+        vm.expectRevert("LengthInvalid()");
+        wrapper.signatureFromBytes(blob);
+    }
+
+    function test_Signature_toCompactBytes() public {
+        // Note that test cases are taken from EIP-2098.
+
+        // Test Case 1:
+        Signature memory sig1 = Signature({
+            v: 27,
+            r: 0x68a020a209d3d56c46f38cc50a33f704f4a9a10a59377f8dd762ac66910e9b90,
+            s: 0x7e865ad05c4035ab5792787d4a0297a43617ae897930a6fe4d822b8faea52064
+        });
+        bytes memory got1 = wrapper.toCompactBytes(sig1);
+        bytes memory want1 = bytes.concat(
+            hex"68a020a209d3d56c46f38cc50a33f704f4a9a10a59377f8dd762ac66910e9b90",
+            hex"7e865ad05c4035ab5792787d4a0297a43617ae897930a6fe4d822b8faea52064"
+        );
+        assertEq(got1, want1);
+
+        // Test Case 2:
+        Signature memory sig2 = Signature({
+            v: 28,
+            r: 0x9328da16089fcba9bececa81663203989f2df5fe1faa6291a45381c81bd17f76,
+            s: 0x139c6d6b623b42da56557e5e734a43dc83345ddfadec52cbe24d0cc64f550793
+        });
+        bytes memory got2 = wrapper.toCompactBytes(sig2);
+        bytes memory want2 = bytes.concat(
+            hex"9328da16089fcba9bececa81663203989f2df5fe1faa6291a45381c81bd17f76",
+            hex"939c6d6b623b42da56557e5e734a43dc83345ddfadec52cbe24d0cc64f550793"
+        );
+        assertEq(got2, want2);
+    }
+
+    function test_signatureFromCompactBytes() public {
+        // Note that test cases are taken from EIP-2098.
+
+        // Test Case 1:
+        bytes memory blob1 = bytes.concat(
+            hex"68a020a209d3d56c46f38cc50a33f704f4a9a10a59377f8dd762ac66910e9b90",
+            hex"7e865ad05c4035ab5792787d4a0297a43617ae897930a6fe4d822b8faea52064"
+        );
+        Signature memory got1 = wrapper.signatureFromCompactBytes(blob1);
+        Signature memory want1 = Signature({
+            v: 27,
+            r: 0x68a020a209d3d56c46f38cc50a33f704f4a9a10a59377f8dd762ac66910e9b90,
+            s: 0x7e865ad05c4035ab5792787d4a0297a43617ae897930a6fe4d822b8faea52064
+        });
+        assertEq(got1.v, want1.v);
+        assertEq(got1.r, want1.r);
+        assertEq(got1.s, want1.s);
+
+        // Test Case 2:
+        bytes memory blob2 = bytes.concat(
+            hex"9328da16089fcba9bececa81663203989f2df5fe1faa6291a45381c81bd17f76",
+            hex"939c6d6b623b42da56557e5e734a43dc83345ddfadec52cbe24d0cc64f550793"
+        );
+        Signature memory got2 = wrapper.signatureFromCompactBytes(blob2);
+        Signature memory want2 = Signature({
+            v: 28,
+            r: 0x9328da16089fcba9bececa81663203989f2df5fe1faa6291a45381c81bd17f76,
+            s: 0x139c6d6b623b42da56557e5e734a43dc83345ddfadec52cbe24d0cc64f550793
+        });
+        assertEq(got2.v, want2.v);
+        assertEq(got2.r, want2.r);
+        assertEq(got2.s, want2.s);
+    }
+
+    function testFuzz_signatureFromCompactBytes_RevertsIf_LengthInvalid(
+        bytes memory blob
+    ) public {
+        vm.assume(blob.length != 64);
+
+        vm.expectRevert("LengthInvalid()");
+        wrapper.signatureFromCompactBytes(blob);
+    }
 }
 
 /**
@@ -268,12 +440,11 @@ contract ECDSAWrapper {
         return privKey.sign(digest);
     }
 
-    function signEthereumSignedMessage(PrivateKey privKey, bytes memory message)
-        public
-        view
-        returns (Signature memory)
-    {
-        return privKey.signEthereumSignedMessage(message);
+    function signEthereumSignedMessageHash(
+        PrivateKey privKey,
+        bytes memory message
+    ) public view returns (Signature memory) {
+        return privKey.signEthereumSignedMessageHash(message);
     }
 
     function signEthereumSignedMessageHash(PrivateKey privKey, bytes32 digest)
