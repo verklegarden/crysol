@@ -11,30 +11,28 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.16;
 
-// TODO: Rename to Ethereum Signed Message Hash.
-//       However, make clear via docs that hash is _not yet_ signed!
 /**
  * @title Message
  *
- * @notice Functionality for constructing Ethereum Message Hashes
+ * @notice Functionality for constructing Ethereum Signed Message Hashes
  *
- * @dev An Ethereum Message Hash is a hash composed of a prefix and the actual
- *      message. The prefix makes a signature for the hash recognizable as an
- *      Ethereum specific signature.
+ * @dev An Ethereum Signed Message Hash is a hash composed of a prefix and the
+ *      actual message. The prefix makes a signature for the hash recognizable
+ *      as an Ethereum specific signature.
  *
- *      An Ethereum Message Hash is defined via the [`eth_sign`] RPC call as:
+ *      An Ethereum Signed Message Hash is defined via the [`eth_sign`] RPC call:
  *          keccak256("\x19Ethereum Signed Message:\n" + len(message) + message)
  *
  *      Note that this library only provides functionality for creating Ethereum
- *      Message Hashes for keccak256 digests and not arbitrary bytes.
+ *      Signed Message Hashes for keccak256 digests and not arbitrary bytes.
  *
  * @custom:references
  *      - [eth_sign]: https://ethereum.org/en/developers/docs/apis/json-rpc/#eth_sign
  */
 library Message {
-    /// @dev Returns an Ethereum Message Hash from the keccak256 digest from
-    ///      message `message`.
-    function deriveEthereumMessageHash(bytes memory message)
+    /// @dev Returns an Ethereum Signed Message Hash from message `message`'s
+    ///      keccak256 digest.
+    function deriveEthereumSignedMessageHash(bytes memory message)
         internal
         pure
         returns (bytes32)
@@ -47,11 +45,11 @@ library Message {
             digest := keccak256(offset, len)
         }
 
-        return deriveEthereumMessageHash(digest);
+        return deriveEthereumSignedMessageHash(digest);
     }
 
-    /// @dev Returns an Ethereum Message Hash from hash digest `digest`.
-    function deriveEthereumMessageHash(bytes32 digest)
+    /// @dev Returns an Ethereum Signed Message Hash from hash digest `digest`.
+    function deriveEthereumSignedMessageHash(bytes32 digest)
         internal
         pure
         returns (bytes32)

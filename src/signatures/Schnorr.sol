@@ -276,7 +276,7 @@ library Schnorr {
         vmed
         returns (Signature memory)
     {
-        bytes32 digest = Message.deriveEthereumMessageHash(message);
+        bytes32 digest = Message.deriveEthereumSignedMessageHash(message);
 
         return privKey.sign(digest);
     }
@@ -287,7 +287,7 @@ library Schnorr {
         vmed
         returns (Signature memory)
     {
-        bytes32 digest2 = Message.deriveEthereumMessageHash(digest);
+        bytes32 digest2 = Message.deriveEthereumSignedMessageHash(digest);
 
         return privKey.sign(digest2);
     }

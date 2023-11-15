@@ -12,7 +12,7 @@ library MessageSpec {
     Vm private constant vm =
         Vm(address(uint160(uint(keccak256("hevm cheat code")))));
 
-    function deriveEthereumMessageHash(bytes memory message)
+    function deriveEthereumSignedMessageHash(bytes memory message)
         internal
         pure
         returns (bytes32)
@@ -24,7 +24,7 @@ library MessageSpec {
         );
     }
 
-    function deriveEthereumMessageHash(bytes32 digest)
+    function deriveEthereumSignedMessageHash(bytes32 digest)
         internal
         pure
         returns (bytes32)

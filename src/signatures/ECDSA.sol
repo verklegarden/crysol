@@ -28,6 +28,8 @@ struct Signature {
 
 // TODO: Specification not complete nor correct!!!!
 //       Everything still WIP!
+// TODO: Don\t use m as H(message). Stay in sync with code and use
+//       message = bytes and digest = H(message)
 /**
  * @title ECDSA
  *
@@ -162,8 +164,6 @@ library ECDSA {
 
     //--------------------------------------------------------------------------
     // Signature Verification
-    //
-    // Note that malleable signatures are deemed invalid.
 
     /// @dev Returns whether public key `pubKey` signs via ECDSA signature
     ///      `sig` message `message`.
@@ -311,7 +311,7 @@ library ECDSA {
         vmed
         returns (Signature memory)
     {
-        bytes32 digest = Message.deriveEthereumMessageHash(message);
+        bytes32 digest = Message.deriveEthereumSignedMessageHash(message);
 
         return privKey.sign(digest);
     }
@@ -324,7 +324,7 @@ library ECDSA {
         vmed
         returns (Signature memory)
     {
-        bytes32 digest2 = Message.deriveEthereumMessageHash(digest);
+        bytes32 digest2 = Message.deriveEthereumSignedMessageHash(digest);
 
         return privKey.sign(digest2);
     }

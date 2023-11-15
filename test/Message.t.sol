@@ -22,16 +22,16 @@ contract MessageTest is Test {
         wrapper = new MessageWrapper();
     }
 
-    function test_deriveEthereumMessageHash_From_Bytes() public {
+    function test_deriveEthereumSignedMessageHash_From_Bytes() public {
         assertEq(
-            wrapper.deriveEthereumMessageHash(MESSAGE),
+            wrapper.deriveEthereumSignedMessageHash(MESSAGE),
             ETHEREUM_SIGNED_MESSAGE_HASH
         );
     }
 
-    function test_deriveEthereumMessageHash_From_Digest() public {
+    function test_deriveEthereumSignedMessageHash_From_Digest() public {
         assertEq(
-            wrapper.deriveEthereumMessageHash(keccak256(MESSAGE)),
+            wrapper.deriveEthereumSignedMessageHash(keccak256(MESSAGE)),
             ETHEREUM_SIGNED_MESSAGE_HASH
         );
     }
@@ -43,19 +43,19 @@ contract MessageTest is Test {
  * @dev For more info, see https://github.com/foundry-rs/foundry/pull/3128#issuecomment-1241245086.
  */
 contract MessageWrapper {
-    function deriveEthereumMessageHash(bytes memory message)
+    function deriveEthereumSignedMessageHash(bytes memory message)
         public
         pure
         returns (bytes32)
     {
-        return Message.deriveEthereumMessageHash(message);
+        return Message.deriveEthereumSignedMessageHash(message);
     }
 
-    function deriveEthereumMessageHash(bytes32 digest)
+    function deriveEthereumSignedMessageHash(bytes32 digest)
         public
         pure
         returns (bytes32)
     {
-        return Message.deriveEthereumMessageHash(digest);
+        return Message.deriveEthereumSignedMessageHash(digest);
     }
 }

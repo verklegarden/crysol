@@ -15,17 +15,17 @@ contract MessageSpecTest is Test {
     function testSpec_deriveEthereumMessageHash_From_Bytes(bytes memory message)
         public
     {
-        bytes32 got = Message.deriveEthereumMessageHash(message);
-        bytes32 want = MessageSpec.deriveEthereumMessageHash(message);
+        bytes32 got = Message.deriveEthereumSignedMessageHash(message);
+        bytes32 want = MessageSpec.deriveEthereumSignedMessageHash(message);
 
         assertEq(got, want);
     }
 
-    function testSpec_deriveEthereumMessageHash_From_Digest(bytes32 digest)
+    function testSpec_deriveEthereumSignedMessageHash_From_Digest(bytes32 digest)
         public
     {
-        bytes32 got = Message.deriveEthereumMessageHash(digest);
-        bytes32 want = MessageSpec.deriveEthereumMessageHash(digest);
+        bytes32 got = Message.deriveEthereumSignedMessageHash(digest);
+        bytes32 want = MessageSpec.deriveEthereumSignedMessageHash(digest);
 
         assertEq(got, want);
     }
