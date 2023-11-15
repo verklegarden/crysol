@@ -12,16 +12,28 @@ import {Message} from "src/Message.sol";
 contract MessageTest is Test {
     MessageWrapper wrapper;
 
+    bytes constant MESSAGE = bytes("crysol <3");
+
+    bytes32 constant ETHEREUM_SIGNED_MESSAGE_HASH = bytes32(
+        0xf0d01579d47c5b662330453e5709f9c1e75de1f1b741f00e20c3c381ab997664
+    );
+
     function setUp() public {
         wrapper = new MessageWrapper();
     }
 
     function test_deriveEthereumMessageHash_From_Bytes() public {
-        // @todo Compute/Find test vector.
+        assertEq(
+            wrapper.deriveEthereumMessageHash(MESSAGE),
+            ETHEREUM_SIGNED_MESSAGE_HASH
+        );
     }
 
     function test_deriveEthereumMessageHash_From_Digest() public {
-        // @todo Compute/Find test vector.
+        assertEq(
+            wrapper.deriveEthereumMessageHash(keccak256(MESSAGE)),
+            ETHEREUM_SIGNED_MESSAGE_HASH
+        );
     }
 }
 

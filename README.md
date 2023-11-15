@@ -54,14 +54,14 @@ $ forge fmt [--check]
 
 ## 👩🏼‍⚖️ Tests
 
-| **Library**                  | **Unit Tests** | **Property-Based Tests** | **Specification-Based Differential Tests** |
+| **Library**                  | **Unit Tests** | **Property-Based Tests** | **Specification-Based Tests** |
 | ---------------------------- | -------------- | ------------------------ | ------------------------------------------ |
 | `curves/Secp256k1`           | ✅              | ❌                        | ❌                                          |
 | `curves/Secp256k1Arithmetic` | ✅              | ❌                        | ❌                                          |
 | `signatures/ECDSA`           | ❌              | ❌                        | ❌                                          |
 | `signatures/Schnorr`         | ❌              | ❌                        | ❌                                          |
 | `Random`                     | ✅              | ❌                        | ❌                                          |
-| `Message`                    | ❌              | ❌                        | ❌                                          |
+| `Message`                    | ✅              | ❌                        | ✅                                          |
 
 ✅ Test Type Implemented &emsp; ❌ Test Type Not Implemented
 

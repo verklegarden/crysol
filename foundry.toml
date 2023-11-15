@@ -15,7 +15,6 @@ extra_output_files = ["irOptimized"]
 line_length = 80
 int_types = "short"
 number_underscore = "preserve"
-ignore = []
 
 [doc]
 out = "docs_generated" # Note to not overwrite own docs
