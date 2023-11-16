@@ -271,11 +271,10 @@ library Schnorr {
     }
 
     // @todo Docs signEthereumSignedMessage
-    function signEthereumSignedMessage(PrivateKey privKey, bytes memory message)
-        internal
-        vmed
-        returns (Signature memory)
-    {
+    function signEthereumSignedMessageHash(
+        PrivateKey privKey,
+        bytes memory message
+    ) internal vmed returns (Signature memory) {
         bytes32 digest = Message.deriveEthereumSignedMessageHash(message);
 
         return privKey.sign(digest);
@@ -315,10 +314,15 @@ library Schnorr {
     {
         // forgefmt: disable-start
         string memory str = "Schnorr::Signature {\n";
-        str = string.concat(str, "    signature : ", vm.toString(sig.signature), ",\n");
-        str = string.concat(str, "    commitment: ", vm.toString(sig.commitment), ",\n");
+        str = string.concat(str, "    signature: ", vm.toString(sig.signature), ",\n");
+        str = string.concat(str, "    commitment: ", vm.toString(sig.commitment), "\n");
         str = string.concat(str, "  }");
         return str;
         // forgefmt: disable-end
     }
+
+    //--------------------------------------------------------------------------
+    // (De)Serialization
+    //
+    // TODO: Schnorr Serde
 }

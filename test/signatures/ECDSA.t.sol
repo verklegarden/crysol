@@ -235,6 +235,8 @@ contract ECDSATest is Test {
         assertFalse(wrapper.isMalleable(sig));
     }
 
+    // -- Signature::toString
+
     function test_Signature_toString() public {
         Signature memory sig = Signature({
             v: 27,

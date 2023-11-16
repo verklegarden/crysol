@@ -58,7 +58,7 @@ $ forge fmt [--check]
 | ---------------------------- | -------------- | ------------------------ | ------------------------------------------ |
 | `curves/Secp256k1`           | ✅              | ❌                        | ❌                                          |
 | `curves/Secp256k1Arithmetic` | ✅              | ❌                        | ❌                                          |
-| `signatures/ECDSA`           | ❌              | ❌                        | ❌                                          |
+| `signatures/ECDSA`           | ✅              | ❌                        | ❌                                          |
 | `signatures/Schnorr`         | ❌              | ❌                        | ❌                                          |
 | `Random`                     | ✅              | ❌                        | ❌                                          |
 | `Message`                    | ✅              | ❌                        | ✅                                          |
