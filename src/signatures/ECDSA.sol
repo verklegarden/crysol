@@ -385,8 +385,8 @@ library ECDSA {
     {
         bytes memory blob;
 
-        // @todo Use direct access in assembly.
-        uint8 v = sig.v; // @todo Does this use one word or a single byte?
+        // TODO: Use direct access in assembly.
+        uint8 v = sig.v; // TODO: Does this use one word or a single byte?
         bytes32 r = sig.r;
         bytes32 s = sig.s;
         assembly ("memory-safe") {
@@ -441,7 +441,7 @@ library ECDSA {
     {
         bytes memory blob;
 
-        // @todo Use direct access in assembly.
+        // TODO: Use direct access in assembly.
         uint8 v = sig.v;
         bytes32 r = sig.r;
         bytes32 s = sig.s;

@@ -87,6 +87,7 @@ contract SchnorrTest is Test {
         Signature memory sig
     ) public {
         vm.assume(privKey.isValid());
+        vm.assume(sig.commitment != address(0));
 
         sig.signature =
             bytes32(_bound(uint(sig.signature), Secp256k1.Q, type(uint).max));
@@ -179,9 +180,6 @@ contract SchnorrWrapper {
     using Schnorr for PrivateKey;
     using Schnorr for PublicKey;
     using Schnorr for Signature;
-
-    using Secp256k1 for PrivateKey;
-    using Secp256k1 for PublicKey;
 
     //--------------------------------------------------------------------------
     // Signature Verification

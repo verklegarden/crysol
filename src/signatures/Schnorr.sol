@@ -17,6 +17,8 @@ import {Message} from "../Message.sol";
 
 import {Secp256k1, PrivateKey, PublicKey} from "../curves/Secp256k1.sol";
 
+import {Nonce} from "./utils/Nonce.sol";
+
 /**
  * @notice Signature is a Schnorr signature
  */
@@ -25,10 +27,6 @@ struct Signature {
     address commitment;
 }
 
-// TODO: Define ₓ, ₚ, and ₑ as functions. See ECDSA.
-// TODO: Don't use signature and commitment as terms.
-//       Stay in sync with ECDSA and use s and r. Note though that
-//       r is here the address of the public key, not the x coordinate.
 /**
  * @title Schnorr
  *
@@ -37,71 +35,18 @@ struct Signature {
  * @dev Provides a Schnorr signature implementation in combination with the
  *      secp256k1 elliptic curve and keccak256 hash function.
  *
- * @dev Schnorr Signature Specification
- *
- *      Terminology
- *      ~~~~~~~~~~~
- *
- *      - H()       Keccak256 hash function
- *      - ‖         Concatenation operator defined via `abi.encodePacked()`
- *      - G         Generator of secp256k1
- *      - Q         Order of secp256k1
- *      - x         The signer's private key as type uint256
- *      - P         The signer's public key, ie [x]G, as type (uint256, uint256)
- *      - Pₓ        P's x coordinate as type uint256
- *      - Pₚ        Parity of P's y coordinate, ie 0 if even and 1 if odd, as type uint256
- *      - m         Keccak256 hash of message as type bytes32
- *      - k         Nonce as type uint256
- *
- *
- *      Signature Creation
- *      ~~~~~~~~~~~~~~~~~~
- *
- *      1. Select a cryptographically secure nonce
- *          k ∊ [1, Q)
- *
- *      2. Compute nonce's public key
- *          R = [k]G
- *
- *      3. Compute commitment being the Ethereum address of the nonce's public key
- *          Rₑ = ethereum_address_of(R)
- *
- *      4. Construct challenge
- *          e = H(Pₓ ‖ Pₚ ‖ m ‖ Rₑ)
- *
- *      5. Compute signature
- *          s = k + (e * x) (mod Q)
- *
- *      => Let tuple (s, Rₑ) be the Schnorr signature
- *
- *
- *      Signature Verification
- *      ~~~~~~~~~~~~~~~~~~~~~~
- *
- *      Input : (P, m, s, Rₑ)
- *      Output: True if signature verification succeeds, false otherwise
- *
- *      1. Construct challenge
- *          e = H(Pₓ ‖ Pₚ ‖ m ‖ Rₑ)
- *
- *      2. Compute commitment
- *            [s]G - [e]P               | s = k + (e * x)
- *          = [k + (e * x)]G - [e]P     | P = [x]G
- *          = [k + (e * x)]G - [e * x]G | Distributive Law
- *          = [k + (e * x) - (e * x)]G  | (e * x) - (e * x) = 0
- *          = [k]G                      | R = [k]G
- *          = R                         | Let ()ₑ be the Ethereum address of a Point
- *          → Rₑ
- *
- *      3. Verification succeeds iff ([s]G - [e]P)ₑ = Rₑ
+ * @custom:docs docs/signature/Schnorr.md
  */
 library Schnorr {
     using Schnorr for address;
     using Schnorr for Signature;
     using Schnorr for PrivateKey;
     using Schnorr for PublicKey;
+
     using Secp256k1 for PrivateKey;
     using Secp256k1 for PublicKey;
+
+    using Nonce for PrivateKey;
 
     // ~~~~~~~ Prelude ~~~~~~~
     // forgefmt: disable-start
@@ -149,12 +94,12 @@ library Schnorr {
             revert("PublicKeyInvalid()");
         }
 
-        if (sig.isMalleable()) {
-            revert("SignatureMalleable()");
-        }
-
         if (sig.signature == 0 || sig.commitment == address(0)) {
             revert("SignatureTrivial()");
+        }
+
+        if (sig.isMalleable()) {
+            revert("SignatureMalleable()");
         }
 
         // Construct challenge = H(Pₓ ‖ Pₚ ‖ m ‖ Rₑ) (mod Q)
@@ -240,9 +185,10 @@ library Schnorr {
     {
         PublicKey memory pubKey = privKey.toPublicKey();
 
-        // Select nonce and compute nonce's public key.
-        PrivateKey nonce = Secp256k1.newPrivateKey();
-        PublicKey memory noncePubKey = nonce.toPublicKey();
+        // Select nonce and compute its public key.
+        uint nonce = privKey.deriveNonce(digest);
+        PublicKey memory noncePubKey =
+            Secp256k1.privateKeyFromUint(nonce).toPublicKey();
 
         // Derive commitment from nonce's public key.
         address commitment = noncePubKey.toAddress();
@@ -261,7 +207,7 @@ library Schnorr {
         // Compute signature = k + (e * x) (mod Q)
         bytes32 signature = bytes32(
             addmod(
-                nonce.asUint(),
+                nonce,
                 mulmod(uint(challenge), privKey.asUint(), Secp256k1.Q),
                 Secp256k1.Q
             )
@@ -270,7 +216,7 @@ library Schnorr {
         return Signature(signature, commitment);
     }
 
-    // @todo Docs signEthereumSignedMessage
+    // TODO: Docs signEthereumSignedMessage
     function signEthereumSignedMessageHash(
         PrivateKey privKey,
         bytes memory message
@@ -280,7 +226,7 @@ library Schnorr {
         return privKey.sign(digest);
     }
 
-    // @todo Docs signEthereumSignedMessageHash
+    // TODO: Docs signEthereumSignedMessageHash
     function signEthereumSignedMessageHash(PrivateKey privKey, bytes32 digest)
         internal
         vmed

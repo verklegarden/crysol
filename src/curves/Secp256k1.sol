@@ -116,7 +116,7 @@ library Secp256k1 {
     /// @custom:vm Random::readUint()(uint)
     function newPrivateKey() internal vmed returns (PrivateKey) {
         uint scalar;
-        while (scalar == 0 || scalar >= Secp256k1.Q) {
+        while (scalar == 0 || scalar >= Q) {
             // Note to not introduce potential bias via bounding operation.
             scalar = Random.readUint();
         }
@@ -127,7 +127,7 @@ library Secp256k1 {
     ///
     /// @dev A valid secp256k1 private key ∊ [1, Q).
     function isValid(PrivateKey privKey) internal pure returns (bool) {
-        return privKey.asUint() != 0 && privKey.asUint() < Secp256k1Arithmetic.Q;
+        return privKey.asUint() != 0 && privKey.asUint() < Q;
     }
 
     /// @dev Returns the public key of private key `privKey`.
