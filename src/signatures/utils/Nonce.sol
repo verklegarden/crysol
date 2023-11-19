@@ -13,9 +13,6 @@ pragma solidity ^0.8.16;
 
 import {Secp256k1, PrivateKey} from "../../curves/Secp256k1.sol";
 
-// TODO: Introduce FieldElement type in Secp256k1Arithmetic and let Nonce be
-//       FieldElement? PrivateKey is alias and uses Arithmetic for validation?
-
 // TODO: Library to derive deterministic nonces following RFC 6979.
 //
 //       For Rust implementation (used by foundry), see:
@@ -54,6 +51,8 @@ library Nonce {
         pure
         returns (uint)
     {
+        // TODO: Nonce should be curve independent, ie not bounded by Q.
+        //       This responsibility should be delegated to the caller?
         return uint(keccak256(abi.encodePacked(privKey.asUint(), digest)))
             % Secp256k1.Q;
     }
