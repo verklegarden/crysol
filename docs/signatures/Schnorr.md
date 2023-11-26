@@ -4,7 +4,7 @@ This document specifies the Schnorr signature scheme over the secp256k1 elliptic
 
 ## Introduction
 
-Schnorr signatures provide a number of advantages compared to [ECDSA signatures](./ECDSA.md):
+Schnorr signatures provide a number of advantages compared to ECDSA signatures:
 
 - **Provable secure**: Schnorr signatures are provable secure
 - **Non-malleability**: Schnorr signatures are non-malleable
@@ -73,8 +73,8 @@ signature = k + (e * x) (mod Q)
 
 ## Signature Verification
 
-**Input**: `(P, m, signature, commitment)`
-**Output**: `True` if signature verification succeeds, `False` otherwise
+* **Input**: `(P, m, signature, commitment)`
+* **Output**: `True` if signature verification succeeds, `False` otherwise
 
 1. Construct challenge `e`
 
@@ -82,21 +82,15 @@ signature = k + (e * x) (mod Q)
 e = H(Pₓ ‖ Pₚ ‖ m ‖ r)
 ```
 
-2. Compute nonce's public key
+2. Compute Ethereum address of nonce's public key
 
 ```
-  [signature]G - [e]P       | signature = k + (e * x)
-= [k + (e * x)]G - [e]P     | P = [x]G
-= [k + (e * x)]G - [e * x]G | Distributive Law
-= [k + (e * x) - (e * x)]G  | (e * x) - (e * x) = 0
-= [k]G                      | R = [k]G
-= R
-```
-
-3. Derive `commitment` from nonce's public key
-
-```
-commitment = Rₑ
+  ([signature]G - [e]P)ₑ       | signature = k + (e * x)
+= ([k + (e * x)]G - [e]P)ₑ     | P = [x]G
+= ([k + (e * x)]G - [e * x]G)ₑ | Distributive Law
+= ([k + (e * x) - (e * x)]G)ₑ  | (e * x) - (e * x) = 0
+= ([k]G)ₑ                      | R = [k]G
+= Rₑ
 ```
 
 3. Return `True` if `([signature]G - [e]P)ₑ == commitment`, `False` otherwise

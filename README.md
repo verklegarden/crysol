@@ -1,8 +1,24 @@
-# Crysol • [![Unit Tests][tests-shield]][tests-shield-url] [![License: MIT][license-shield]][license-shield-url] [![Solidity][solidity-shield]][solidity-shield-url]
+<div align="center">
 
-> **Warning**
->
-> Very much work in progress! Don't use!
+<h1>crysol</h1>
+
+<a href="">[![Unit Tests][tests-shield]][tests-shield-url]</a>
+<a href="">[![License: MIT][license-shield]][license-shield-url]</a>
+<a href="">[![Solidity][solidity-shield]][solidity-shield-url]</a>
+
+</div>
+
+`crysol` is a set of Solidity libraries providing **clean** and **well-tested** implementations of cryptographic algorithms.
+
+Differentiating to other projects, `crysol` also provides functionality to create cryptographic objects.
+
+## Installation
+
+Install with [Foundry](https://getfoundry.sh/):
+
+```bash
+$ forge install pmerkleplant/crysol
+```
 
 ## Libraries
 
@@ -18,14 +34,6 @@ src
     ├─ Schnorr — "Provides Schnorr signature functionality"
     └─ utils
         └─ Nonce - "Provides deterministic nonce derivation"
-```
-
-## Installation
-
-Install module via Foundry:
-
-```bash
-$ forge install pmerkleplant/crysol
 ```
 
 ## Contributing
@@ -54,20 +62,29 @@ Lint:
 $ forge fmt [--check]
 ```
 
-## 👩🏼‍⚖️ Tests
+## Tests
 
 | **Library**                  | **Unit Tests** | **Property-Based Tests** | **Specification-Based Tests** |
 | ---------------------------- | -------------- | ------------------------ | ----------------------------- |
+| `Random`                     | ✅              | ❌                        | ❌                             |
+| `Message`                    | ✅              | ❌                        | ✅                             |
 | `curves/Secp256k1`           | ✅              | ❌                        | ❌                             |
 | `curves/Secp256k1Arithmetic` | ✅              | ❌                        | ❌                             |
 | `signatures/ECDSA`           | ✅              | ✅                        | ❌                             |
 | `signatures/Schnorr`         | ✅              | ✅                        | ❌                             |
 | `signatures/utils/Nonce`     | ✅              | ❌                        | ❌                             |
-| `Random`                     | ✅              | ❌                        | ❌                             |
-| `Message`                    | ✅              | ❌                        | ✅                             |
 
 ✅ Test Type Implemented &emsp; ❌ Test Type Not Implemented
 
+## Safety
+
+This is **experimental software** and is provided on an "as is" and "as available" basis.
+
+We **do not give any warranties** and **will not be liable** for any loss incurred through any use of this codebase.
+
+While `crysol` has been heavily tested, there may be parts that may exhibit unexpected emergent behavior when used with other code, or may break in future Solidity versions.
+
+Please always include your own thorough tests when using `crysol` to make sure it works correctly with your code.
 
 <!--- Shields -->
 [tests-shield]: https://github.com/pmerkleplant/crysol/actions/workflows/unit-tests.yml/badge.svg
