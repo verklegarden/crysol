@@ -56,7 +56,11 @@ library StealthSecp256k1 {
         PublicKey memory ephemeralPubKey = ephemeralPrivKey.toPublicKey();
 
         // Compute shared secret.
-        PublicKey memory sharedPubKey = sma.viewingPubKey.mul(ephemeralPrivKey);
+        // forgefmt: disable-next-item
+        PublicKey memory sharedPubKey = sma.viewingPubKey
+                                            .intoAffinePoint()
+                                            .mul(ephemeralPrivKey);
+
         // TODO: EIP not exact: sharedSecret must be bounded to field.
         // TODO: If sharedSecret is zero, loop with new ephemeral key!
         //       Currently reverts.

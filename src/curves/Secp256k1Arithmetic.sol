@@ -11,6 +11,8 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.16;
 
+// TODO: Rename to Point?
+// TODO: Represent point at infinity via zero point?
 /**
  * @notice Point is a secp256k1 point in affine coordinates
  *
@@ -149,6 +151,29 @@ library Secp256k1Arithmetic {
     ///      See "Appendix F: Signing Transactions" in [Yellow Paper].
     function yParity(Point memory point) internal pure returns (uint) {
         return point.y & 1;
+    }
+
+    function addAffinePoint(
+        AffinePoint memory point,
+        AffinePoint memory other
+    ) internal pure returns (AffinePoint memory) {
+        AffinePoint memory sum;
+
+        if (point.equals(other)) {
+            // _double
+        } else {
+            // _add
+        }
+
+        return sum;
+    }
+
+    function equals(AffinePoint memory point, AffinePoint memory other)
+        internal
+        pure
+        returns (bool)
+    {
+        return point.x == other.x && point.y == other.y;
     }
 
     //--------------------------------------------------------------------------
