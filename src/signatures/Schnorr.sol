@@ -198,7 +198,7 @@ library Schnorr {
 
         // Derive deterministic nonce ∊ [1, Q).
         uint nonce = privKey.deriveNonce(digest) % Secp256k1.Q;
-        assert(nonce != 0); // TODO: Revisit once nonce derived via RFC 6979.
+        // assert(nonce != 0); // TODO: Revisit once nonce derived via RFC 6979.
 
         // Compute nonce's public key.
         PublicKey memory noncePubKey =

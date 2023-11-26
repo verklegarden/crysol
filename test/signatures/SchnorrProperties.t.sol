@@ -21,7 +21,7 @@ contract SchnorrPropertiesTest is Test {
     //--------------------------------------------------------------------------
     // Properties: Signature
 
-    function testProperty_CreatedSignaturesAreVerifiable(
+    function testProperty_sign_CreatesVerifiableSignatures(
         PrivateKey privKey,
         bytes memory message
     ) public {
@@ -32,7 +32,7 @@ contract SchnorrPropertiesTest is Test {
         assertTrue(pubKey.verify(message, privKey.sign(message)));
     }
 
-    function testProperty_CreatedSignaturesAreDeterministic(
+    function testProperty_sign_CreatesDeterministicSignatures(
         PrivateKey privKey,
         bytes memory message
     ) public {
@@ -45,7 +45,7 @@ contract SchnorrPropertiesTest is Test {
         assertEq(sig1.commitment, sig2.commitment);
     }
 
-    function testProperty_CreatedSignaturesAreNonMalleable(
+    function testProperty_sign_CreatesNonMalleableSignatures(
         PrivateKey privKey,
         bytes memory message
     ) public {

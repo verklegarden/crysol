@@ -21,7 +21,7 @@ contract ECDSAPropertiesTest is Test {
     //--------------------------------------------------------------------------
     // Properties: Signature
 
-    function testProperty_CreatedSignaturesAreVerifiable(
+    function testProperty_sign_CreatesVerifiableSignatures(
         PrivateKey privKey,
         bytes memory message
     ) public {
@@ -32,7 +32,7 @@ contract ECDSAPropertiesTest is Test {
         assertTrue(pubKey.verify(message, privKey.sign(message)));
     }
 
-    function testProperty_CreatedSignaturesAreDeterministic(
+    function testProperty_sign_CreatesDeterministicSignatures(
         PrivateKey privKey,
         bytes memory message
     ) public {
@@ -46,7 +46,7 @@ contract ECDSAPropertiesTest is Test {
         assertEq(sig1.s, sig2.s);
     }
 
-    function testProperty_CreatedSignaturesAreNonMalleable(
+    function testProperty_sign_CreatesNonMalleableSignatures(
         PrivateKey privKey,
         bytes memory message
     ) public {
@@ -57,4 +57,29 @@ contract ECDSAPropertiesTest is Test {
 
     //--------------------------------------------------------------------------
     // Properties: (De)Serialization
+
+    function testProperty_Bytes_SerializationLoop(Signature memory sig)
+        public
+    {
+        Signature memory got = ECDSA.signatureFromBytes(sig.toBytes());
+
+        assertEq(got.v, sig.v);
+        assertEq(got.r, sig.r);
+        assertEq(got.s, sig.s);
+    }
+
+    function testProperty_CompactBytes_SerializationLoop(
+        PrivateKey privKey,
+        bytes memory message
+    ) public {
+        vm.assume(privKey.isValid());
+
+        Signature memory want = privKey.sign(message);
+        Signature memory got =
+            ECDSA.signatureFromCompactBytes(want.toCompactBytes());
+
+        assertEq(got.v, want.v);
+        assertEq(got.r, want.r);
+        assertEq(got.s, want.s);
+    }
 }

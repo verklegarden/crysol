@@ -383,22 +383,7 @@ library ECDSA {
         pure
         returns (bytes memory)
     {
-        bytes memory blob;
-
-        // TODO: Use direct access in assembly.
-        uint8 v = sig.v; // TODO: Does this use one word or a single byte?
-        bytes32 r = sig.r;
-        bytes32 s = sig.s;
-        assembly ("memory-safe") {
-            // Signature consists of two words and one byte.
-            mstore(blob, 0x41)
-
-            mstore(add(blob, 0x20), r)
-            mstore(add(blob, 0x40), s)
-            // Note to shift v to highest-order byte.
-            mstore(add(blob, 0x60), shl(248, v))
-        }
-        return blob;
+        return abi.encodePacked(sig.r, sig.s, sig.v);
     }
 
     /// @dev Returns Signature from bytes `blob`.
@@ -441,7 +426,6 @@ library ECDSA {
     {
         bytes memory blob;
 
-        // TODO: Use direct access in assembly.
         uint8 v = sig.v;
         bytes32 r = sig.r;
         bytes32 s = sig.s;

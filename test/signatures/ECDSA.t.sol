@@ -264,7 +264,9 @@ contract ECDSATest is Test {
         assertEq(got, want);
     }
 
-    function testFuzz_signatureFromBytes(uint8 v, bytes32 r, bytes32 s) public {
+    function testFuzz_signatureFromBytes(uint8 v, bytes32 r, bytes32 s)
+        public
+    {
         bytes memory blob = abi.encodePacked(r, s, v);
 
         Signature memory got = wrapper.signatureFromBytes(blob);

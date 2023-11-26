@@ -60,8 +60,8 @@ $ forge fmt [--check]
 | ---------------------------- | -------------- | ------------------------ | ----------------------------- |
 | `curves/Secp256k1`           | ✅              | ❌                        | ❌                             |
 | `curves/Secp256k1Arithmetic` | ✅              | ❌                        | ❌                             |
-| `signatures/ECDSA`           | ✅              | ❌                        | ❌                             |
-| `signatures/Schnorr`         | ❌              | ❌                        | ❌                             |
+| `signatures/ECDSA`           | ✅              | ✅                        | ❌                             |
+| `signatures/Schnorr`         | ✅              | ✅                        | ❌                             |
 | `signatures/utils/Nonce`     | ✅              | ❌                        | ❌                             |
 | `Random`                     | ✅              | ❌                        | ❌                             |
 | `Message`                    | ✅              | ❌                        | ✅                             |
