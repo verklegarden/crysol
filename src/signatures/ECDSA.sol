@@ -323,7 +323,7 @@ library ECDSA {
     }
 
     /// @dev Returns an ECDSA signature signed by private key `privKey` singing
-    ///      has digest `digest` as Ethereum Signed Message.
+    ///      hash digest `digest` as Ethereum Signed Message.
     ///
     /// @dev For more info regarding Ethereum Signed Messages, see {Message.sol}.
     ///
