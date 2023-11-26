@@ -8,6 +8,11 @@
 
 </div>
 
+> **Warning**
+>
+> Still in early development. Don't use yet except you know what your doing!
+> Expect breaking changes!
+
 `crysol` is a set of Solidity libraries providing **clean** and **well-tested** implementations of cryptographic algorithms.
 
 Differentiating to other projects, `crysol` also provides functionality to create cryptographic objects.
