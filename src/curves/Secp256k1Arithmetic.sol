@@ -45,6 +45,9 @@ struct JacobianPoint {
  * @custom:references
  *      - [SEC 2 v2]: https://www.secg.org/sec2-v2.pdf
  *      - [Yellow Paper]: TODO
+ *
+ * @author crysol (https://github.com/pmerkleplant/crysol)
+ * @author Inspired by Chronicle Protocol's Scribe (https://github.com/chronicleprotocol/scribe)
  */
 library Secp256k1Arithmetic {
     using Secp256k1Arithmetic for AffinePoint;

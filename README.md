@@ -25,7 +25,7 @@ $ forge install pmerkleplant/crysol
 ```ml
 src
 ├─ Random - "Provides access to cryptographically secure randomness"
-├─ Message - "Functionality for constructing Ethereum Message Hashes"
+├─ Message - "Functionality for constructing Ethereum Signed Message Hashes"
 ├─ curves
 │   ├─ Secp256k1 - "Provides common cryptography-related functionality for the secp256k1 elliptic curve"
 │   └─ Secp256k1Arithmetic — "Provides common arithmetic-related functionality for the secp256k1 elliptic curve"
@@ -67,7 +67,7 @@ $ forge fmt [--check]
 | **Library**                  | **Unit Tests** | **Property-Based Tests** | **Specification-Based Tests** |
 | ---------------------------- | -------------- | ------------------------ | ----------------------------- |
 | `Random`                     | ✅              | ❌                        | ❌                             |
-| `Message`                    | ✅              | ❌                        | ✅                             |
+| `Message`                    | ✅              | ❌                        | ❌                             |
 | `curves/Secp256k1`           | ✅              | ❌                        | ❌                             |
 | `curves/Secp256k1Arithmetic` | ✅              | ❌                        | ❌                             |
 | `signatures/ECDSA`           | ✅              | ✅                        | ❌                             |

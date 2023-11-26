@@ -36,6 +36,9 @@ struct Signature {
  *      secp256k1 elliptic curve and keccak256 hash function.
  *
  * @custom:docs docs/signatures/Schnorr.md
+ *
+ * @author crysol (https://github.com/pmerkleplant/crysol)
+ * @author Inspired by Chronicle Protocol's Scribe (https://github.com/chronicleprotocol/scribe)
  */
 library Schnorr {
     using Schnorr for address;

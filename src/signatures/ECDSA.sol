@@ -55,6 +55,8 @@ struct Signature {
  *      - [SEC 1 v2]: https://www.secg.org/sec1-v2.pdf
  *      - [EIP-2]: https://eips.ethereum.org/EIPS/eip-2
  *      - [EIP-2098]: https://eips.ethereum.org/EIPS/eip-2098
+ *
+ * @author crysol (https://github.com/pmerkleplant/crysol)
  */
 library ECDSA {
     using ECDSA for address;

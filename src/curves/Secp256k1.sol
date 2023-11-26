@@ -70,6 +70,9 @@ struct PublicKey {
  *
  * @notice Providing common cryptography-related functionality for the secp256k1
  *         elliptic curve
+ *
+ * @author crysol (https://github.com/pmerkleplant/crysol)
+ * @author Inspired by Chronicle Protocol's Scribe (https://github.com/chronicleprotocol/scribe)
  */
 library Secp256k1 {
     using Secp256k1 for PrivateKey;
