@@ -290,7 +290,7 @@ library ECDSA {
             revert("PrivateKeyInvalid()");
         }
 
-        // @todo Should revert if digest is zero?
+        // TODO: Should revert if digest is zero?
 
         uint8 v;
         bytes32 r;

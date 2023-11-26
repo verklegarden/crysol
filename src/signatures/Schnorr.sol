@@ -193,8 +193,8 @@ library Schnorr {
         PublicKey memory pubKey = privKey.toPublicKey();
 
         // Derive deterministic nonce ∊ [1, Q).
-        uint nonce = privKey.deriveNonce(digest) % Q;
-        assert(nonce != 0);
+        uint nonce = privKey.deriveNonce(digest) % Secp256k1.Q;
+        assert(nonce != 0); // TODO: Revisit once nonce derived via RFC 6979.
 
         // Compute nonce's public key.
         PublicKey memory noncePubKey =
@@ -226,7 +226,13 @@ library Schnorr {
         return Signature(signature, commitment);
     }
 
-    // TODO: Docs signEthereumSignedMessage
+    /// @dev Returns a Schnorr signature signed by private key `privKey` singing
+    ///      message `message`'s keccak256 digest as Ethereum Signed Message.
+    ///
+    /// @dev For more info regarding Ethereum Signed Messages, see {Message.sol}.
+    ///
+    /// @dev Reverts if:
+    ///      - Private key invalid
     function signEthereumSignedMessageHash(
         PrivateKey privKey,
         bytes memory message
@@ -236,7 +242,13 @@ library Schnorr {
         return privKey.sign(digest);
     }
 
-    // TODO: Docs signEthereumSignedMessageHash
+    /// @dev Returns a Schnorr signature signed by private key `privKey` singing
+    ///      hash digest `digest` as Ethereum Signed Message.
+    ///
+    /// @dev For more info regarding Ethereum Signed Messages, see {Message.sol}.
+    ///
+    /// @dev Reverts if:
+    ///      - Private key invalid
     function signEthereumSignedMessageHash(PrivateKey privKey, bytes32 digest)
         internal
         vmed
@@ -281,4 +293,5 @@ library Schnorr {
     // (De)Serialization
     //
     // TODO: Schnorr Serde
+    //       Any other standard except BIP-340?
 }

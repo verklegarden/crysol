@@ -69,9 +69,9 @@ contract Secp256k1ArithmeticTest is Test {
     // -- isOnCurve
 
     function testVectors_AffinePoint_isOnCurve() public {
-        assertTrue(wrapper.isOnCurve(Secp256k1Arithmetic.G()));
+        assertTrue(wrapper.isOnCurve(wrapper.G()));
 
-        // @todo Test some more points.
+        // TODO: Test some more points.
     }
 
     function testFuzz_AffinePoint_isOnCurve(PrivateKey privKey) public {
@@ -107,8 +107,8 @@ contract Secp256k1ArithmeticTest is Test {
     //--------------------------------------------------------------------------
     // Test: Jacobian Point
 
-    // @todo Test no new memory allocation.
-    // @todo Not a real test. Use vectors from Paul Miller.
+    // TODO: Test no new memory allocation.
+    // TODO: Not a real test. Use vectors from Paul Miller.
     function testFuzz_JacobianPoint_intoAffinePoint(PrivateKey privKey)
         public
     {
@@ -137,7 +137,7 @@ contract Secp256k1ArithmeticTest is Test {
     }
 
     function test_modularInverseOf_RevertsIf_XIsZero() public {
-        // @todo Test for proper error message.
+        // TODO: Test for proper error message.
         vm.expectRevert();
         wrapper.modularInverseOf(0);
     }
@@ -147,7 +147,7 @@ contract Secp256k1ArithmeticTest is Test {
     {
         vm.assume(x >= Secp256k1Arithmetic.P);
 
-        // @todo Test for proper error message.
+        // TODO: Test for proper error message.
         vm.expectRevert();
         wrapper.modularInverseOf(x);
     }
@@ -180,13 +180,13 @@ contract Secp256k1ArithmeticTest is Test {
     }
 
     function test_areModularInverse_RevertsIf_XIsZero() public {
-        // @todo Test for proper error message.
+        // TODO: Test for proper error message.
         vm.expectRevert();
         wrapper.areModularInverse(0, 1);
     }
 
     function test_areModularInverse_RevertsIf_XInvIsZero() public {
-        // @todo Test for proper error message.
+        // TODO: Test for proper error message.
         vm.expectRevert();
         wrapper.areModularInverse(1, 0);
     }
@@ -196,7 +196,7 @@ contract Secp256k1ArithmeticTest is Test {
     {
         vm.assume(x >= Secp256k1Arithmetic.P);
 
-        // @todo Test for proper error message.
+        // TODO: Test for proper error message.
         vm.expectRevert();
         wrapper.areModularInverse(x, 1);
     }
@@ -206,7 +206,7 @@ contract Secp256k1ArithmeticTest is Test {
     ) public {
         vm.assume(xInv >= Secp256k1Arithmetic.P);
 
-        // @todo Test for proper error message.
+        // TODO: Test for proper error message.
         vm.expectRevert();
         wrapper.areModularInverse(1, xInv);
     }

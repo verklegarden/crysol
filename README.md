@@ -15,7 +15,9 @@ src
 │   └─ Secp256k1Arithmetic — "Provides common arithmetic-related functionality for the secp256k1 elliptic curve"
 └─ signatures
     ├─ ECDSA — "Provides ECDSA signature functionality"
-    └─ Schnorr — "Provides Schnorr signature functionality"
+    ├─ Schnorr — "Provides Schnorr signature functionality"
+    └─ utils
+        └─ Nonce - "Provides deterministic nonce derivation"
 ```
 
 ## Installation
@@ -55,13 +57,14 @@ $ forge fmt [--check]
 ## 👩🏼‍⚖️ Tests
 
 | **Library**                  | **Unit Tests** | **Property-Based Tests** | **Specification-Based Tests** |
-| ---------------------------- | -------------- | ------------------------ | ------------------------------------------ |
-| `curves/Secp256k1`           | ✅              | ❌                        | ❌                                          |
-| `curves/Secp256k1Arithmetic` | ✅              | ❌                        | ❌                                          |
-| `signatures/ECDSA`           | ✅              | ❌                        | ❌                                          |
-| `signatures/Schnorr`         | ❌              | ❌                        | ❌                                          |
-| `Random`                     | ✅              | ❌                        | ❌                                          |
-| `Message`                    | ✅              | ❌                        | ✅                                          |
+| ---------------------------- | -------------- | ------------------------ | ----------------------------- |
+| `curves/Secp256k1`           | ✅              | ❌                        | ❌                             |
+| `curves/Secp256k1Arithmetic` | ✅              | ❌                        | ❌                             |
+| `signatures/ECDSA`           | ✅              | ❌                        | ❌                             |
+| `signatures/Schnorr`         | ❌              | ❌                        | ❌                             |
+| `signatures/utils/Nonce`     | ✅              | ❌                        | ❌                             |
+| `Random`                     | ✅              | ❌                        | ❌                             |
+| `Message`                    | ✅              | ❌                        | ✅                             |
 
 ✅ Test Type Implemented &emsp; ❌ Test Type Not Implemented
 

@@ -147,8 +147,6 @@ contract ECDSATest is Test {
     function testFuzz_sign(PrivateKey privKey, bytes memory message) public {
         vm.assume(privKey.isValid());
 
-        PublicKey memory pubKey = privKey.toPublicKey();
-
         Signature memory sig1 = wrapper.sign(privKey, message);
         Signature memory sig2 = wrapper.sign(privKey, keccak256(message));
 
@@ -156,6 +154,7 @@ contract ECDSATest is Test {
         assertEq(sig1.r, sig2.r);
         assertEq(sig1.s, sig2.s);
 
+        PublicKey memory pubKey = privKey.toPublicKey();
         assertTrue(pubKey.verify(message, sig1));
         assertTrue(pubKey.verify(message, sig2));
     }
@@ -179,8 +178,6 @@ contract ECDSATest is Test {
     ) public {
         vm.assume(privKey.isValid());
 
-        PublicKey memory pubKey = privKey.toPublicKey();
-
         Signature memory sig1 =
             wrapper.signEthereumSignedMessageHash(privKey, message);
         Signature memory sig2 =
@@ -190,6 +187,7 @@ contract ECDSATest is Test {
         assertEq(sig1.r, sig2.r);
         assertEq(sig1.s, sig2.s);
 
+        PublicKey memory pubKey = privKey.toPublicKey();
         assertTrue(
             pubKey.verify(
                 Message.deriveEthereumSignedMessageHash(message), sig1
@@ -277,8 +275,6 @@ contract ECDSATest is Test {
         assembly ("memory-safe") {
             v := byte(0, lastWord)
         }
-
-        console.log(v);
 
         assembly ("memory-safe") {
             mstore(blob, 65)

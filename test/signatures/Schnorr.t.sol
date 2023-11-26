@@ -117,19 +117,79 @@ contract SchnorrTest is Test {
     }
 
     //--------------------------------------------------------------------------
-    // TODO Test: Signature Creation
+    // Test: Signature Creation
 
-    /*
+    // TODO: Properties: (same as ECDSA)
+    //       - Verifiable
+    //       - Deterministic
+    //       - Non-Malleable
+
     function testFuzz_sign(PrivateKey privKey, bytes memory message) public {
+        vm.assume(privKey.isValid());
+
         Signature memory sig1 = wrapper.sign(privKey, message);
         Signature memory sig2 = wrapper.sign(privKey, keccak256(message));
+
+        assertEq(sig1.signature, sig2.signature);
+        assertEq(sig1.commitment, sig2.commitment);
+
+        PublicKey memory pubKey = privKey.toPublicKey();
+        assertTrue(pubKey.verify(message, sig1));
+        assertTrue(pubKey.verify(message, sig2));
     }
 
-    function testFuzz_sign_UsesRandomNonce(
+    function testFuzz_sign_RevertsIf_PrivateKeyInvalid(
         PrivateKey privKey,
         bytes memory message
-    ) public {}
-    */
+    ) public {
+        vm.assume(!privKey.isValid());
+
+        vm.expectRevert("PrivateKeyInvalid()");
+        wrapper.sign(privKey, message);
+
+        vm.expectRevert("PrivateKeyInvalid()");
+        wrapper.sign(privKey, keccak256(message));
+    }
+
+    function testFuzz_signEthereumSignedMessageHash(
+        PrivateKey privKey,
+        bytes memory message
+    ) public {
+        vm.assume(privKey.isValid());
+
+        Signature memory sig1 =
+            wrapper.signEthereumSignedMessageHash(privKey, message);
+        Signature memory sig2 =
+            wrapper.signEthereumSignedMessageHash(privKey, keccak256(message));
+
+        assertEq(sig1.signature, sig2.signature);
+        assertEq(sig1.commitment, sig2.commitment);
+
+        PublicKey memory pubKey = privKey.toPublicKey();
+        assertTrue(
+            pubKey.verify(
+                Message.deriveEthereumSignedMessageHash(message), sig1
+            )
+        );
+        assertTrue(
+            pubKey.verify(
+                Message.deriveEthereumSignedMessageHash(message), sig2
+            )
+        );
+    }
+
+    function testFuzz_signEthereumSignedMessageHash_RevertsIf_PrivateKeyInvalid(
+        PrivateKey privKey,
+        bytes memory message
+    ) public {
+        vm.assume(!privKey.isValid());
+
+        vm.expectRevert("PrivateKeyInvalid()");
+        wrapper.signEthereumSignedMessageHash(privKey, message);
+
+        vm.expectRevert("PrivateKeyInvalid()");
+        wrapper.signEthereumSignedMessageHash(privKey, keccak256(message));
+    }
 
     //--------------------------------------------------------------------------
     // Test: Utils

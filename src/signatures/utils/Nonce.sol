@@ -22,7 +22,7 @@ import {Secp256k1, PrivateKey} from "../../curves/Secp256k1.sol";
 /**
  * @title Nonce
  *
- * @notice ...
+ * @notice Provides deterministic nonce derivation
  *
  * @dev ...
  *

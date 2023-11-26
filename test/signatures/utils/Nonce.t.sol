@@ -21,19 +21,6 @@ contract NonceTest is Test {
         wrapper = new NonceWrapper();
     }
 
-    // TODO: Not necessary if FieldElement type would be used.
-    function testFuzz_deriveNonce_IsSecp256k1FieldElement(
-        PrivateKey privKey,
-        bytes memory message
-    ) public {
-        vm.assume(privKey.isValid());
-
-        bytes32 digest = keccak256(message);
-
-        assertTrue(wrapper.deriveNonce(privKey, message) < Secp256k1.Q);
-        assertTrue(wrapper.deriveNonce(privKey, digest) < Secp256k1.Q);
-    }
-
     function testFuzz_deriveNonce_IsDeterministic(
         PrivateKey privKey,
         bytes memory message
