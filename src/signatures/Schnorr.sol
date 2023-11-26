@@ -35,7 +35,7 @@ struct Signature {
  * @dev Provides a Schnorr signature implementation in combination with the
  *      secp256k1 elliptic curve and keccak256 hash function.
  *
- * @custom:docs docs/signature/Schnorr.md
+ * @custom:docs docs/signatures/Schnorr.md
  */
 library Schnorr {
     using Schnorr for address;
@@ -111,43 +111,50 @@ library Schnorr {
             )
         ) % Secp256k1.Q;
 
-        // Compute msgHash = -sig * Pₓ      (mod Q)
-        //                 = Q - (sig * Pₓ) (mod Q)
+        // Compute ecrecover_msgHash = -sig * Pₓ      (mod Q)
+        //                           = Q - (sig * Pₓ) (mod Q)
         //
         // Unchecked because the only protected operation performed is the
         // subtraction from Q where the subtrahend is the result of a (mod Q)
         // computation, i.e. the subtrahend is guaranteed to be less than Q.
-        uint msgHash;
+        bytes32 ecrecover_msgHash;
         unchecked {
-            msgHash =
-                Secp256k1.Q - mulmod(uint(sig.signature), pubKey.x, Secp256k1.Q);
+            ecrecover_msgHash = bytes32(
+                Secp256k1.Q - mulmod(uint(sig.signature), pubKey.x, Secp256k1.Q)
+            );
         }
 
-        // Compute v = Pₚ + 27
+        // Compute ecrecover_v = Pₚ + 27
         //
         // Unchecked because pubKey.yParity() ∊ {0, 1} which cannot overflow
         // by adding 27.
-        uint v;
+        uint8 ecrecover_v;
         unchecked {
-            v = pubKey.yParity() + 27;
+            ecrecover_v = uint8(pubKey.yParity() + 27);
         }
 
-        // Set r = Pₓ
-        uint r = pubKey.x;
+        // Set ecrecover_r = Pₓ
+        bytes32 ecrecover_r = bytes32(pubKey.x);
 
-        // Compute s = Q - (e * Pₓ) (mod Q)
+        // Compute ecrecover_s = Q - (e * Pₓ) (mod Q)
         //
         // Unchecked because the only protected operation performed is the
         // subtraction from Q where the subtrahend is the result of a (mod Q)
         // computation, i.e. the subtrahend is guaranteed to be less than Q.
-        uint s;
+        bytes32 ecrecover_s;
         unchecked {
-            s = Secp256k1.Q - mulmod(challenge, pubKey.x, Secp256k1.Q);
+            ecrecover_s =
+                bytes32(Secp256k1.Q - mulmod(challenge, pubKey.x, Secp256k1.Q));
         }
 
         // Compute ([s]G - [e]P)ₑ via ecrecover.
-        address recovered =
-            ecrecover(bytes32(msgHash), uint8(v), bytes32(r), bytes32(s));
+        // forgefmt: disable-next-item
+        address recovered = ecrecover(
+            ecrecover_msgHash,
+            ecrecover_v,
+            ecrecover_r,
+            ecrecover_s
+        );
 
         // Verification succeeds iff ([s]G - [e]P)ₑ = Rₑ.
         //
@@ -185,8 +192,11 @@ library Schnorr {
     {
         PublicKey memory pubKey = privKey.toPublicKey();
 
-        // Select nonce and compute its public key.
-        uint nonce = privKey.deriveNonce(digest);
+        // Derive deterministic nonce ∊ [1, Q).
+        uint nonce = privKey.deriveNonce(digest) % Q;
+        assert(nonce != 0);
+
+        // Compute nonce's public key.
         PublicKey memory noncePubKey =
             Secp256k1.privateKeyFromUint(nonce).toPublicKey();
 

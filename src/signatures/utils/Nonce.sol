@@ -34,6 +34,12 @@ library Nonce {
 
     /// @dev Derives a deterministic nonce from private key `privKey` and message
     ///      `message`.
+    ///
+    /// @dev Note that a nonce is of type uint and not bounded by any field!
+    ///
+    /// @custom:invariant Keccak256 image is never zero
+    ///     ∀ (privKey, msg) ∊ (PrivateKey, bytes):
+    ///         keccak256(privKey ‖ keccak256(message)) != 0
     function deriveNonce(PrivateKey privKey, bytes memory message)
         internal
         pure
@@ -46,14 +52,17 @@ library Nonce {
 
     /// @dev Derives a deterministic nonce from private key `privKey` and message
     ///      `message`.
+    ///
+    /// @dev Note that a nonce is of type uint and not bounded by any field!
+    ///
+    /// @custom:invariant Keccak256 image is never zero
+    ///     ∀ (privKey, digest) ∊ (PrivateKey, bytes32):
+    ///         keccak256(privKey ‖ digest) != 0
     function deriveNonce(PrivateKey privKey, bytes32 digest)
         internal
         pure
         returns (uint)
     {
-        // TODO: Nonce should be curve independent, ie not bounded by Q.
-        //       This responsibility should be delegated to the caller?
-        return uint(keccak256(abi.encodePacked(privKey.asUint(), digest)))
-            % Secp256k1.Q;
+        return uint(keccak256(abi.encodePacked(privKey.asUint(), digest)));
     }
 }
