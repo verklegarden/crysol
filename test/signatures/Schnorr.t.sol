@@ -119,11 +119,6 @@ contract SchnorrTest is Test {
     //--------------------------------------------------------------------------
     // Test: Signature Creation
 
-    // TODO: Properties: (same as ECDSA)
-    //       - Verifiable
-    //       - Deterministic
-    //       - Non-Malleable
-
     function testFuzz_sign(PrivateKey privKey, bytes memory message) public {
         vm.assume(privKey.isValid());
 

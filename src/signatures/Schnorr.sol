@@ -170,6 +170,8 @@ library Schnorr {
     ///
     /// @dev Reverts if:
     ///      - Private key invalid
+    ///
+    /// @custom:vm sign(PrivateKey, bytes32)
     function sign(PrivateKey privKey, bytes memory message)
         internal
         vmed
@@ -185,6 +187,8 @@ library Schnorr {
     ///
     /// @dev Reverts if:
     ///      - Private key invalid
+    ///
+    /// @custom:vm curves/Secp256k1::toPublicKey(PrivateKey)(PublicKey)
     function sign(PrivateKey privKey, bytes32 digest)
         internal
         vmed
@@ -233,6 +237,8 @@ library Schnorr {
     ///
     /// @dev Reverts if:
     ///      - Private key invalid
+    ///
+    /// @custom:vm sign(PrivateKey, bytes32)
     function signEthereumSignedMessageHash(
         PrivateKey privKey,
         bytes memory message
@@ -249,6 +255,8 @@ library Schnorr {
     ///
     /// @dev Reverts if:
     ///      - Private key invalid
+    ///
+    /// @custom:vm sign(PrivateKey, bytes32)
     function signEthereumSignedMessageHash(PrivateKey privKey, bytes32 digest)
         internal
         vmed

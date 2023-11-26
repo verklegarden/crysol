@@ -264,22 +264,12 @@ contract ECDSATest is Test {
         assertEq(got, want);
     }
 
-    function testFuzz_signatureFromBytes(bytes memory blob) public {
-        vm.assume(blob.length >= 3 * 32);
+    function testFuzz_signatureFromBytes(uint8 v, bytes32 r, bytes32 s) public {
+        bytes memory blob = abi.encodePacked(r, s, v);
 
-        (bytes32 r, bytes32 s, uint lastWord) =
-            abi.decode(blob, (bytes32, bytes32, uint));
-
-        // V is encoded in first byte of last word.
-        uint8 v;
-        assembly ("memory-safe") {
-            v := byte(0, lastWord)
-        }
-
-        assembly ("memory-safe") {
-            mstore(blob, 65)
-        }
         Signature memory got = wrapper.signatureFromBytes(blob);
+
+        console.log(string.concat("Got:", got.toString()));
 
         assertEq(got.v, v);
         assertEq(got.r, r);
