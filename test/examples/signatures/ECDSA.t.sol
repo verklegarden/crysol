@@ -3,7 +3,7 @@ pragma solidity ^0.8.16;
 
 import {Test} from "forge-std/Test.sol";
 
-import {ECDSAExample} from "examples/ECDSA.sol";
+import {ECDSAExample} from "examples/signatures/ECDSA.sol";
 
 /**
  * @title ECDSAExamplesTest

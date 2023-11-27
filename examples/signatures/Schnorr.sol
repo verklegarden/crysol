@@ -6,16 +6,15 @@ import {console2 as console} from "forge-std/console2.sol";
 
 import {Secp256k1, PrivateKey, PublicKey} from "src/curves/Secp256k1.sol";
 
-import {ECDSA, Signature} from "src/signatures/ECDSA.sol";
+import {Schnorr, Signature} from "src/signatures/Schnorr.sol";
 
-contract ECDSAExample is Script {
+contract SchnorrExample is Script {
     using Secp256k1 for PrivateKey;
     using Secp256k1 for PublicKey;
 
-    using ECDSA for address;
-    using ECDSA for PrivateKey;
-    using ECDSA for PublicKey;
-    using ECDSA for Signature;
+    using Schnorr for PrivateKey;
+    using Schnorr for PublicKey;
+    using Schnorr for Signature;
 
     function signAndVerify() public {
         bytes memory message = bytes("crysol <3");
@@ -23,14 +22,12 @@ contract ECDSAExample is Script {
         // Create a cryptographically secure private key.
         PrivateKey privKey = Secp256k1.newPrivateKey();
 
-        // Sign message via ECDSA.
+        // Sign message via Schnorr.
         Signature memory sig = privKey.sign(message);
 
-        // Verify signature via public key or address.
+        // Verify signature.
         PublicKey memory pubKey = privKey.toPublicKey();
-        address addr = pubKey.toAddress();
         require(pubKey.verify(message, sig), "Signature invalid");
-        require(addr.verify(message, sig), "Signature invalid");
 
         // Print signature to stdout.
         console.log(sig.toString());

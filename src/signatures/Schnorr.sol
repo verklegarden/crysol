@@ -150,7 +150,7 @@ library Schnorr {
                 bytes32(Secp256k1.Q - mulmod(challenge, pubKey.x, Secp256k1.Q));
         }
 
-        // Compute ([s]G - [e]P)ₑ via ecrecover.
+        // Compute ([sig]G - [e]P)ₑ via ecrecover.
         // forgefmt: disable-next-item
         address recovered = ecrecover(
             ecrecover_msgHash,
@@ -159,7 +159,7 @@ library Schnorr {
             ecrecover_s
         );
 
-        // Verification succeeds iff ([s]G - [e]P)ₑ = Rₑ.
+        // Verification succeeds iff ([sig]G - [e]P)ₑ = Rₑ.
         //
         // Note that commitment is guaranteed to not be zero.
         return sig.commitment == recovered;

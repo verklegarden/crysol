@@ -196,6 +196,7 @@ contract Secp256k1Test is Test {
     //----------------------------------
     // Private Key
 
+    // TODO: This is not serde.
     // -- privateKeyFromUint
 
     function testFuzz_privateKeyFromUint(uint seed) public {
