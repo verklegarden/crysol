@@ -14,6 +14,11 @@ pragma solidity ^0.8.16;
 import {Vm} from "forge-std/Vm.sol";
 
 import {Secp256k1, PrivateKey, PublicKey} from "../curves/Secp256k1.sol";
+import {
+    Secp256k1Arithmetic,
+    AffinePoint,
+    JacobianPoint
+} from "../curves/Secp256k1Arithmetic.sol";
 
 uint constant SCHEME_ID = 1;
 
@@ -29,6 +34,12 @@ struct StealthAddress {
 }
 
 library StealthSecp256k1 {
+    using Secp256k1 for PrivateKey;
+    using Secp256k1 for PublicKey;
+    using Secp256k1 for AffinePoint;
+    using Secp256k1Arithmetic for AffinePoint;
+    using Secp256k1Arithmetic for JacobianPoint;
+
     // Stealth Meta Addresses
 
     // TODO: See https://eips.ethereum.org/EIPS/eip-5564#stealth-meta-address-format.
@@ -48,7 +59,6 @@ library StealthSecp256k1 {
         returns (StealthAddress memory)
     {
         // TODO: Functionality missing in Secp256k1(Arithmetic):
-        //       - [scalar]PublicKey
         //       - PublicKey + PublicKey
 
         // Create ephemeral key pair.
@@ -58,8 +68,10 @@ library StealthSecp256k1 {
         // Compute shared secret.
         // forgefmt: disable-next-item
         PublicKey memory sharedPubKey = sma.viewingPubKey
+                                            .toJacobianPoint()
+                                            .mul(ephemeralPrivKey.asUint())
                                             .intoAffinePoint()
-                                            .mul(ephemeralPrivKey);
+                                            .intoPublicKey();
 
         // TODO: EIP not exact: sharedSecret must be bounded to field.
         // TODO: If sharedSecret is zero, loop with new ephemeral key!
@@ -75,8 +87,13 @@ library StealthSecp256k1 {
         PublicKey memory sharedSecretPubKey = sharedSecretPrivKey.toPublicKey();
 
         // Compute recipients public key.
-        PublicKey memory recipientPubKey =
-            sma.spendingPubKey.add(sharedSecretPubKey);
+        // forgefmt: disable-next-item
+        PublicKey memory recipientPubKey = sma.spendingPubKey
+                                                .toJacobianPoint()
+                                                .add(sharedSecretPubKey
+                                                        .toJacobianPoint())
+                                                .intoAffinePoint()
+                                                .intoPublicKey();
 
         // Derive recipients address from their public key.
         address recipientAddr = recipientPubKey.toAddress();
@@ -89,13 +106,18 @@ library StealthSecp256k1 {
     ///         ([viewPrivKey]ephPubKey).toHash() != 0 (mod Q)
     function checkStealthAddress(
         PrivateKey viewingPrivKey,
-        PublicKey spendingPubKey,
+        PublicKey memory spendingPubKey,
         StealthAddress memory stealthAddress
     ) internal returns (bool) {
         // Compute shared secret.
-        PublicKey memory sharedPubKey =
-            stealthAddress.ephemeralPubKey.mul(viewingPrivKey);
-        // TODO: EIP not exact: sharedSecret must be bounded to field.
+        // forgefmt: disable-next-item
+        PublicKey memory sharedPubKey = stealthAddress.ephemeralPubKey
+                                            .toJacobianPoint()
+                                            .mul(viewingPrivKey.asUint())
+                                            .intoAffinePoint()
+                                            .intoPublicKey();
+
+        // TODO: EIP not exact: sharedSecret must be bound to field.
         PrivateKey sharedSecretPrivKey = Secp256k1.privateKeyFromUint(
             uint(sharedPubKey.toHash()) % Secp256k1.Q
         );
@@ -112,15 +134,20 @@ library StealthSecp256k1 {
         PublicKey memory sharedSecretPubKey = sharedSecretPrivKey.toPublicKey();
 
         // Compute recipients public key.
-        PublicKey memory recipientPubKey =
-            sma.spendingPubKey.add(sharedSecretPubKey);
+        // forgefmt: disable-next-item
+        PublicKey memory recipientPubKey = spendingPubKey
+                                            .toJacobianPoint()
+                                            .add(sharedSecretPubKey
+                                                    .toJacobianPoint())
+                                            .intoAffinePoint()
+                                            .intoPublicKey();
 
         // Derive recipients address from their public key.
         address recipientAddr = recipientPubKey.toAddress();
 
         // Return true if stealth address' address matches computed recipients
         // address.
-        return recipientAddr == stealthAddress.recipientAddr;
+        return recipientAddr == stealthAddress.recipient;
     }
 
     // Private Key
@@ -131,8 +158,13 @@ library StealthSecp256k1 {
         StealthAddress memory stealthAddress
     ) internal returns (PrivateKey) {
         // Compute shared secret.
-        PublicKey memory sharedPubKey =
-            stealthAddress.ephemeralPubKey.mul(viewingPrivKey);
+        // forgefmt: disable-next-item
+        PublicKey memory sharedPubKey = stealthAddress.ephemeralPubKey
+                                            .toJacobianPoint()
+                                            .mul(viewingPrivKey.asUint())
+                                            .intoAffinePoint()
+                                            .intoPublicKey();
+
         // TODO: EIP not exact: sharedSecret must be bounded to field.
         // TODO: If sharedSecret is zero, loop with new ephemeral key!
         //       Currently reverts.

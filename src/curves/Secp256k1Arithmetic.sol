@@ -153,21 +153,6 @@ library Secp256k1Arithmetic {
         return point.y & 1;
     }
 
-    function addAffinePoint(
-        AffinePoint memory point,
-        AffinePoint memory other
-    ) internal pure returns (AffinePoint memory) {
-        AffinePoint memory sum;
-
-        if (point.equals(other)) {
-            // _double
-        } else {
-            // _add
-        }
-
-        return sum;
-    }
-
     function equals(AffinePoint memory point, AffinePoint memory other)
         internal
         pure
@@ -176,10 +161,111 @@ library Secp256k1Arithmetic {
         return point.x == other.x && point.y == other.y;
     }
 
+    //----------------------------------
+    // Addition
+
+    function addAffinePoint(AffinePoint memory point, AffinePoint memory other)
+        internal
+        pure
+        returns (AffinePoint memory)
+    {
+        JacobianPoint memory jSum;
+        JacobianPoint memory jPoint = point.toJacobianPoint();
+
+        if (point.equals(other)) {
+            jSum = jPoint.double();
+        } else {
+            jSum = jPoint.add(other.toJacobianPoint());
+        }
+
+        return jSum.intoAffinePoint();
+    }
+
     //--------------------------------------------------------------------------
     // Projective Point
     //
-    // Coming soon...
+    // Current functionality implemented from TODO: [ecmul] by Jordi.
+
+    function mul(JacobianPoint memory jacPoint, uint scalar)
+        internal
+        pure
+        returns (JacobianPoint memory)
+    {
+        if (scalar == 0) {
+            return ZeroPoint().toJacobianPoint();
+        }
+
+        JacobianPoint memory copy = jacPoint;
+        JacobianPoint memory product = ZeroPoint().toJacobianPoint();
+
+        while (scalar != 0) {
+            if (scalar & 1 == 1) {
+                product = product.add(copy);
+            }
+            scalar /= 2;
+            copy = copy.double();
+        }
+
+        return product;
+    }
+
+    function add(JacobianPoint memory jacPoint, JacobianPoint memory other)
+        internal
+        pure
+        returns (JacobianPoint memory)
+    {
+        if ((jacPoint.x | jacPoint.y) == 0) {
+            return other;
+        }
+        if ((other.x | other.y) == 0) {
+            return jacPoint;
+        }
+
+        JacobianPoint memory sum;
+        uint l;
+        uint lz;
+        uint da;
+        uint db;
+
+        if (jacPoint.x == other.x && jacPoint.y == other.y) {
+            (l, lz) = _mul(jacPoint.x, jacPoint.z, jacPoint.x, jacPoint.z);
+            (l, lz) = _mul(l, lz, 3, 1);
+            (l, lz) = _add(l, lz, A, 1);
+
+            (da, db) = _mul(jacPoint.y, jacPoint.z, 2, 1);
+        } else {
+            (l, lz) = _sub(other.y, other.z, jacPoint.y, jacPoint.z);
+            (da, db) = _sub(other.x, other.z, jacPoint.x, jacPoint.z);
+        }
+
+        (l, lz) = _div(l, lz, da, db);
+
+        (sum.x, da) = _mul(l, lz, l, lz);
+        (sum.x, da) = _sub(sum.x, da, jacPoint.x, jacPoint.z);
+        (sum.x, da) = _sub(sum.x, da, other.x, other.z);
+
+        (sum.y, db) = _sub(jacPoint.x, jacPoint.z, sum.x, da);
+        (sum.y, db) = _mul(sum.y, db, l, lz);
+        (sum.y, db) = _sub(sum.y, db, jacPoint.y, jacPoint.z);
+
+        if (da != db) {
+            sum.x = mulmod(sum.x, db, P);
+            sum.y = mulmod(sum.y, da, P);
+            sum.z = mulmod(da, db, P);
+        } else {
+            sum.z = da;
+        }
+
+        return sum;
+    }
+
+    function double(JacobianPoint memory jacPoint)
+        internal
+        pure
+        returns (JacobianPoint memory)
+    {
+        return jacPoint.add(jacPoint);
+    }
 
     //--------------------------------------------------------------------------
     // (De)Serialization
@@ -317,5 +403,52 @@ library Secp256k1Arithmetic {
         }
 
         return mulmod(x, xInv, P) == 1;
+    }
+
+    //--------------------------------------------------------------------------
+    // Private Functions
+
+    function _add(uint x1, uint z1, uint x2, uint z2)
+        private
+        pure
+        returns (uint, uint)
+    {
+        uint x3 = addmod(mulmod(z2, x1, P), mulmod(x2, z1, P), P);
+        uint z3 = mulmod(z1, z2, P);
+
+        return (x3, z3);
+    }
+
+    function _sub(uint x1, uint z1, uint x2, uint z2)
+        private
+        pure
+        returns (uint, uint)
+    {
+        uint x3 = addmod(mulmod(z2, x1, P), mulmod(P - x2, z1, P), P);
+        uint z3 = mulmod(z1, z2, P);
+
+        return (x3, z3);
+    }
+
+    function _mul(uint x1, uint z1, uint x2, uint z2)
+        private
+        pure
+        returns (uint, uint)
+    {
+        uint x3 = mulmod(x1, x2, P);
+        uint z3 = mulmod(z1, z2, P);
+
+        return (x3, z3);
+    }
+
+    function _div(uint x1, uint z1, uint x2, uint z2)
+        private
+        pure
+        returns (uint, uint)
+    {
+        uint x3 = mulmod(x1, z2, P);
+        uint z3 = mulmod(z1, x2, P);
+
+        return (x3, z3);
     }
 }
