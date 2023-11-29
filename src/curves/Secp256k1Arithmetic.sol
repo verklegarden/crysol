@@ -12,12 +12,12 @@
 pragma solidity ^0.8.16;
 
 /**
- * @notice AffinePoint is a secp256k1 point in Affine coordinates
+ * @notice Point is a secp256k1 point in Affine coordinates
  *
  * @dev The point at infinity is represented via:
  *          x = y = type(uint).max
  */
-struct AffinePoint {
+struct Point {
     uint x;
     uint y;
 }
@@ -50,7 +50,7 @@ struct JacobianPoint {
  * @author Inspired by Chronicle Protocol's Scribe (https://github.com/chronicleprotocol/scribe)
  */
 library Secp256k1Arithmetic {
-    using Secp256k1Arithmetic for AffinePoint;
+    using Secp256k1Arithmetic for Point;
     using Secp256k1Arithmetic for JacobianPoint;
 
     //--------------------------------------------------------------------------
@@ -65,9 +65,9 @@ library Secp256k1Arithmetic {
     uint internal constant P =
         0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFEFFFFFC2F;
 
-    /// @dev The generator G as AffinePoint.
-    function G() internal pure returns (AffinePoint memory) {
-        return AffinePoint(
+    /// @dev The generator G as Point.
+    function G() internal pure returns (Point memory) {
+        return Point(
             0x79be667ef9dcbbac55a06295ce870b07029bfcdb2dce28d959f2815b16f81798,
             0x483ada7726a3c4655da4fbfc0e1108a8fd17b448a68554199c47d08ffb10d4b8
         );
@@ -81,22 +81,18 @@ library Secp256k1Arithmetic {
     //--------------------------------------------------------------------------
 
     //--------------------------------------------------------------------------
-    // Affine Point
+    // Point
 
     /// @dev Returns the zero point.
     ///
     /// @dev Note that the zero point is invalid and this function only provided
     ///      for convenience.
-    function ZeroPoint() internal pure returns (AffinePoint memory) {
-        return AffinePoint(0, 0);
+    function ZeroPoint() internal pure returns (Point memory) {
+        return Point(0, 0);
     }
 
-    /// @dev Returns whether Affine point `point` is the zero point.
-    function isZeroPoint(AffinePoint memory point)
-        internal
-        pure
-        returns (bool)
-    {
+    /// @dev Returns whether point `point` is the zero point.
+    function isZeroPoint(Point memory point) internal pure returns (bool) {
         return (point.x | point.y) == 0;
     }
 
@@ -104,15 +100,15 @@ library Secp256k1Arithmetic {
     ///
     /// @dev Note that point at infinity is represented via:
     ///         point.x = point.y = type(uint).max
-    function PointAtInfinity() internal pure returns (AffinePoint memory) {
-        return AffinePoint(type(uint).max, type(uint).max);
+    function PointAtInfinity() internal pure returns (Point memory) {
+        return Point(type(uint).max, type(uint).max);
     }
 
-    /// @dev Returns whether Affine point `point` is the point at infinity.
+    /// @dev Returns whether point `point` is the point at infinity.
     ///
     /// @dev Note that point at infinity is represented via:
     ///         point.x = point.y = type(uint).max
-    function isPointAtInfinity(AffinePoint memory point)
+    function isPointAtInfinity(Point memory point)
         internal
         pure
         returns (bool)
@@ -120,13 +116,13 @@ library Secp256k1Arithmetic {
         return (point.x & point.y) == type(uint).max;
     }
 
-    /// @dev Returns whether Affine point `point` is a point on the curve.
+    /// @dev Returns whether point `point` is on the curve.
     ///
     /// @dev Note that secp256k1 curve is specified as y² ≡ x³ + ax + b (mod P)
     ///      where:
     ///         a = 0
     ///         b = 7
-    function isOnCurve(AffinePoint memory point) internal pure returns (bool) {
+    function isOnCurve(Point memory point) internal pure returns (bool) {
         uint left = mulmod(point.y, point.y, P);
         // Note that adding a * x can be waived as ∀x: a * x = 0.
         uint right =
@@ -135,13 +131,13 @@ library Secp256k1Arithmetic {
         return left == right;
     }
 
-    /// @dev Returns the parity of Affine point `point`'s y coordinate.
+    /// @dev Returns the parity of point `point`'s y coordinate.
     ///
     /// @dev The value 0 represents an even y value and 1 represents an odd y
     ///      value.
     ///
     ///      See "Appendix F: Signing Transactions" in [Yellow Paper].
-    function yParity(AffinePoint memory point) internal pure returns (uint) {
+    function yParity(Point memory point) internal pure returns (uint) {
         return point.y & 1;
     }
 
@@ -154,10 +150,10 @@ library Secp256k1Arithmetic {
     // (De)Serialization
 
     //----------------------------------
-    // Affine Point
+    // Point
 
-    /// @dev Returns Affine point `point` as Jacobian point.
-    function toJacobianPoint(AffinePoint memory point)
+    /// @dev Returns point `point` as Jacobian point.
+    function toJacobianPoint(Point memory point)
         internal
         pure
         returns (JacobianPoint memory)
@@ -169,10 +165,10 @@ library Secp256k1Arithmetic {
     // Jacobian Point
 
     /// @dev Mutates Jacobian point `jacPoint` to Affine point.
-    function intoAffinePoint(JacobianPoint memory jacPoint)
+    function intoPoint(JacobianPoint memory jacPoint)
         internal
         pure
-        returns (AffinePoint memory)
+        returns (Point memory)
     {
         // Compute z⁻¹, i.e. the modular inverse of jacPoint.z.
         uint zInv = modularInverseOf(jacPoint.z);
@@ -194,9 +190,9 @@ library Secp256k1Arithmetic {
             mstore(add(jacPoint, 0x20), y)
         }
 
-        // Return as AffinePoint(jacPoint.x, jacPoint.y).
+        // Return as Point(jacPoint.x, jacPoint.y).
         // Note that jacPoint.z is from now on dirty memory!
-        AffinePoint memory point;
+        Point memory point;
         assembly ("memory-safe") {
             point := jacPoint
         }

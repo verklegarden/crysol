@@ -6,7 +6,7 @@ import {console2 as console} from "forge-std/console2.sol";
 
 import {
     Secp256k1Arithmetic,
-    AffinePoint,
+    Point,
     JacobianPoint
 } from "src/curves/Secp256k1Arithmetic.sol";
 import {Secp256k1, PrivateKey, PublicKey} from "src/curves/Secp256k1.sol";
@@ -15,7 +15,7 @@ import {Secp256k1, PrivateKey, PublicKey} from "src/curves/Secp256k1.sol";
  * @notice Secp256k1Arithmetic Unit Tests
  */
 contract Secp256k1ArithmeticTest is Test {
-    using Secp256k1Arithmetic for AffinePoint;
+    using Secp256k1Arithmetic for Point;
     using Secp256k1Arithmetic for JacobianPoint;
 
     using Secp256k1 for PrivateKey;
@@ -28,7 +28,7 @@ contract Secp256k1ArithmeticTest is Test {
     }
 
     //--------------------------------------------------------------------------
-    // Test: Affine Point
+    // Test: Point
 
     // -- ZeroPoint
 
@@ -38,9 +38,7 @@ contract Secp256k1ArithmeticTest is Test {
 
     // -- isZeroPoint
 
-    function testFuzz_AffinePoint_isZeroPoint(AffinePoint memory point)
-        public
-    {
+    function testFuzz_Point_isZeroPoint(Point memory point) public {
         if (point.x == 0 && point.y == 0) {
             assertTrue(wrapper.isZeroPoint(point));
         } else {
@@ -56,9 +54,7 @@ contract Secp256k1ArithmeticTest is Test {
 
     // -- isPointAtInfinity
 
-    function testFuzz_AffinePoint_isPointAtInfinity(AffinePoint memory point)
-        public
-    {
+    function testFuzz_Point_isPointAtInfinity(Point memory point) public {
         if (point.x == type(uint).max && point.y == type(uint).max) {
             assertTrue(wrapper.isPointAtInfinity(point));
         } else {
@@ -68,37 +64,37 @@ contract Secp256k1ArithmeticTest is Test {
 
     // -- isOnCurve
 
-    function testVectors_AffinePoint_isOnCurve() public {
+    function testVectors_Point_isOnCurve() public {
         assertTrue(wrapper.isOnCurve(wrapper.G()));
 
         // TODO: Test some more points.
     }
 
-    function testFuzz_AffinePoint_isOnCurve(PrivateKey privKey) public {
+    function testFuzz_Point_isOnCurve(PrivateKey privKey) public {
         vm.assume(privKey.isValid());
 
-        AffinePoint memory point = privKey.toPublicKey().intoAffinePoint();
+        Point memory point = privKey.toPublicKey().intoPoint();
 
         assertTrue(wrapper.isOnCurve(point));
     }
 
     // -- yParity
 
-    function testFuzz_AffinePoint_yParity(uint x, uint y) public {
+    function testFuzz_Point_yParity(uint x, uint y) public {
         // yParity is 0 if y is even and 1 if y is odd.
         uint want = y % 2 == 0 ? 0 : 1;
-        uint got = wrapper.yParity(AffinePoint(x, y));
+        uint got = wrapper.yParity(Point(x, y));
 
         assertEq(want, got);
     }
 
     // -- toJacobianPoint
 
-    function testFuzz_AffinePoint_toJacobianPoint(PrivateKey privKey) public {
+    function testFuzz_Point_toJacobianPoint(PrivateKey privKey) public {
         vm.assume(privKey.isValid());
 
-        AffinePoint memory want = privKey.toPublicKey().intoAffinePoint();
-        AffinePoint memory got = wrapper.toJacobianPoint(want).intoAffinePoint();
+        Point memory want = privKey.toPublicKey().intoPoint();
+        Point memory got = wrapper.toJacobianPoint(want).intoPoint();
 
         assertEq(want.x, got.x);
         assertEq(want.y, got.y);
@@ -109,13 +105,11 @@ contract Secp256k1ArithmeticTest is Test {
 
     // TODO: Test no new memory allocation.
     // TODO: Not a real test. Use vectors from Paul Miller.
-    function testFuzz_JacobianPoint_intoAffinePoint(PrivateKey privKey)
-        public
-    {
+    function testFuzz_JacobianPoint_intoPoint(PrivateKey privKey) public {
         vm.assume(privKey.isValid());
 
-        AffinePoint memory want = privKey.toPublicKey().intoAffinePoint();
-        AffinePoint memory got = wrapper.intoAffinePoint(want.toJacobianPoint());
+        Point memory want = privKey.toPublicKey().intoPoint();
+        Point memory got = wrapper.intoPoint(want.toJacobianPoint());
 
         assertEq(want.x, got.x);
         assertEq(want.y, got.y);
@@ -218,44 +212,40 @@ contract Secp256k1ArithmeticTest is Test {
  * @dev For more info, see https://github.com/foundry-rs/foundry/pull/3128#issuecomment-1241245086.
  */
 contract Secp256k1ArithmeticWrapper {
-    using Secp256k1Arithmetic for AffinePoint;
+    using Secp256k1Arithmetic for Point;
     using Secp256k1Arithmetic for JacobianPoint;
 
     //--------------------------------------------------------------------------
     // Constants
 
-    function G() public pure returns (AffinePoint memory) {
+    function G() public pure returns (Point memory) {
         return Secp256k1Arithmetic.G();
     }
 
     //--------------------------------------------------------------------------
-    // Affine Point
+    // Point
 
-    function ZeroPoint() public pure returns (AffinePoint memory) {
+    function ZeroPoint() public pure returns (Point memory) {
         return Secp256k1Arithmetic.ZeroPoint();
     }
 
-    function isZeroPoint(AffinePoint memory point) public pure returns (bool) {
+    function isZeroPoint(Point memory point) public pure returns (bool) {
         return point.isZeroPoint();
     }
 
-    function PointAtInfinity() public pure returns (AffinePoint memory) {
+    function PointAtInfinity() public pure returns (Point memory) {
         return Secp256k1Arithmetic.PointAtInfinity();
     }
 
-    function isPointAtInfinity(AffinePoint memory point)
-        public
-        pure
-        returns (bool)
-    {
+    function isPointAtInfinity(Point memory point) public pure returns (bool) {
         return point.isPointAtInfinity();
     }
 
-    function isOnCurve(AffinePoint memory point) public pure returns (bool) {
+    function isOnCurve(Point memory point) public pure returns (bool) {
         return point.isOnCurve();
     }
 
-    function yParity(AffinePoint memory point) public pure returns (uint) {
+    function yParity(Point memory point) public pure returns (uint) {
         return point.yParity();
     }
 
@@ -263,9 +253,9 @@ contract Secp256k1ArithmeticWrapper {
     // (De)Serialization
 
     //----------------------------------
-    // Affine Point
+    // Point
 
-    function toJacobianPoint(AffinePoint memory point)
+    function toJacobianPoint(Point memory point)
         public
         pure
         returns (JacobianPoint memory)
@@ -276,12 +266,12 @@ contract Secp256k1ArithmeticWrapper {
     //----------------------------------
     // Jacobian Point
 
-    function intoAffinePoint(JacobianPoint memory jacPoint)
+    function intoPoint(JacobianPoint memory jacPoint)
         public
         pure
-        returns (AffinePoint memory)
+        returns (Point memory)
     {
-        return jacPoint.intoAffinePoint();
+        return jacPoint.intoPoint();
     }
 
     //--------------------------------------------------------------------------

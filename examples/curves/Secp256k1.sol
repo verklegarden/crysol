@@ -5,7 +5,7 @@ import {Script} from "forge-std/Script.sol";
 import {console2 as console} from "forge-std/console2.sol";
 
 import {Secp256k1, PrivateKey, PublicKey} from "src/curves/Secp256k1.sol";
-import {Secp256k1Arithmetic, AffinePoint, JacobianPoint} from "src/curves/Secp256k1Arithmetic.sol";
+import {Secp256k1Arithmetic, Point, JacobianPoint} from "src/curves/Secp256k1Arithmetic.sol";
 
 contract Secp256k1Example is Script {
     using Secp256k1 for PrivateKey;
@@ -20,7 +20,7 @@ contract Secp256k1Example is Script {
 
         // Arithmetic types.
         // into() -> no memory allocation, to() -> new memory allocation
-        AffinePoint memory point = pubKey.intoAffinePoint();
+        Point memory point = pubKey.intoPoint();
         JacobianPoint memory jacPoint = pubKey.toJacobianPoint();
 
         // Print some stuff.

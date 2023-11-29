@@ -15,7 +15,7 @@ import {Vm} from "forge-std/Vm.sol";
 
 import {
     Secp256k1Arithmetic,
-    AffinePoint,
+    Point,
     JacobianPoint
 } from "./Secp256k1Arithmetic.sol";
 
@@ -77,8 +77,8 @@ struct PublicKey {
 library Secp256k1 {
     using Secp256k1 for PrivateKey;
     using Secp256k1 for PublicKey;
-    using Secp256k1 for AffinePoint;
-    using Secp256k1Arithmetic for AffinePoint;
+    using Secp256k1 for Point;
+    using Secp256k1Arithmetic for Point;
 
     // ~~~~~~~ Prelude ~~~~~~~
     // forgefmt: disable-start
@@ -103,7 +103,7 @@ library Secp256k1 {
 
     /// @dev The generator G as PublicKey.
     function G() internal pure returns (PublicKey memory) {
-        AffinePoint memory g = Secp256k1Arithmetic.G();
+        Point memory g = Secp256k1Arithmetic.G();
 
         return PublicKey(g.x, g.y);
     }
@@ -209,7 +209,7 @@ library Secp256k1 {
 
     /// @dev Returns whether public key `pubKey` is a valid secp256k1 public key.
     function isValid(PublicKey memory pubKey) internal pure returns (bool) {
-        return pubKey.intoAffinePoint().isOnCurve();
+        return pubKey.intoPoint().isOnCurve();
     }
 
     /// @dev Returns the y parity of public key `pubKey`.
@@ -219,16 +219,16 @@ library Secp256k1 {
     ///
     ///      See "Appendix F: Signing Transactions" in the Yellow Paper.
     function yParity(PublicKey memory pubKey) internal pure returns (uint) {
-        return pubKey.intoAffinePoint().yParity();
+        return pubKey.intoPoint().yParity();
     }
 
-    /// @dev Mutates public key `pubKey` to Affine Point.
-    function intoAffinePoint(PublicKey memory pubKey)
+    /// @dev Mutates public key `pubKey` to Affine point.
+    function intoPoint(PublicKey memory pubKey)
         internal
         pure
-        returns (AffinePoint memory)
+        returns (Point memory)
     {
-        AffinePoint memory point;
+        Point memory point;
         assembly ("memory-safe") {
             point := pubKey
         }
@@ -236,7 +236,7 @@ library Secp256k1 {
     }
 
     /// @dev Mutates Affine point `point` to Public Key.
-    function intoPublicKey(AffinePoint memory point)
+    function intoPublicKey(Point memory point)
         internal
         pure
         returns (PublicKey memory)

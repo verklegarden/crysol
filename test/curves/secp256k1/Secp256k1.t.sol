@@ -7,7 +7,7 @@ import {console2 as console} from "forge-std/console2.sol";
 import {Secp256k1, PrivateKey, PublicKey} from "src/curves/Secp256k1.sol";
 import {
     Secp256k1Arithmetic,
-    AffinePoint,
+    Point,
     JacobianPoint
 } from "src/curves/Secp256k1Arithmetic.sol";
 
@@ -157,23 +157,19 @@ contract Secp256k1Test is Test {
         assertEq(want, got);
     }
 
-    // -- intoAffinePoint
+    // -- intoPoint
 
     // @todo Add no memory expansion tests for `into__()` functions.
     //       Must directly use library, not wrapper.
 
-    function testFuzz_PublicKey_intoAffinePoint(PublicKey memory pubKey)
-        public
-    {
-        AffinePoint memory point = wrapper.intoAffinePoint(pubKey);
+    function testFuzz_PublicKey_intoPoint(PublicKey memory pubKey) public {
+        Point memory point = wrapper.intoPoint(pubKey);
 
         assertEq(point.x, pubKey.x);
         assertEq(point.y, pubKey.y);
     }
 
-    function testFuzz_AffinePoint_intoPublicKey(AffinePoint memory point)
-        public
-    {
+    function testFuzz_Point_intoPublicKey(Point memory point) public {
         PublicKey memory pubKey = wrapper.intoPublicKey(point);
 
         assertEq(pubKey.x, point.x);
@@ -352,8 +348,8 @@ contract Secp256k1Test is Test {
 contract Secp256k1Wrapper {
     using Secp256k1 for PrivateKey;
     using Secp256k1 for PublicKey;
-    using Secp256k1 for AffinePoint;
-    using Secp256k1Arithmetic for AffinePoint;
+    using Secp256k1 for Point;
+    using Secp256k1Arithmetic for Point;
 
     //--------------------------------------------------------------------------
     // Constants
@@ -407,15 +403,15 @@ contract Secp256k1Wrapper {
         return pubKey.yParity();
     }
 
-    function intoAffinePoint(PublicKey memory pubKey)
+    function intoPoint(PublicKey memory pubKey)
         public
         pure
-        returns (AffinePoint memory)
+        returns (Point memory)
     {
-        return pubKey.intoAffinePoint();
+        return pubKey.intoPoint();
     }
 
-    function intoPublicKey(AffinePoint memory point)
+    function intoPublicKey(Point memory point)
         public
         pure
         returns (PublicKey memory)
