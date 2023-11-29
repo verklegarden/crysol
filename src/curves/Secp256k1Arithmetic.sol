@@ -11,7 +11,6 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.16;
 
-// TODO: Rename to Point?
 // TODO: Represent point at infinity via zero point?
 /**
  * @notice Point is a secp256k1 point in affine coordinates
@@ -27,8 +26,19 @@ struct Point {
 /**
  * @notice ProjectivePoint is a secp256k1 point in projective coordinates
  *
+<<<<<<< HEAD
  * @dev A projective point represents an affine point (x, y) as (X, Y, Z)
  *      satisfying the following equations:
+||||||| parent of cc6390d (getting there...)
+ * @dev Jacobian point represents Affine point (x, y) as (X, Y, Z) satisfying
+ *      the following equations:
+=======
+ * @dev TODO Note to only use Jacobian Point if you know what you're doing.
+ *           If not, use more user-friendly Point functions.
+ *
+ * @dev Jacobian point represents Affine point (x, y) as (X, Y, Z) satisfying
+ *      the following equations:
+>>>>>>> cc6390d (getting there...)
  *          x = X / Z²
  *          y = Y / Z³
  */
@@ -153,7 +163,7 @@ library Secp256k1Arithmetic {
         return point.y & 1;
     }
 
-    function equals(AffinePoint memory point, AffinePoint memory other)
+    function equals(Point memory point, Point memory other)
         internal
         pure
         returns (bool)
@@ -164,11 +174,22 @@ library Secp256k1Arithmetic {
     //----------------------------------
     // Addition
 
-    function addAffinePoint(AffinePoint memory point, AffinePoint memory other)
+    /// @dev Returns new point being the sum of points `point` and `other`.
+    ///
+    /// @dev TODO Note about performance. intoPoint() conversion is expensive.
+    ///           Also created new point struct in memory.
+    function add(Point memory point, Point memory other)
         internal
         pure
-        returns (AffinePoint memory)
+        returns (Point memory)
     {
+        if (!point.isOnCurve()) {
+            revert("PointNotOnCurve(point)");
+        }
+        if (!other.isOnCurve()) {
+            revert("PointNotOnCurve(other)");
+        }
+
         JacobianPoint memory jSum;
         JacobianPoint memory jPoint = point.toJacobianPoint();
 
@@ -178,7 +199,23 @@ library Secp256k1Arithmetic {
             jSum = jPoint.add(other.toJacobianPoint());
         }
 
-        return jSum.intoAffinePoint();
+        return jSum.intoPoint();
+    }
+
+    function mul(Point memory point, uint scalar)
+        internal
+        pure
+        returns (Point memory)
+    {
+        if (!point.isOnCurve()) {
+            revert("PointNotOnCurve(point)");
+        }
+
+        if (point.isPointAtInfinity() || scalar == 0) {
+            return PointAtInfinity();
+        }
+
+        return point.toJacobianPoint().jMul(scalar).intoPoint();
     }
 
     //--------------------------------------------------------------------------
@@ -186,7 +223,9 @@ library Secp256k1Arithmetic {
     //
     // Current functionality implemented from TODO: [ecmul] by Jordi.
 
-    function mul(JacobianPoint memory jacPoint, uint scalar)
+    // DANGER: Very dangerous.
+
+    function jMul(JacobianPoint memory jPoint, uint scalar)
         internal
         pure
         returns (JacobianPoint memory)
@@ -195,7 +234,7 @@ library Secp256k1Arithmetic {
             return ZeroPoint().toJacobianPoint();
         }
 
-        JacobianPoint memory copy = jacPoint;
+        JacobianPoint memory copy = jPoint;
         JacobianPoint memory product = ZeroPoint().toJacobianPoint();
 
         while (scalar != 0) {
@@ -209,16 +248,16 @@ library Secp256k1Arithmetic {
         return product;
     }
 
-    function add(JacobianPoint memory jacPoint, JacobianPoint memory other)
+    function add(JacobianPoint memory jPoint, JacobianPoint memory other)
         internal
         pure
         returns (JacobianPoint memory)
     {
-        if ((jacPoint.x | jacPoint.y) == 0) {
+        if ((jPoint.x | jPoint.y) == 0) {
             return other;
         }
         if ((other.x | other.y) == 0) {
-            return jacPoint;
+            return jPoint;
         }
 
         JacobianPoint memory sum;
@@ -227,26 +266,26 @@ library Secp256k1Arithmetic {
         uint da;
         uint db;
 
-        if (jacPoint.x == other.x && jacPoint.y == other.y) {
-            (l, lz) = _mul(jacPoint.x, jacPoint.z, jacPoint.x, jacPoint.z);
+        if (jPoint.x == other.x && jPoint.y == other.y) {
+            (l, lz) = _mul(jPoint.x, jPoint.z, jPoint.x, jPoint.z);
             (l, lz) = _mul(l, lz, 3, 1);
             (l, lz) = _add(l, lz, A, 1);
 
-            (da, db) = _mul(jacPoint.y, jacPoint.z, 2, 1);
+            (da, db) = _mul(jPoint.y, jPoint.z, 2, 1);
         } else {
-            (l, lz) = _sub(other.y, other.z, jacPoint.y, jacPoint.z);
-            (da, db) = _sub(other.x, other.z, jacPoint.x, jacPoint.z);
+            (l, lz) = _sub(other.y, other.z, jPoint.y, jPoint.z);
+            (da, db) = _sub(other.x, other.z, jPoint.x, jPoint.z);
         }
 
         (l, lz) = _div(l, lz, da, db);
 
         (sum.x, da) = _mul(l, lz, l, lz);
-        (sum.x, da) = _sub(sum.x, da, jacPoint.x, jacPoint.z);
+        (sum.x, da) = _sub(sum.x, da, jPoint.x, jPoint.z);
         (sum.x, da) = _sub(sum.x, da, other.x, other.z);
 
-        (sum.y, db) = _sub(jacPoint.x, jacPoint.z, sum.x, da);
+        (sum.y, db) = _sub(jPoint.x, jPoint.z, sum.x, da);
         (sum.y, db) = _mul(sum.y, db, l, lz);
-        (sum.y, db) = _sub(sum.y, db, jacPoint.y, jacPoint.z);
+        (sum.y, db) = _sub(sum.y, db, jPoint.y, jPoint.z);
 
         if (da != db) {
             sum.x = mulmod(sum.x, db, P);
@@ -259,12 +298,12 @@ library Secp256k1Arithmetic {
         return sum;
     }
 
-    function double(JacobianPoint memory jacPoint)
+    function double(JacobianPoint memory jPoint)
         internal
         pure
         returns (JacobianPoint memory)
     {
-        return jacPoint.add(jacPoint);
+        return jPoint.add(jPoint);
     }
 
     //--------------------------------------------------------------------------

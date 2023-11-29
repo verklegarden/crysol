@@ -14,11 +14,7 @@ pragma solidity ^0.8.16;
 import {Vm} from "forge-std/Vm.sol";
 
 import {Secp256k1, PrivateKey, PublicKey} from "../curves/Secp256k1.sol";
-import {
-    Secp256k1Arithmetic,
-    AffinePoint,
-    JacobianPoint
-} from "../curves/Secp256k1Arithmetic.sol";
+import {Secp256k1Arithmetic, Point} from "../curves/Secp256k1Arithmetic.sol";
 
 uint constant SCHEME_ID = 1;
 
@@ -36,9 +32,8 @@ struct StealthAddress {
 library StealthSecp256k1 {
     using Secp256k1 for PrivateKey;
     using Secp256k1 for PublicKey;
-    using Secp256k1 for AffinePoint;
-    using Secp256k1Arithmetic for AffinePoint;
-    using Secp256k1Arithmetic for JacobianPoint;
+    using Secp256k1 for Point;
+    using Secp256k1Arithmetic for Point;
 
     // Stealth Meta Addresses
 
@@ -68,9 +63,8 @@ library StealthSecp256k1 {
         // Compute shared secret.
         // forgefmt: disable-next-item
         PublicKey memory sharedPubKey = sma.viewingPubKey
-                                            .toJacobianPoint()
+                                            .intoPoint()
                                             .mul(ephemeralPrivKey.asUint())
-                                            .intoAffinePoint()
                                             .intoPublicKey();
 
         // TODO: EIP not exact: sharedSecret must be bounded to field.
@@ -89,10 +83,9 @@ library StealthSecp256k1 {
         // Compute recipients public key.
         // forgefmt: disable-next-item
         PublicKey memory recipientPubKey = sma.spendingPubKey
-                                                .toJacobianPoint()
+                                                .intoPoint()
                                                 .add(sharedSecretPubKey
-                                                        .toJacobianPoint())
-                                                .intoAffinePoint()
+                                                        .intoPoint())
                                                 .intoPublicKey();
 
         // Derive recipients address from their public key.
@@ -112,9 +105,8 @@ library StealthSecp256k1 {
         // Compute shared secret.
         // forgefmt: disable-next-item
         PublicKey memory sharedPubKey = stealthAddress.ephemeralPubKey
-                                            .toJacobianPoint()
+                                            .intoPoint()
                                             .mul(viewingPrivKey.asUint())
-                                            .intoAffinePoint()
                                             .intoPublicKey();
 
         // TODO: EIP not exact: sharedSecret must be bound to field.
@@ -136,11 +128,10 @@ library StealthSecp256k1 {
         // Compute recipients public key.
         // forgefmt: disable-next-item
         PublicKey memory recipientPubKey = spendingPubKey
-                                            .toJacobianPoint()
-                                            .add(sharedSecretPubKey
-                                                    .toJacobianPoint())
-                                            .intoAffinePoint()
-                                            .intoPublicKey();
+                                                .intoPoint()
+                                                .add(sharedSecretPubKey
+                                                        .intoPoint())
+                                                .intoPublicKey();
 
         // Derive recipients address from their public key.
         address recipientAddr = recipientPubKey.toAddress();
@@ -160,9 +151,8 @@ library StealthSecp256k1 {
         // Compute shared secret.
         // forgefmt: disable-next-item
         PublicKey memory sharedPubKey = stealthAddress.ephemeralPubKey
-                                            .toJacobianPoint()
+                                            .intoPoint()
                                             .mul(viewingPrivKey.asUint())
-                                            .intoAffinePoint()
                                             .intoPublicKey();
 
         // TODO: EIP not exact: sharedSecret must be bounded to field.
