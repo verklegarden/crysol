@@ -116,9 +116,20 @@ library Secp256k1Arithmetic {
     ///
     /// @dev Note that the identity is represented via:
     ///         point.x = point.y = type(uint).max
+<<<<<<< HEAD
     ///
     /// @dev Note that the identity is also called point at infinity.
     function Identity() internal pure returns (Point memory) {
+||||||| parent of 8b86dc3 (Finishing up arithmetic - still untested)
+    function PointAtInfinity() internal pure returns (Point memory) {
+=======
+    ///
+    /// @dev Note that the point at infinity serves as identity element with
+    ///      following rules:
+    ///         ∀ p ∊ Point: p.isOnCurve() → (p + PointAtInfinity() = p)
+    ///         ∀ x ∊ Uint: [s]PointAtInfinity() = PointAtInfinity()
+    function PointAtInfinity() internal pure returns (Point memory) {
+>>>>>>> 8b86dc3 (Finishing up arithmetic - still untested)
         return Point(type(uint).max, type(uint).max);
     }
 
@@ -138,15 +149,28 @@ library Secp256k1Arithmetic {
     ///      where:
     ///         a = 0
     ///         b = 7
+<<<<<<< HEAD
     ///
     /// @dev Note that the identity is also on the curve.
+||||||| parent of 8b86dc3 (Finishing up arithmetic - still untested)
+=======
+    ///
+    /// @dev Note that the point at infinity is also on the curve.
+>>>>>>> 8b86dc3 (Finishing up arithmetic - still untested)
     function isOnCurve(Point memory point) internal pure returns (bool) {
+<<<<<<< HEAD
         if (point.isIdentity()) {
+||||||| parent of 8b86dc3 (Finishing up arithmetic - still untested)
+        // TODO: Point at infinity on curve?
+        if (point.isPointAtInfinity()) {
+=======
+        if (point.isPointAtInfinity()) {
+>>>>>>> 8b86dc3 (Finishing up arithmetic - still untested)
             return true;
         }
 
         uint left = mulmod(point.y, point.y, P);
-        // Note that adding a * x can be waived as ∀x: a * x = 0.
+        // Note that adding a * x can be waived as ∀ x: a * x = 0.
         uint right =
             addmod(mulmod(point.x, mulmod(point.x, point.x, P), P), B, P);
 
@@ -163,6 +187,7 @@ library Secp256k1Arithmetic {
         return point.y & 1;
     }
 
+    /// @dev Returns whether point `point` equals point `other`.
     function equals(Point memory point, Point memory other)
         internal
         pure
@@ -172,17 +197,21 @@ library Secp256k1Arithmetic {
     }
 
     //----------------------------------
-    // Addition
+    // Arithmetic
 
-    /// @dev Returns new point being the sum of points `point` and `other`.
+    /// @dev Returns a new point being the sum of points `point` and `other`.
     ///
     /// @dev TODO Note about performance. intoPoint() conversion is expensive.
     ///           Also created new point struct in memory.
+    ///
+    /// @dev Reverts if:
+    ///      - Point not on curve
     function add(Point memory point, Point memory other)
         internal
         pure
         returns (Point memory)
     {
+        // Revert if any point not on curve.
         if (!point.isOnCurve()) {
             revert("PointNotOnCurve(point)");
         }
@@ -190,18 +219,34 @@ library Secp256k1Arithmetic {
             revert("PointNotOnCurve(other)");
         }
 
+        // Catch addition with identity, ie point at infinity.
+        if (point.isPointAtInfinity()) {
+            return other;
+        }
+        if (other.isPointAtInfinity()) {
+            return point;
+        }
+
         JacobianPoint memory jSum;
         JacobianPoint memory jPoint = point.toJacobianPoint();
 
         if (point.equals(other)) {
-            jSum = jPoint.double();
+            jSum = _jDouble(jPoint);
         } else {
-            jSum = jPoint.add(other.toJacobianPoint());
+            jSum = _jAdd(jPoint, other.toJacobianPoint());
         }
 
         return jSum.intoPoint();
     }
 
+    /// @dev Returns a new point being the product of point `point` and scalar
+    ///      `scalar`.
+    ///
+    /// @dev TODO Note about performance. intoPoint() conversion is expensive.
+    ///           Also created new point struct in memory.
+    ///
+    /// @dev Reverts if:
+    ///      - Point not on curve
     function mul(Point memory point, uint scalar)
         internal
         pure
@@ -215,41 +260,177 @@ library Secp256k1Arithmetic {
             return PointAtInfinity();
         }
 
-        return point.toJacobianPoint().jMul(scalar).intoPoint();
+        JacobianPoint memory jProduct;
+        JacobianPoint memory jPoint = point.toJacobianPoint();
+
+        jProduct = _jMul(jPoint, scalar);
+
+        return jProduct.intoPoint();
+    }
+
+    //----------------------------------
+    // Type Conversion
+
+    /// @dev Returns point `point` as Jacobian point.
+    function toJacobianPoint(Point memory point)
+        internal
+        pure
+        returns (JacobianPoint memory)
+    {
+        return JacobianPoint(point.x, point.y, 1);
     }
 
     //--------------------------------------------------------------------------
     // Projective Point
     //
-    // Current functionality implemented from TODO: [ecmul] by Jordi.
+    // TODO: Jacobian arithmetic is private for now as they provide less
+    //       security guarantees.
+    //       If you need Jacobian functionality exposed, eg for performance
+    //       gains, let me know!
 
-    // DANGER: Very dangerous.
+    //----------------------------------
+    // Type Conversion
 
-    function jMul(JacobianPoint memory jPoint, uint scalar)
+    /// @dev Mutates Jacobian point `jPoint` to Affine point.
+    function intoPoint(JacobianPoint memory jPoint)
         internal
         pure
-        returns (JacobianPoint memory)
+        returns (Point memory)
     {
-        if (scalar == 0) {
-            return ZeroPoint().toJacobianPoint();
+        // Compute z⁻¹, i.e. the modular inverse of jPoint.z.
+        uint zInv = modularInverseOf(jPoint.z);
+
+        // Compute (z⁻¹)² (mod P)
+        uint zInv_2 = mulmod(zInv, zInv, P);
+
+        // Compute jPoint.x * (z⁻¹)² (mod P), i.e. the x coordinate of given
+        // Jacobian point in Affine representation.
+        uint x = mulmod(jPoint.x, zInv_2, P);
+
+        // Compute jPoint.y * (z⁻¹)³ (mod P), i.e. the y coordinate of given
+        // Jacobian point in Affine representation.
+        uint y = mulmod(jPoint.y, mulmod(zInv, zInv_2, P), P);
+
+        // Store x and y in jPoint.
+        assembly ("memory-safe") {
+            mstore(jPoint, x)
+            mstore(add(jPoint, 0x20), y)
         }
 
-        JacobianPoint memory copy = jPoint;
-        JacobianPoint memory product = ZeroPoint().toJacobianPoint();
-
-        while (scalar != 0) {
-            if (scalar & 1 == 1) {
-                product = product.add(copy);
-            }
-            scalar /= 2;
-            copy = copy.double();
+        // Return as Point(jPoint.x, jPoint.y).
+        // Note that jPoint.z is from now on dirty memory!
+        Point memory point;
+        assembly ("memory-safe") {
+            point := jPoint
         }
-
-        return product;
+        return point;
     }
 
-    function add(JacobianPoint memory jPoint, JacobianPoint memory other)
+    //--------------------------------------------------------------------------
+    // Utils
+
+    /// @dev Returns the modular inverse of `x` for modulo `P`.
+    ///
+    ///      The modular inverse of `x` is x⁻¹ such that x * x⁻¹ ≡ 1 (mod P).
+    ///
+    /// @dev Reverts if:
+    ///      - x not in [1, P)
+    ///
+    /// @dev Uses the Extended Euclidean Algorithm.
+    ///
+    /// @custom:invariant Terminates in finite time.
+    function modularInverseOf(uint x) internal pure returns (uint) {
+        // TODO: Refactor to use Fermats Little Theorem.
+        //       While generally less performant due to the modexp precompile
+        //       pricing its less cheaper in EVM context.
+        //       For more info, see page 4 in "Speeding up Elliptic Curve Computations for Ethereum Account Abstraction".
+
+        if (x == 0) {
+            revert("Modular inverse of zero does not exist");
+        }
+        if (x >= P) {
+            revert("NotAFieldElement(x)");
+        }
+
+        uint t;
+        uint q;
+        uint newT = 1;
+        uint r = P;
+
+        assembly ("memory-safe") {
+            // Implemented in assembly to circumvent division-by-zero
+            // and over-/underflow protection.
+            //
+            // Functionally equivalent Solidity code:
+            //      while (x != 0) {
+            //          q = r / x;
+            //          (t, newT) = (newT, addmod(t, (P - mulmod(q, newT, P)), P));
+            //          (r, x) = (x, r - (q * x));
+            //      }
+            //
+            // For the division r / x, x is guaranteed to not be zero via the
+            // loop condition.
+            //
+            // The subtraction of form P - mulmod(_, _, P) is guaranteed to not
+            // underflow due to the subtrahend being a (mod P) result,
+            // i.e. the subtrahend being guaranteed to be less than P.
+            //
+            // The subterm q * x is guaranteed to not overflow because
+            // q * x ≤ r due to q = ⎣r / x⎦.
+            //
+            // The term r - (q * x) is guaranteed to not underflow because
+            // q * x ≤ r and therefore r - (q * x) ≥ 0.
+            for {} x {} {
+                q := div(r, x)
+
+                let tmp := t
+                t := newT
+                newT := addmod(tmp, sub(P, mulmod(q, newT, P)), P)
+
+                tmp := r
+                r := x
+                x := sub(tmp, mul(q, x))
+            }
+        }
+
+        return t;
+    }
+
+    /// @dev Returns whether `xInv` is the modular inverse of `x`.
+    ///
+    /// @dev Note that there is no modular inverse for zero.
+    ///
+    /// @dev Reverts if:
+    ///      - x not in [1, P)
+    ///      - xInv not in [1, P)
+    function areModularInverse(uint x, uint xInv)
         internal
+        pure
+        returns (bool)
+    {
+        if (x >= P) {
+            revert("NotAFieldElement(x)");
+        }
+        if (xInv >= P) {
+            revert("NotAFieldElement(xInv)");
+        }
+
+        return mulmod(x, xInv, P) == 1;
+    }
+
+    //--------------------------------------------------------------------------
+    // Private Functions
+
+    //----------------------------------
+    // Affine Point
+    //
+    // Functionality stolen from Jordi Baylina's [ecsol](https://github.com/jbaylina/ecsol/blob/c2256afad126b7500e6f879a9369b100e47d435d/ec.sol).
+
+    /// @dev Assumptions:
+    ///      - Each point is either on the curve or the zero point
+    ///      - No point is the point at infinity
+    function _jAdd(JacobianPoint memory jPoint, JacobianPoint memory other)
+        private
         pure
         returns (JacobianPoint memory)
     {
@@ -298,14 +479,19 @@ library Secp256k1Arithmetic {
         return sum;
     }
 
-    function double(JacobianPoint memory jPoint)
+    /// @dev Assumptions:
+    ///      - Point is on the curve
+    ///      - Point is not the point at infinity
+    function _jDouble(JacobianPoint memory jPoint)
         internal
         pure
         returns (JacobianPoint memory)
     {
-        return jPoint.add(jPoint);
+        // TODO: There are faster doubling formulas.
+        return _jAdd(jPoint, jPoint);
     }
 
+<<<<<<< HEAD
     //--------------------------------------------------------------------------
     // (De)Serialization
 
@@ -315,12 +501,39 @@ library Secp256k1Arithmetic {
     /// @dev Returns point `point` as projective point.
     function toProjectivePoint(Point memory point)
         internal
+||||||| parent of 8b86dc3 (Finishing up arithmetic - still untested)
+    //--------------------------------------------------------------------------
+    // (De)Serialization
+
+    //----------------------------------
+    // Point
+
+    /// @dev Returns point `point` as Jacobian point.
+    function toJacobianPoint(Point memory point)
+        internal
+=======
+    /// @dev Assumptions:
+    ///      - Point is on the curve
+    ///      - Point is not the point at infinity
+    ///      - Scalar is not zero
+    function _jMul(JacobianPoint memory jPoint, uint scalar)
+        private
+>>>>>>> 8b86dc3 (Finishing up arithmetic - still untested)
         pure
         returns (ProjectivePoint memory)
     {
+<<<<<<< HEAD
         return ProjectivePoint(point.x, point.y, 1);
     }
+||||||| parent of 8b86dc3 (Finishing up arithmetic - still untested)
+        return JacobianPoint(point.x, point.y, 1);
+    }
+=======
+        JacobianPoint memory copy = jPoint;
+        JacobianPoint memory product = ZeroPoint().toJacobianPoint();
+>>>>>>> 8b86dc3 (Finishing up arithmetic - still untested)
 
+<<<<<<< HEAD
     //----------------------------------
     // Projective Point
 
@@ -422,12 +635,122 @@ library Secp256k1Arithmetic {
                 tmp := r
                 r := x
                 x := sub(tmp, mul(q, x))
-            }
+||||||| parent of 8b86dc3 (Finishing up arithmetic - still untested)
+    //----------------------------------
+    // Jacobian Point
+
+    /// @dev Mutates Jacobian point `jPoint` to Affine point.
+    function intoPoint(JacobianPoint memory jPoint)
+        internal
+        pure
+        returns (Point memory)
+    {
+        // Compute z⁻¹, i.e. the modular inverse of jPoint.z.
+        uint zInv = modularInverseOf(jPoint.z);
+
+        // Compute (z⁻¹)² (mod P)
+        uint zInv_2 = mulmod(zInv, zInv, P);
+
+        // Compute jPoint.x * (z⁻¹)² (mod P), i.e. the x coordinate of given
+        // Jacobian point in Affine representation.
+        uint x = mulmod(jPoint.x, zInv_2, P);
+
+        // Compute jPoint.y * (z⁻¹)³ (mod P), i.e. the y coordinate of given
+        // Jacobian point in Affine representation.
+        uint y = mulmod(jPoint.y, mulmod(zInv, zInv_2, P), P);
+
+        // Store x and y in jPoint.
+        assembly ("memory-safe") {
+            mstore(jPoint, x)
+            mstore(add(jPoint, 0x20), y)
         }
 
-        return t;
+        // Return as Point(jPoint.x, jPoint.y).
+        // Note that jPoint.z is from now on dirty memory!
+        Point memory point;
+        assembly ("memory-safe") {
+            point := jPoint
+        }
+        return point;
     }
 
+    //--------------------------------------------------------------------------
+    // Utils
+
+    // @todo Use Fermats Little Theorem. While generally less performant, it is
+    //       cheaper on EVM due to the modexp precompile.
+    //       See "Speeding up Elliptic Curve Computations for Ethereum Account Abstraction" page 4.
+
+    /// @dev Returns the modular inverse of `x` for modulo `P`.
+    ///
+    ///      The modular inverse of `x` is x⁻¹ such that x * x⁻¹ ≡ 1 (mod P).
+    ///
+    /// @dev Reverts if:
+    ///      - x not in [1, P)
+    ///
+    /// @dev Uses the Extended Euclidean Algorithm.
+    ///
+    /// @custom:invariant Terminates in finite time.
+    function modularInverseOf(uint x) internal pure returns (uint) {
+        if (x == 0) {
+            revert("Modular inverse of zero does not exist");
+        }
+        if (x >= P) {
+            revert("TODO(modularInverse: x >= P)");
+        }
+
+        uint t;
+        uint q;
+        uint newT = 1;
+        uint r = P;
+
+        assembly ("memory-safe") {
+            // Implemented in assembly to circumvent division-by-zero
+            // and over-/underflow protection.
+            //
+            // Functionally equivalent Solidity code:
+            //      while (x != 0) {
+            //          q = r / x;
+            //          (t, newT) = (newT, addmod(t, (P - mulmod(q, newT, P)), P));
+            //          (r, x) = (x, r - (q * x));
+            //      }
+            //
+            // For the division r / x, x is guaranteed to not be zero via the
+            // loop condition.
+            //
+            // The subtraction of form P - mulmod(_, _, P) is guaranteed to not
+            // underflow due to the subtrahend being a (mod P) result,
+            // i.e. the subtrahend being guaranteed to be less than P.
+            //
+            // The subterm q * x is guaranteed to not overflow because
+            // q * x ≤ r due to q = ⎣r / x⎦.
+            //
+            // The term r - (q * x) is guaranteed to not underflow because
+            // q * x ≤ r and therefore r - (q * x) ≥ 0.
+            for {} x {} {
+                q := div(r, x)
+
+                let tmp := t
+                t := newT
+                newT := addmod(tmp, sub(P, mulmod(q, newT, P)), P)
+
+                tmp := r
+                r := x
+                x := sub(tmp, mul(q, x))
+=======
+        while (scalar != 0) {
+            if (scalar & 1 == 1) {
+                product = _jAdd(product, copy);
+>>>>>>> 8b86dc3 (Finishing up arithmetic - still untested)
+            }
+            scalar /= 2;
+            copy = _jDouble(copy);
+        }
+
+        return product;
+    }
+
+<<<<<<< HEAD
     /// @dev Returns whether `xInv` is the modular inverse of `x`.
     function areModularInverse(uint x, uint xInv)
         internal
@@ -446,6 +769,28 @@ library Secp256k1Arithmetic {
 
     //--------------------------------------------------------------------------
     // Private Functions
+||||||| parent of 8b86dc3 (Finishing up arithmetic - still untested)
+    function areModularInverse(uint x, uint xInv)
+        internal
+        pure
+        returns (bool)
+    {
+        if (x == 0 || xInv == 0) {
+            revert("Modular inverse of zero does not exist");
+        }
+        if (x >= P || xInv >= P) {
+            revert("TODO(modularInverse: x >= P)");
+        }
+
+        return mulmod(x, xInv, P) == 1;
+    }
+
+    //--------------------------------------------------------------------------
+    // Private Functions
+=======
+    //----------------------------------
+    // Helpers
+>>>>>>> 8b86dc3 (Finishing up arithmetic - still untested)
 
     function _add(uint x1, uint z1, uint x2, uint z2)
         private

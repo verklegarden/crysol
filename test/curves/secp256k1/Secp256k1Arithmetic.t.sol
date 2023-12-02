@@ -78,6 +78,10 @@ contract Secp256k1ArithmeticTest is Test {
         assertTrue(wrapper.isOnCurve(point));
     }
 
+    function test_Point_isOnCurve_PointAtInfinity() public {
+        assertTrue(wrapper.isOnCurve(Secp256k1Arithmetic.PointAtInfinity()));
+    }
+
     // -- yParity
 
     function testFuzz_Point_yParity(uint x, uint y) public {
@@ -87,6 +91,43 @@ contract Secp256k1ArithmeticTest is Test {
 
         assertEq(want, got);
     }
+
+    // -- equals
+
+    function testFuzz_Point_equals(PrivateKey privKey) public {
+        vm.assume(privKey.isValid());
+
+        Point memory point = privKey.toPublicKey().intoPoint();
+
+        assertTrue(wrapper.equals(point, point));
+    }
+
+    function testFuzz_Point_equals_FailsIfPointsDoNotEqual(
+        PrivateKey privKey1,
+        PrivateKey privKey2
+    ) public {
+        vm.assume(privKey1.asUint() != privKey2.asUint());
+        vm.assume(privKey1.isValid());
+        vm.assume(privKey2.isValid());
+
+        Point memory point1 = privKey1.toPublicKey().intoPoint();
+        Point memory point2 = privKey2.toPublicKey().intoPoint();
+
+        assertFalse(wrapper.equals(point1, point2));
+    }
+
+    function test_Point_equals_DoesNotRevert_IfPointsNotOnCurve(
+        Point memory point1,
+        Point memory point2
+    ) public {
+        wrapper.equals(point1, point2);
+    }
+
+    //----------------------------------
+    // TODO: Test: Arithmetic
+
+    //----------------------------------
+    // Test: Type Conversion
 
     // -- toProjectivePoint
 
@@ -102,6 +143,9 @@ contract Secp256k1ArithmeticTest is Test {
 
     //--------------------------------------------------------------------------
     // Test: Projective Point
+
+    //----------------------------------
+    // Test: Type Conversion
 
     // TODO: Test no new memory allocation.
     // TODO: Not a real test. Use vectors from Paul Miller.
@@ -141,8 +185,7 @@ contract Secp256k1ArithmeticTest is Test {
     {
         vm.assume(x >= Secp256k1Arithmetic.P);
 
-        // TODO: Test for proper error message.
-        vm.expectRevert();
+        vm.expectRevert("NotAFieldElement(x)");
         wrapper.modularInverseOf(x);
     }
 
@@ -163,9 +206,7 @@ contract Secp256k1ArithmeticTest is Test {
         uint x,
         uint xInv
     ) public {
-        vm.assume(x != 0);
         vm.assume(x < Secp256k1Arithmetic.P);
-        vm.assume(xInv != 0);
         vm.assume(xInv < Secp256k1Arithmetic.P);
 
         vm.assume(mulmod(x, xInv, Secp256k1Arithmetic.P) != 1);
@@ -173,25 +214,12 @@ contract Secp256k1ArithmeticTest is Test {
         assertFalse(wrapper.areModularInverse(x, xInv));
     }
 
-    function test_areModularInverse_RevertsIf_XIsZero() public {
-        // TODO: Test for proper error message.
-        vm.expectRevert();
-        wrapper.areModularInverse(0, 1);
-    }
-
-    function test_areModularInverse_RevertsIf_XInvIsZero() public {
-        // TODO: Test for proper error message.
-        vm.expectRevert();
-        wrapper.areModularInverse(1, 0);
-    }
-
     function testFuzz_areModularInverse_RevertsIf_XEqualToOrBiggerThanP(uint x)
         public
     {
         vm.assume(x >= Secp256k1Arithmetic.P);
 
-        // TODO: Test for proper error message.
-        vm.expectRevert();
+        vm.expectRevert("NotAFieldElement(x)");
         wrapper.areModularInverse(x, 1);
     }
 
@@ -200,8 +228,7 @@ contract Secp256k1ArithmeticTest is Test {
     ) public {
         vm.assume(xInv >= Secp256k1Arithmetic.P);
 
-        // TODO: Test for proper error message.
-        vm.expectRevert();
+        vm.expectRevert("NotAFieldElement(xInv)");
         wrapper.areModularInverse(1, xInv);
     }
 }
@@ -247,6 +274,10 @@ contract Secp256k1ArithmeticWrapper {
 
     function yParity(Point memory point) public pure returns (uint) {
         return point.yParity();
+    }
+
+    function equals(Point memory point, Point memory other) public pure returns (bool) {
+        return point.equals(other);
     }
 
     //--------------------------------------------------------------------------
