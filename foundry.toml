@@ -1,7 +1,7 @@
 [profile.default]
 src = 'src'
 out = 'out'
-libs = ['lib', 'spec', 'examples', 'unsafe']
+libs = ['lib', 'examples', 'unsafe']
 ffi = true
 
 # Compilation

@@ -276,7 +276,11 @@ contract Secp256k1ArithmeticWrapper {
         return point.yParity();
     }
 
-    function equals(Point memory point, Point memory other) public pure returns (bool) {
+    function equals(Point memory point, Point memory other)
+        public
+        pure
+        returns (bool)
+    {
         return point.equals(other);
     }
 

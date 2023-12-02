@@ -29,6 +29,20 @@ struct StealthAddress {
     uint8 viewTag;
 }
 
+// TODO: Differentiate between EIPs and ERCs.
+
+/**
+ * @title StealthSecp256k1
+ *
+ * @notice Stealth Addresses for secp256k1 following [EIP-5564]
+ *
+ * @dev
+ *
+ * @custom:references
+ *      - [EIP-5564]: https://eips.ethereum.org/EIPS/eip-5564
+ *
+ * @author crysol (https://github.com/pmerkleplant/crysol)
+ */
 library StealthSecp256k1 {
     using Secp256k1 for PrivateKey;
     using Secp256k1 for PublicKey;
