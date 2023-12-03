@@ -50,6 +50,8 @@ contract StealthSecp256k1Example is Script {
             spendingPubKey: receiverSpendingPubKey,
             viewingPubKey: receiverViewPubKey
         });
+        console.log("Stealth Meta Address: ");
+        console.logBytes(receiverStealthMeta.toBytes("eth"));
 
         // Sender creates stealth address from receiver's stealth meta address.
         console.log(

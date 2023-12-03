@@ -52,12 +52,21 @@ library StealthSecp256k1 {
     // Stealth Meta Addresses
 
     // TODO: See https://eips.ethereum.org/EIPS/eip-5564#stealth-meta-address-format.
-    function toBytes(StealthAddress memory stealthMetaAddress)
-        internal
-        pure
-        returns (bytes memory)
-    {
-        return bytes("");
+    //
+    //       st:eth:0x<spendingKey><viewingKey>
+    function toBytes(
+        StealthMetaAddress memory stealthMetaAddress,
+        string memory chainShortName
+    ) internal pure returns (bytes memory) {
+        bytes memory prefix =
+            abi.encodePacked(bytes("st:"), bytes(chainShortName), bytes(":0x"));
+
+        bytes memory pubKeys = abi.encodePacked(
+            stealthMetaAddress.spendingPubKey.toBytes(),
+            stealthMetaAddress.viewingPubKey.toBytes()
+        );
+
+        return abi.encodePacked(prefix, pubKeys);
     }
 
     // Stealth Address
@@ -67,9 +76,6 @@ library StealthSecp256k1 {
         internal
         returns (StealthAddress memory)
     {
-        // TODO: Functionality missing in Secp256k1(Arithmetic):
-        //       - PublicKey + PublicKey
-
         // Create ephemeral key pair.
         PrivateKey ephemeralPrivKey = Secp256k1.newPrivateKey();
         PublicKey memory ephemeralPubKey = ephemeralPrivKey.toPublicKey();

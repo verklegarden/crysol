@@ -17,20 +17,20 @@ pragma solidity ^0.8.16;
  *
  *         Index      |  Description                                  | Length in bytes
  *        -----------------------------------------------------------------------------
- *        [0x00]      | View tag                                      | 1
- *        [0x01:0x04] | `0xeeeeeeee`                                  | 4
- *        [0x05:0x24] | `0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE`  | 20
- *        [0x18:0x38] | Amount in wei                                 | 32
+ *        [0x00]      | View tag                                      |              1
+ *        [0x01:0x04] | `0xeeeeeeee`                                  |              4
+ *        [0x05:0x24] | `0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE`  |             20
+ *        [0x18:0x38] | Amount in wei                                 |             32
  *
  *      - Tx involving a contract call with a single argument, eg ERC-20/ERC-721
  *        transfers:
  *
  *         Index      |  Description                                  | Length in bytes
  *        -----------------------------------------------------------------------------
- *        [0x00]      | View tag                                      | 1
- *        [0x01:0x04] | Solidity function selector                    | 4
- *        [0x05:0x24] | Contract address                              | 20
- *        [0x18:0x38] | One word argument, eg token amount            | 32
+ *        [0x00]      | View tag                                      |             1
+ *        [0x01:0x04] | Solidity function selector                    |             4
+ *        [0x05:0x24] | Contract address                              |             20
+ *        [0x18:0x38] | One word argument, eg token amount            |             32
  *
  * @custom:references
  *      - [EIP-5564]: https://eips.ethereum.org/EIPS/eip-5564
@@ -41,7 +41,7 @@ interface IERC5564Announcer {
     ///
     /// @param schemeId Scheme id based on [EIP-5564 Scheme Registry] registry.
     /// @param stealthAddress The stealth address.
-    /// @param caller The address who announced the tx.
+    /// @param caller The address announcing the tx.
     /// @param ephemeralPubKey The ephemeral public key created during the
     ///                        stealth address generation.
     /// @param metadata Bytes blob providing the view tag and arbitrary

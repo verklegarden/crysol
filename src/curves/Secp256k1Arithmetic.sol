@@ -11,7 +11,6 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.16;
 
-// TODO: Represent point at infinity via zero point?
 /**
  * @notice Point is a secp256k1 point in affine coordinates
  *
@@ -199,7 +198,7 @@ library Secp256k1Arithmetic {
     //----------------------------------
     // Arithmetic
 
-    /// @dev Returns a new point being the sum of points `point` and `other`.
+    /// @dev Returns the sum of points `point` and `other` as new point.
     ///
     /// @dev TODO Note about performance. intoPoint() conversion is expensive.
     ///           Also created new point struct in memory.
@@ -422,7 +421,7 @@ library Secp256k1Arithmetic {
     // Private Functions
 
     //----------------------------------
-    // Affine Point
+    // Jacobian Point
     //
     // Functionality stolen from Jordi Baylina's [ecsol](https://github.com/jbaylina/ecsol/blob/c2256afad126b7500e6f879a9369b100e47d435d/ec.sol).
 
