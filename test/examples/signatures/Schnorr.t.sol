@@ -8,7 +8,7 @@ import {SchnorrExample} from "examples/signatures/Schnorr.sol";
 /**
  * @title SchnorrExamplesTest
  *
- * @notice Tests Schnorr examples in src/examples/.
+ * @notice Tests Schnorr examples in examples/signatures/Schnorr.sol.
  */
 contract SchnorrExamplesTest is Test {
     SchnorrExample example;

@@ -8,7 +8,7 @@ import {ECDSAExample} from "examples/signatures/ECDSA.sol";
 /**
  * @title ECDSAExamplesTest
  *
- * @notice Tests ECDSA examples in src/examples/.
+ * @notice Tests ECDSA examples in examples/signatures/ECDSA.sol.
  */
 contract ECDSAExamplesTest is Test {
     ECDSAExample example;

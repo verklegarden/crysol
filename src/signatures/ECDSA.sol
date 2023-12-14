@@ -15,7 +15,7 @@ import {Vm} from "forge-std/Vm.sol";
 
 import {Message} from "../Message.sol";
 
-import {Secp256k1, PrivateKey, PublicKey} from "../curves/Secp256k1.sol";
+import {Secp256k1, SecretKey, PublicKey} from "../curves/Secp256k1.sol";
 
 /**
  * @notice Signature is an ECDSA signature
@@ -40,15 +40,16 @@ struct Signature {
  *      Note that ECDSA signatures are malleable, meaning every valid ECDSA
  *      signature has two distinct representations. Furthermore, computing the
  *      second valid signature can be done without knowledge of the signer's
- *      private key. This weakness has lead to numerous bugs in smart contract
- *      systems.
+ *      secret key. This weakness has lead to numerous bugs in not just smart
+ *      contract systems.
  *
  *      Therefore, this library only creates and accepts signatures in one of
- *      these representations. Signatures in the second representation are deemed
- *      invalid. For more info, see function `isMalleable(Signature)(bool)`.
+ *      the two possible representations. Signatures in the second representation
+ *      are deemed invalid.
+ *      For more info, see function `isMalleable(Signature)(bool)`.
  *
  *      This behaviour is sync with the broader Ethereum ecosystem as a general
- *      defensive mechanism against ECDSA's weakness.
+ *      defensive mechanism against ECDSA malleability.
  *      For more info, see eg [EIP-2].
  *
  * @custom:references
@@ -61,9 +62,10 @@ struct Signature {
 library ECDSA {
     using ECDSA for address;
     using ECDSA for Signature;
-    using ECDSA for PrivateKey;
+    using ECDSA for SecretKey;
     using ECDSA for PublicKey;
-    using Secp256k1 for PrivateKey;
+
+    using Secp256k1 for SecretKey;
     using Secp256k1 for PublicKey;
 
     // ~~~~~~~ Prelude ~~~~~~~
@@ -86,48 +88,53 @@ library ECDSA {
     //--------------------------------------------------------------------------
     // Signature Verification
 
-    /// @dev Returns whether public key `pubKey` signs via ECDSA signature
-    ///      `sig` message `message`.
+    /// @dev Returns whether public key `pk` signs via ECDSA signature `sig`
+    ///      message `message`.
     ///
     /// @dev Reverts if:
     ///      - Public key invalid
     ///      - Signature malleable
     ///
     /// @custom:invariant No valid public key's address is zero.
-    ///     ∀ pubKey ∊ PublicKey: pubKey.isValid() → pubKey.toAddress() != address(0)
+    ///     ∀ pk ∊ PublicKey: pk.isValid() → pk.toAddress() != address(0)
     function verify(
-        PublicKey memory pubKey,
+        PublicKey memory pl,
         bytes memory message,
         Signature memory sig
     ) internal pure returns (bool) {
-        if (!pubKey.isValid()) {
+        if (!pl.isValid()) {
             revert("PublicKeyInvalid()");
         }
 
         bytes32 digest = keccak256(message);
 
-        return pubKey.toAddress().verify(digest, sig);
+        return pl.toAddress().verify(digest, sig);
     }
 
-    /// @dev Returns whether public key `pubKey` signs via ECDSA signature
-    ///      `sig` hash digest `digest`.
+    /// @dev Returns whether public key `pk` signs via ECDSA signature `sig`
+    ///      hash digest `digest`.
     ///
     /// @dev Reverts if:
     ///      - Public key invalid
     ///      - Signature malleable
     ///
     /// @custom:invariant No valid public key's address is zero.
-    ///     ∀ pubKey ∊ PublicKey: pubKey.isValid() → pubKey.toAddress() != address(0)
-    function verify(
-        PublicKey memory pubKey,
-        bytes32 digest,
-        Signature memory sig
-    ) internal pure returns (bool) {
-        if (!pubKey.isValid()) {
+    ///     ∀ pk ∊ PublicKey: pk.isValid() → pk.toAddress() != address(0)
+    function verify(PublicKey memory pk, bytes32 digest, Signature memory sig)
+        internal
+        pure
+        returns (bool)
+    {
+        if (!pk.isValid()) {
             revert("PublicKeyInvalid()");
         }
 
-        return pubKey.toAddress().verify(digest, sig);
+        // TODO: Is this necessary? Better safe than sorry...?
+        if (digest == bytes32("")) {
+            revert("DigestZero()");
+        }
+
+        return pk.toAddress().verify(digest, sig);
     }
 
     /// @dev Returns whether address `signer` signs via ECDSA signature `sig`
@@ -174,15 +181,15 @@ library ECDSA {
     //--------------------------------------------------------------------------
     // Signature Creation
 
-    /// @dev Returns an ECDSA signature signed by private key `privKey` signing
+    /// @dev Returns an ECDSA signature signed by secret key `sk` signing
     ///      message `message`.
     ///
     /// @dev Reverts if:
-    ///      - Private key invalid
+    ///      - Secret key invalid
     ///
     /// @custom:vm vm.sign(uint,bytes32)
-    /// @custom:invariant Returned signature is non-malleable.
-    function sign(PrivateKey privKey, bytes memory message)
+    /// @custom:invariant Created signature is non-malleable.
+    function sign(SecretKey sk, bytes memory message)
         internal
         view
         vmed
@@ -190,70 +197,75 @@ library ECDSA {
     {
         bytes32 digest = keccak256(message);
 
-        return privKey.sign(digest);
+        return sk.sign(digest);
     }
 
-    /// @dev Returns an ECDSA signature signed by private key `privKey` signing
-    ///      hash digest `digest`.
+    /// @dev Returns an ECDSA signature signed by secret key `sk` signing hash
+    ///      digest `digest`.
     ///
     /// @dev Reverts if:
-    ///      - Private key invalid
+    ///      - Secret key invalid
     ///
     /// @custom:vm vm.sign(uint,bytes32)
-    /// @custom:invariant Returned signature is non-malleable.
-    function sign(PrivateKey privKey, bytes32 digest)
+    /// @custom:invariant Created signature is non-malleable.
+    function sign(SecretKey sk, bytes32 digest)
         internal
         view
         vmed
         returns (Signature memory)
     {
-        if (!privKey.isValid()) {
-            revert("PrivateKeyInvalid()");
+        if (!sk.isValid()) {
+            revert("SecretKeyInvalid()");
         }
 
         // TODO: Should revert if digest is zero?
+        if (digest == bytes32("")) {
+            revert("DigestZero()");
+        }
 
         uint8 v;
         bytes32 r;
         bytes32 s;
-        (v, r, s) = vm.sign(privKey.asUint(), digest);
+        (v, r, s) = vm.sign(pk.asUint(), digest);
 
         Signature memory sig = Signature(v, r, s);
-        // assert(!sig.isMalleable());
+        assert(!sig.isMalleable());
 
         return sig;
     }
 
-    /// @dev Returns an ECDSA signature signed by private key `privKey` singing
+    /// @dev Returns an ECDSA signature signed by secret key `sk` singing
     ///      message `message`'s keccak256 digest as Ethereum Signed Message.
     ///
     /// @dev For more info regarding Ethereum Signed Messages, see {Message.sol}.
     ///
     /// @dev Reverts if:
-    ///      - Private key invalid
+    ///      - Secret key invalid
     ///
     /// @custom:vm vm.sign(uint,bytes32)
-    /// @custom:invariant Returned signature is non-malleable.
-    function signEthereumSignedMessageHash(
-        PrivateKey privKey,
-        bytes memory message
-    ) internal view vmed returns (Signature memory) {
+    /// @custom:invariant Created signature is non-malleable.
+    function signEthereumSignedMessageHash(SecretKey sk, bytes memory message)
+        internal
+        view
+        vmed
+        returns (Signature memory)
+    {
         bytes32 digest = Message.deriveEthereumSignedMessageHash(message);
 
-        return privKey.sign(digest);
+        return sk.sign(digest);
     }
 
-    /// @dev Returns an ECDSA signature signed by private key `privKey` singing
-    ///      hash digest `digest` as Ethereum Signed Message.
+    /// @dev Returns an ECDSA signature signed by secret key `sk` singing hash
+    ///      digest `digest` as Ethereum Signed Message.
     ///
     /// @dev For more info regarding Ethereum Signed Messages, see {Message.sol}.
     ///
     /// @dev Reverts if:
-    ///      - Private key invalid
+    ///      - Secret key invalid
     ///
     /// @custom:vm vm.sign(uint,bytes32)
-    /// @custom:invariant Returned signature is non-malleable.
-    function signEthereumSignedMessageHash(PrivateKey privKey, bytes32 digest)
+    /// @custom:invariant Created signature is non-malleable.
+    function signEthereumSignedMessageHash(SecretKey sk, bytes32 digest)
         internal
         view
         vmed
@@ -261,7 +273,7 @@ library ECDSA {
     {
         bytes32 digest2 = Message.deriveEthereumSignedMessageHash(digest);
 
-        return privKey.sign(digest2);
+        return sk.sign(digest2);
     }
 
     //--------------------------------------------------------------------------
@@ -295,6 +307,9 @@ library ECDSA {
     //--------------------------------------------------------------------------
     // (De)Serialization
 
+    // TODO: Use toEncoded() to differentiate between ABI and standard-based
+    //       encoding (eg EIP-2098, SEC1).
+
     /// @dev Returns signature `sig` as bytes.
     ///
     /// @dev Provides following encoding:
@@ -307,7 +322,7 @@ library ECDSA {
         return abi.encodePacked(sig.r, sig.s, sig.v);
     }
 
-    /// @dev Returns Signature from bytes `blob`.
+    /// @dev Returns signature from bytes `blob`.
     ///
     /// @dev Reverts if:
     ///      - Blob not exactly 65 bytes

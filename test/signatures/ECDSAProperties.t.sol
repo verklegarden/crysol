@@ -6,40 +6,41 @@ import {console2 as console} from "forge-std/console2.sol";
 
 import {ECDSA, Signature} from "src/signatures/ECDSA.sol";
 
-import {Secp256k1, PrivateKey, PublicKey} from "src/curves/Secp256k1.sol";
+import {Secp256k1, SecretKey, PublicKey} from "src/curves/Secp256k1.sol";
 
 /**
  * @notice ECDSA Property Tests
  */
 contract ECDSAPropertiesTest is Test {
-    using ECDSA for PrivateKey;
+    using ECDSA for SecretKey;
     using ECDSA for PublicKey;
     using ECDSA for Signature;
 
-    using Secp256k1 for PrivateKey;
+    using Secp256k1 for SecretKey;
 
     //--------------------------------------------------------------------------
     // Properties: Signature
 
     function testProperty_sign_CreatesVerifiableSignatures(
-        PrivateKey privKey,
+        SecretKey sk,
         bytes memory message
     ) public {
-        vm.assume(privKey.isValid());
+        vm.assume(sk.isValid());
 
-        PublicKey memory pubKey = privKey.toPublicKey();
+        PublicKey memory pk = sk.toPublicKey();
+        Signature memory sig = sk.sign(message);
 
-        assertTrue(pubKey.verify(message, privKey.sign(message)));
+        assertTrue(pk.verify(message, sig));
     }
 
     function testProperty_sign_CreatesDeterministicSignatures(
-        PrivateKey privKey,
+        SecretKey sk,
         bytes memory message
     ) public {
-        vm.assume(privKey.isValid());
+        vm.assume(sk.isValid());
 
-        Signature memory sig1 = privKey.sign(message);
-        Signature memory sig2 = privKey.sign(message);
+        Signature memory sig1 = sk.sign(message);
+        Signature memory sig2 = sk.sign(message);
 
         assertEq(sig1.v, sig2.v);
         assertEq(sig1.r, sig2.r);
@@ -47,12 +48,14 @@ contract ECDSAPropertiesTest is Test {
     }
 
     function testProperty_sign_CreatesNonMalleableSignatures(
-        PrivateKey privKey,
+        SecretKey sk,
         bytes memory message
     ) public {
-        vm.assume(privKey.isValid());
+        vm.assume(sk.isValid());
 
-        assertFalse(privKey.sign(message).isMalleable());
+        Signature memory sig = sk.sign(message);
+
+        assertFalse(sig.isMalleable());
     }
 
     //--------------------------------------------------------------------------
@@ -69,12 +72,12 @@ contract ECDSAPropertiesTest is Test {
     }
 
     function testProperty_CompactBytes_SerializationLoop(
-        PrivateKey privKey,
+        SecretKey sk,
         bytes memory message
     ) public {
-        vm.assume(privKey.isValid());
+        vm.assume(sk.isValid());
 
-        Signature memory want = privKey.sign(message);
+        Signature memory want = sk.sign(message);
         Signature memory got =
             ECDSA.signatureFromCompactBytes(want.toCompactBytes());
 

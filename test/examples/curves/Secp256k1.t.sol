@@ -8,7 +8,7 @@ import {Secp256k1Example} from "examples/curves/Secp256k1.sol";
 /**
  * @title Secp256k1ExamplesTest
  *
- * @notice Tests Secp256k1 examples in src/examples/.
+ * @notice Tests secp256k1 examples in examples/curves/Secp256kk1.sol.
  */
 contract Secp256k1ExamplesTest is Test {
     Secp256k1Example example;

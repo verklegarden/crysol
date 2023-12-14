@@ -4,12 +4,12 @@ pragma solidity ^0.8.16;
 import {Script} from "forge-std/Script.sol";
 import {console2 as console} from "forge-std/console2.sol";
 
-import {Secp256k1, PrivateKey, PublicKey} from "src/curves/Secp256k1.sol";
+import {Secp256k1, SecretKey, PublicKey} from "src/curves/Secp256k1.sol";
 
 import {ECDSA, Signature} from "src/signatures/ECDSA.sol";
 
 contract ECDSAExample is Script {
-    using Secp256k1 for PrivateKey;
+    using Secp256k1 for SecretKey;
     using Secp256k1 for PublicKey;
 
     using ECDSA for address;
@@ -20,16 +20,17 @@ contract ECDSAExample is Script {
     function signAndVerify() public {
         bytes memory message = bytes("crysol <3");
 
-        // Create a cryptographically secure private key.
-        PrivateKey privKey = Secp256k1.newPrivateKey();
+        // Create new cryptographically sound secret key.
+        SecretKey sk = Secp256k1.newSecretKey();
+        assert(sk.isValid());
 
         // Sign message via ECDSA.
-        Signature memory sig = privKey.sign(message);
+        Signature memory sig = sk.sign(message);
 
         // Verify signature via public key or address.
-        PublicKey memory pubKey = privKey.toPublicKey();
-        address addr = pubKey.toAddress();
-        require(pubKey.verify(message, sig), "Signature invalid");
+        PublicKey memory pk = sk.toPublicKey();
+        require(sk.toPublicKey().verify(message, sig), "Signature invalid");
+        address addr = pk.toAddress();
         require(addr.verify(message, sig), "Signature invalid");
 
         // Print signature to stdout.
