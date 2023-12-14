@@ -304,6 +304,5 @@ library Schnorr {
     //--------------------------------------------------------------------------
     // (De)Serialization
     //
-    // TODO: Schnorr Serde
-    //       Any other standard except BIP-340?
+    // TODO: Schnorr Serde defined via BIP-340.
 }

@@ -57,6 +57,8 @@ contract StealthSecp256k1Example is Script {
         console.log(
             "Sender: Creates stealth address based on receiver's meta address"
         );
+        // TODO: receiver's stealh address must be argument for function, not 
+        //       an object to call a function on.
         StealthAddress memory stealth = receiverStealthMeta.newStealthAddress();
 
         // Sender sends ETH to stealth.

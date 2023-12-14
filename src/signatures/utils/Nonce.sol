@@ -53,7 +53,7 @@ library Nonce {
     /// @dev Derives a deterministic nonce from secret key `sk` and message
     ///      `message`.
     ///
-    /// @dev Note that a nonce is of type uint and not bounded by any field!
+    /// @dev Note that a nonce is of type uint and not bounded to any field!
     ///
     /// @custom:invariant Keccak256 image is never zero
     ///     ∀ (sk, digest) ∊ (SecretKey, bytes32): keccak256(sk ‖ digest) != 0

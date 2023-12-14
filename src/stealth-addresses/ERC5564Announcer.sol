@@ -8,8 +8,8 @@ pragma solidity ^0.8.16;
  *
  * @dev Metadata Specification and Recommendations
  *
- *      The first byte of the metadata MUST be the view tag. The view tag provides
- *      a probabilistic filter to skip computations when checking announcements.
+ *      The first byte of the metadata MUST be the view tag. The view tag is a
+ *      probabilistic filter to skip computations when checking announcements.
  *
  *      The following recommendations are given in [EIP-5564]:
  *
@@ -22,15 +22,15 @@ pragma solidity ^0.8.16;
  *        [0x05:0x24] | `0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE`  |             20
  *        [0x18:0x38] | Amount in wei                                 |             32
  *
- *      - Tx involving a contract call with a single argument, eg ERC-20/ERC-721
+ *      - Tx involving a contract call with a single argument, eg ERC-20 and ERC-721
  *        transfers:
  *
  *         Index      |  Description                                  | Length in bytes
  *        -----------------------------------------------------------------------------
- *        [0x00]      | View tag                                      |             1
- *        [0x01:0x04] | Solidity function selector                    |             4
+ *        [0x00]      | View tag                                      |              1
+ *        [0x01:0x04] | Solidity function selector                    |              4
  *        [0x05:0x24] | Contract address                              |             20
- *        [0x18:0x38] | One word argument, eg token amount            |             32
+ *        [0x18:0x38] | One word argument, eg token amount in wei     |             32
  *
  * @custom:references
  *      - [EIP-5564]: https://eips.ethereum.org/EIPS/eip-5564
