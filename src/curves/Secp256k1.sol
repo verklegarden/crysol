@@ -9,9 +9,6 @@
 */
 
 // TODO:
-//  - [X] Rename JacobianPoint to ProjectivePoint
-//  - [X] Rename PointAtInfinity to Identity?
-//      - Maybe both? Basically type alias?
 //  - [ ] Complete addition formula from Renes-Costello-Batina 2015?
 //      - See https://eprint.iacr.org/2015/1060 Algorithm 7 + 8
 //      - For double Algorithm 9
@@ -21,8 +18,6 @@
 //          - toEncodedPoint() -> SEC1 encoded ("normal")
 //          - toCompressedEncodedPoint() -> compressed SEC1 encoded
 //      - TODO: Note that identity case not implemented!!!!
-//
-//  - [X] Use SecretKey instead of PrivateKey?
 
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.16;
@@ -74,8 +69,8 @@ type SecretKey is uint;
  *
  *          SecretKey sk = Secp256k1.newSecretKey();
  *
- *          PublicKey memory pubKey = sk.toPublicKey();
- *          assert(pubKey.isValid());
+ *          PublicKey memory pk = sk.toPublicKey();
+ *          assert(pk.isValid());
  *      }
  *      ```
  */
@@ -97,6 +92,7 @@ library Secp256k1 {
     using Secp256k1 for SecretKey;
     using Secp256k1 for PublicKey;
     using Secp256k1 for Point;
+
     using Secp256k1Arithmetic for Point;
 
     // ~~~~~~~ Prelude ~~~~~~~
@@ -170,7 +166,7 @@ library Secp256k1 {
             revert("SecretKeyInvalid()");
         }
 
-        // Use vm to compute pubKey = [sk]G.
+        // Use vm to compute pk = [sk]G.
         Vm.Wallet memory wallet = vm.createWallet(sk.asUint());
         return PublicKey(wallet.publicKeyX, wallet.publicKeyY);
     }
@@ -239,7 +235,7 @@ library Secp256k1 {
         return pk.intoPoint().yParity();
     }
 
-    /// @dev Mutates public key `pk` to Affine point.
+    /// @dev Mutates public key `pk` to affine point.
     function intoPoint(PublicKey memory pk)
         internal
         pure
@@ -247,12 +243,12 @@ library Secp256k1 {
     {
         Point memory point;
         assembly ("memory-safe") {
-            point := pubKey
+            point := pk
         }
         return point;
     }
 
-    /// @dev Mutates Affine point `point` to Public Key.
+    /// @dev Mutates affine point `point` to a public key.
     function intoPublicKey(Point memory point)
         internal
         pure
@@ -265,13 +261,13 @@ library Secp256k1 {
         return pk;
     }
 
-    /// @dev Returns public key `pk` as Projective Point.
+    /// @dev Returns public key `pk` as projective point.
     function toProjectivePoint(PublicKey memory pk)
         internal
         pure
         returns (ProjectivePoint memory)
     {
-        return pk.toPoint().toProjectivePoint();
+        return pk.intoPoint().toProjectivePoint();
     }
 
     //--------------------------------------------------------------------------

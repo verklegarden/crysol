@@ -60,13 +60,13 @@ struct Signature {
  * @author crysol (https://github.com/pmerkleplant/crysol)
  */
 library ECDSA {
+    using Secp256k1 for SecretKey;
+    using Secp256k1 for PublicKey;
+
     using ECDSA for address;
     using ECDSA for Signature;
     using ECDSA for SecretKey;
     using ECDSA for PublicKey;
-
-    using Secp256k1 for SecretKey;
-    using Secp256k1 for PublicKey;
 
     // ~~~~~~~ Prelude ~~~~~~~
     // forgefmt: disable-start
@@ -226,7 +226,7 @@ library ECDSA {
         uint8 v;
         bytes32 r;
         bytes32 s;
-        (v, r, s) = vm.sign(pk.asUint(), digest);
+        (v, r, s) = vm.sign(sk.asUint(), digest);
 
         Signature memory sig = Signature(v, r, s);
         assert(!sig.isMalleable());

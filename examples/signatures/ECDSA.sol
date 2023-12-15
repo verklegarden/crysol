@@ -13,7 +13,7 @@ contract ECDSAExample is Script {
     using Secp256k1 for PublicKey;
 
     using ECDSA for address;
-    using ECDSA for PrivateKey;
+    using ECDSA for SecretKey;
     using ECDSA for PublicKey;
     using ECDSA for Signature;
 

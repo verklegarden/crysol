@@ -4,21 +4,21 @@ pragma solidity ^0.8.16;
 import {Test} from "forge-std/Test.sol";
 import {console2 as console} from "forge-std/console2.sol";
 
+import {Secp256k1, SecretKey, PublicKey} from "src/curves/Secp256k1.sol";
 import {
     Secp256k1Arithmetic,
     Point,
-    JacobianPoint
+    ProjectivePoint
 } from "src/curves/Secp256k1Arithmetic.sol";
-import {Secp256k1, PrivateKey, PublicKey} from "src/curves/Secp256k1.sol";
 
 /**
  * @notice Secp256k1Arithmetic Unit Tests
  */
 contract Secp256k1ArithmeticTest is Test {
     using Secp256k1Arithmetic for Point;
-    using Secp256k1Arithmetic for JacobianPoint;
+    using Secp256k1Arithmetic for ProjectivePoint;
 
-    using Secp256k1 for PrivateKey;
+    using Secp256k1 for SecretKey;
     using Secp256k1 for PublicKey;
 
     Secp256k1ArithmeticWrapper wrapper;
@@ -46,19 +46,19 @@ contract Secp256k1ArithmeticTest is Test {
         }
     }
 
-    // -- PointAtInfinity
+    // -- Identity
 
-    function test_PointAtInfinity() public {
-        assertTrue(wrapper.PointAtInfinity().isPointAtInfinity());
+    function test_Identity() public {
+        assertTrue(wrapper.Identity().isIdentity());
     }
 
-    // -- isPointAtInfinity
+    // -- isIdentity
 
-    function testFuzz_Point_isPointAtInfinity(Point memory point) public {
+    function testFuzz_Point_isIdentity(Point memory point) public {
         if (point.x == type(uint).max && point.y == type(uint).max) {
-            assertTrue(wrapper.isPointAtInfinity(point));
+            assertTrue(wrapper.isIdentity(point));
         } else {
-            assertFalse(wrapper.isPointAtInfinity(point));
+            assertFalse(wrapper.isIdentity(point));
         }
     }
 
@@ -67,13 +67,13 @@ contract Secp256k1ArithmeticTest is Test {
     function testVectors_Point_isOnCurve() public {
         assertTrue(wrapper.isOnCurve(wrapper.G()));
 
-        // TODO: Test some more points.
+        // TODO: Test Point.isOnCurve(): Add more points.
     }
 
-    function testFuzz_Point_isOnCurve(PrivateKey privKey) public {
-        vm.assume(privKey.isValid());
+    function testFuzz_Point_isOnCurve(SecretKey sk) public {
+        vm.assume(sk.isValid());
 
-        Point memory point = privKey.toPublicKey().intoPoint();
+        Point memory point = sk.toPublicKey().intoPoint();
 
         assertTrue(wrapper.isOnCurve(point));
     }
@@ -88,28 +88,28 @@ contract Secp256k1ArithmeticTest is Test {
         assertEq(want, got);
     }
 
-    // -- toJacobianPoint
+    // -- toProjectivePoint
 
-    function testFuzz_Point_toJacobianPoint(PrivateKey privKey) public {
-        vm.assume(privKey.isValid());
+    function testFuzz_Point_toProjectivePoint(SecretKey sk) public {
+        vm.assume(sk.isValid());
 
-        Point memory want = privKey.toPublicKey().intoPoint();
-        Point memory got = wrapper.toJacobianPoint(want).intoPoint();
+        Point memory want = sk.toPublicKey().intoPoint();
+        Point memory got = wrapper.toProjectivePoint(want).intoPoint();
 
         assertEq(want.x, got.x);
         assertEq(want.y, got.y);
     }
 
     //--------------------------------------------------------------------------
-    // Test: Jacobian Point
+    // Test: Projective Point
 
     // TODO: Test no new memory allocation.
     // TODO: Not a real test. Use vectors from Paul Miller.
-    function testFuzz_JacobianPoint_intoPoint(PrivateKey privKey) public {
-        vm.assume(privKey.isValid());
+    function testFuzz_ProjectivePoint_intoPoint(SecretKey sk) public {
+        vm.assume(sk.isValid());
 
-        Point memory want = privKey.toPublicKey().intoPoint();
-        Point memory got = wrapper.intoPoint(want.toJacobianPoint());
+        Point memory want = sk.toPublicKey().intoPoint();
+        Point memory got = wrapper.intoPoint(want.toProjectivePoint());
 
         assertEq(want.x, got.x);
         assertEq(want.y, got.y);
@@ -213,7 +213,7 @@ contract Secp256k1ArithmeticTest is Test {
  */
 contract Secp256k1ArithmeticWrapper {
     using Secp256k1Arithmetic for Point;
-    using Secp256k1Arithmetic for JacobianPoint;
+    using Secp256k1Arithmetic for ProjectivePoint;
 
     //--------------------------------------------------------------------------
     // Constants
@@ -233,12 +233,12 @@ contract Secp256k1ArithmeticWrapper {
         return point.isZeroPoint();
     }
 
-    function PointAtInfinity() public pure returns (Point memory) {
-        return Secp256k1Arithmetic.PointAtInfinity();
+    function Identity() public pure returns (Point memory) {
+        return Secp256k1Arithmetic.Identity();
     }
 
-    function isPointAtInfinity(Point memory point) public pure returns (bool) {
-        return point.isPointAtInfinity();
+    function isIdentity(Point memory point) public pure returns (bool) {
+        return point.isIdentity();
     }
 
     function isOnCurve(Point memory point) public pure returns (bool) {
@@ -255,23 +255,23 @@ contract Secp256k1ArithmeticWrapper {
     //----------------------------------
     // Point
 
-    function toJacobianPoint(Point memory point)
+    function toProjectivePoint(Point memory point)
         public
         pure
-        returns (JacobianPoint memory)
+        returns (ProjectivePoint memory)
     {
-        return point.toJacobianPoint();
+        return point.toProjectivePoint();
     }
 
     //----------------------------------
-    // Jacobian Point
+    // Projective Point
 
-    function intoPoint(JacobianPoint memory jacPoint)
+    function intoPoint(ProjectivePoint memory jPoint)
         public
         pure
         returns (Point memory)
     {
-        return jacPoint.intoPoint();
+        return jPoint.intoPoint();
     }
 
     //--------------------------------------------------------------------------

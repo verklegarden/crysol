@@ -41,15 +41,15 @@ struct Signature {
  * @author Inspired by Chronicle Protocol's Scribe (https://github.com/chronicleprotocol/scribe)
  */
 library Schnorr {
-    using Schnorr for address;
-    using Schnorr for Signature;
-    using Schnorr for SecretKey;
-    using Schnorr for PublicKey;
-
     using Secp256k1 for SecretKey;
     using Secp256k1 for PublicKey;
 
     using Nonce for SecretKey;
+
+    using Schnorr for address;
+    using Schnorr for Signature;
+    using Schnorr for SecretKey;
+    using Schnorr for PublicKey;
 
     // ~~~~~~~ Prelude ~~~~~~~
     // forgefmt: disable-start
