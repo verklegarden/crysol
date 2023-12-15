@@ -15,7 +15,7 @@ import {Vm} from "forge-std/Vm.sol";
 
 import {Message} from "../Message.sol";
 
-import {Secp256k1, PrivateKey, PublicKey} from "../curves/Secp256k1.sol";
+import {Secp256k1, SecretKey, PublicKey} from "../curves/Secp256k1.sol";
 
 import {Nonce} from "./utils/Nonce.sol";
 
@@ -41,15 +41,15 @@ struct Signature {
  * @author Inspired by Chronicle Protocol's Scribe (https://github.com/chronicleprotocol/scribe)
  */
 library Schnorr {
-    using Schnorr for address;
-    using Schnorr for Signature;
-    using Schnorr for PrivateKey;
-    using Schnorr for PublicKey;
-
-    using Secp256k1 for PrivateKey;
+    using Secp256k1 for SecretKey;
     using Secp256k1 for PublicKey;
 
-    using Nonce for PrivateKey;
+    using Nonce for SecretKey;
+
+    using Schnorr for address;
+    using Schnorr for Signature;
+    using Schnorr for SecretKey;
+    using Schnorr for PublicKey;
 
     // ~~~~~~~ Prelude ~~~~~~~
     // forgefmt: disable-start
@@ -64,36 +64,36 @@ library Schnorr {
     //--------------------------------------------------------------------------
     // Signature Verification
 
-    /// @dev Returns whether public key `pubKey` signs via Schnorr signature
-    ///      `sig` hash digest `digest`.
+    /// @dev Returns whether public key `pk` signs via Schnorr signature `sig`
+    ///      hash digest `digest`.
     ///
     /// @dev Reverts if:
     ///      - Public key invalid
     ///      - Schnorr signature malleable
     ///      - Schnorr signature trivial
     function verify(
-        PublicKey memory pubKey,
+        PublicKey memory pk,
         bytes memory message,
         Signature memory sig
     ) internal pure returns (bool) {
         bytes32 digest = keccak256(message);
 
-        return pubKey.verify(digest, sig);
+        return pk.verify(digest, sig);
     }
 
-    /// @dev Returns whether public key `pubKey` signs via Schnorr signature
-    ///      `sig` hash digest `digest`.
+    /// @dev Returns whether public key `pk` signs via Schnorr signature `sig`
+    ///      hash digest `digest`.
     ///
     /// @dev Reverts if:
     ///      - Public key invalid
-    ///      - Schnorr signature malleable
     ///      - Schnorr signature trivial
-    function verify(
-        PublicKey memory pubKey,
-        bytes32 digest,
-        Signature memory sig
-    ) internal pure returns (bool) {
-        if (!pubKey.isValid()) {
+    ///      - Schnorr signature malleable
+    function verify(PublicKey memory pk, bytes32 digest, Signature memory sig)
+        internal
+        pure
+        returns (bool)
+    {
+        if (!pk.isValid()) {
             revert("PublicKeyInvalid()");
         }
 
@@ -105,17 +105,17 @@ library Schnorr {
             revert("SignatureMalleable()");
         }
 
-        // Construct challenge = H(Pₓ ‖ Pₚ ‖ m ‖ Rₑ) (mod Q)
+        // Construct challenge = H(Pkₓ ‖ Pkₚ ‖ m ‖ Rₑ) (mod Q)
         uint challenge = uint(
             keccak256(
                 abi.encodePacked(
-                    pubKey.x, uint8(pubKey.yParity()), digest, sig.commitment
+                    pk.x, uint8(pk.yParity()), digest, sig.commitment
                 )
             )
         ) % Secp256k1.Q;
 
-        // Compute ecrecover_msgHash = -sig * Pₓ      (mod Q)
-        //                           = Q - (sig * Pₓ) (mod Q)
+        // Compute ecrecover_msgHash = -sig * Pkₓ      (mod Q)
+        //                           = Q - (sig * Pkₓ) (mod Q)
         //
         // Unchecked because the only protected operation performed is the
         // subtraction from Q where the subtrahend is the result of a (mod Q)
@@ -123,23 +123,23 @@ library Schnorr {
         bytes32 ecrecover_msgHash;
         unchecked {
             ecrecover_msgHash = bytes32(
-                Secp256k1.Q - mulmod(uint(sig.signature), pubKey.x, Secp256k1.Q)
+                Secp256k1.Q - mulmod(uint(sig.signature), pk.x, Secp256k1.Q)
             );
         }
 
-        // Compute ecrecover_v = Pₚ + 27
+        // Compute ecrecover_v = Pkₚ + 27
         //
-        // Unchecked because pubKey.yParity() ∊ {0, 1} which cannot overflow
-        // by adding 27.
+        // Unchecked because pk.yParity() ∊ {0, 1} which cannot overflow by
+        // adding 27.
         uint8 ecrecover_v;
         unchecked {
-            ecrecover_v = uint8(pubKey.yParity() + 27);
+            ecrecover_v = uint8(pk.yParity() + 27);
         }
 
-        // Set ecrecover_r = Pₓ
-        bytes32 ecrecover_r = bytes32(pubKey.x);
+        // Set ecrecover_r = Pkₓ
+        bytes32 ecrecover_r = bytes32(pk.x);
 
-        // Compute ecrecover_s = Q - (e * Pₓ) (mod Q)
+        // Compute ecrecover_s = Q - (e * Pkₓ) (mod Q)
         //
         // Unchecked because the only protected operation performed is the
         // subtraction from Q where the subtrahend is the result of a (mod Q)
@@ -147,10 +147,10 @@ library Schnorr {
         bytes32 ecrecover_s;
         unchecked {
             ecrecover_s =
-                bytes32(Secp256k1.Q - mulmod(challenge, pubKey.x, Secp256k1.Q));
+                bytes32(Secp256k1.Q - mulmod(challenge, pk.x, Secp256k1.Q));
         }
 
-        // Compute ([sig]G - [e]P)ₑ via ecrecover.
+        // Compute ([sig]G - [e]Pk)ₑ via ecrecover.
         // forgefmt: disable-next-item
         address recovered = ecrecover(
             ecrecover_msgHash,
@@ -159,7 +159,7 @@ library Schnorr {
             ecrecover_s
         );
 
-        // Verification succeeds iff ([sig]G - [e]P)ₑ = Rₑ.
+        // Verification succeeds iff ([sig]G - [e]Pk)ₑ = Rₑ.
         //
         // Note that commitment is guaranteed to not be zero.
         return sig.commitment == recovered;
@@ -168,64 +168,64 @@ library Schnorr {
     //--------------------------------------------------------------------------
     // Signature Creation
 
-    /// @dev Returns a Schnorr signature signed by private key `privKey` signing
+    /// @dev Returns a Schnorr signature signed by secret key `sk` signing
     ///      message `message`.
     ///
     /// @dev Reverts if:
-    ///      - Private key invalid
+    ///      - Secret key invalid
     ///
-    /// @custom:vm sign(PrivateKey, bytes32)
-    function sign(PrivateKey privKey, bytes memory message)
+    /// @custom:vm sign(SecretKey, bytes32)
+    function sign(SecretKey sk, bytes memory message)
         internal
         vmed
         returns (Signature memory)
     {
         bytes32 digest = keccak256(message);
 
-        return privKey.sign(digest);
+        return sk.sign(digest);
     }
 
-    /// @dev Returns a Schnorr signature signed by private key `privKey` signing
+    /// @dev Returns a Schnorr signature signed by secret key `sk` signing
     ///      hash digest `digest`.
     ///
     /// @dev Reverts if:
-    ///      - Private key invalid
+    ///      - Secret key invalid
     ///
-    /// @custom:vm curves/Secp256k1::toPublicKey(PrivateKey)(PublicKey)
-    function sign(PrivateKey privKey, bytes32 digest)
+    /// @custom:vm curves/Secp256k1::toPublicKey(SecretKey)(PublicKey)
+    function sign(SecretKey sk, bytes32 digest)
         internal
         vmed
         returns (Signature memory)
     {
-        PublicKey memory pubKey = privKey.toPublicKey();
+        PublicKey memory pk = sk.toPublicKey();
 
         // Derive deterministic nonce ∊ [1, Q).
-        uint nonce = privKey.deriveNonce(digest) % Secp256k1.Q;
-        // assert(nonce != 0); // TODO: Revisit once nonce derived via RFC 6979.
+        uint nonce = sk.deriveNonce(digest) % Secp256k1.Q;
+        assert(nonce != 0); // TODO: Revisit once nonce derived via RFC 6979.
 
         // Compute nonce's public key.
-        PublicKey memory noncePubKey =
-            Secp256k1.privateKeyFromUint(nonce).toPublicKey();
+        PublicKey memory noncePk =
+            Secp256k1.secretKeyFromUint(nonce).toPublicKey();
 
         // Derive commitment from nonce's public key.
-        address commitment = noncePubKey.toAddress();
+        address commitment = noncePk.toAddress();
 
-        // Construct challenge = H(Pₓ ‖ Pₚ ‖ m ‖ Rₑ) (mod Q)
+        // Construct challenge = H(Pkₓ ‖ Pkₚ ‖ m ‖ Rₑ) (mod Q)
         bytes32 challenge = bytes32(
             uint(
                 keccak256(
                     abi.encodePacked(
-                        pubKey.x, uint8(pubKey.yParity()), digest, commitment
+                        pk.x, uint8(pk.yParity()), digest, commitment
                     )
                 )
             ) % Secp256k1.Q
         );
 
-        // Compute signature = k + (e * x) (mod Q)
+        // Compute signature = k + (e * sk) (mod Q)
         bytes32 signature = bytes32(
             addmod(
                 nonce,
-                mulmod(uint(challenge), privKey.asUint(), Secp256k1.Q),
+                mulmod(uint(challenge), sk.asUint(), Secp256k1.Q),
                 Secp256k1.Q
             )
         );
@@ -233,41 +233,42 @@ library Schnorr {
         return Signature(signature, commitment);
     }
 
-    /// @dev Returns a Schnorr signature signed by private key `privKey` singing
+    /// @dev Returns a Schnorr signature signed by secret key `sk` singing
     ///      message `message`'s keccak256 digest as Ethereum Signed Message.
     ///
     /// @dev For more info regarding Ethereum Signed Messages, see {Message.sol}.
     ///
     /// @dev Reverts if:
-    ///      - Private key invalid
+    ///      - Secret key invalid
     ///
-    /// @custom:vm sign(PrivateKey, bytes32)
-    function signEthereumSignedMessageHash(
-        PrivateKey privKey,
-        bytes memory message
-    ) internal vmed returns (Signature memory) {
+    /// @custom:vm sign(SecretKey, bytes32)
+    function signEthereumSignedMessageHash(SecretKey sk, bytes memory message)
+        internal
+        vmed
+        returns (Signature memory)
+    {
         bytes32 digest = Message.deriveEthereumSignedMessageHash(message);
 
-        return privKey.sign(digest);
+        return sk.sign(digest);
     }
 
-    /// @dev Returns a Schnorr signature signed by private key `privKey` singing
+    /// @dev Returns a Schnorr signature signed by secret key `sk` singing
     ///      hash digest `digest` as Ethereum Signed Message.
     ///
     /// @dev For more info regarding Ethereum Signed Messages, see {Message.sol}.
     ///
     /// @dev Reverts if:
-    ///      - Private key invalid
+    ///      - Secret key invalid
     ///
-    /// @custom:vm sign(PrivateKey, bytes32)
-    function signEthereumSignedMessageHash(PrivateKey privKey, bytes32 digest)
+    /// @custom:vm sign(SecretKey, bytes32)
+    function signEthereumSignedMessageHash(SecretKey sk, bytes32 digest)
         internal
         vmed
         returns (Signature memory)
     {
         bytes32 digest2 = Message.deriveEthereumSignedMessageHash(digest);
 
-        return privKey.sign(digest2);
+        return sk.sign(digest2);
     }
 
     //--------------------------------------------------------------------------

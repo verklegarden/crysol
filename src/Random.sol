@@ -44,8 +44,8 @@ library Random {
 
         bytes memory result = vm.ffi(inputs);
 
-        // Note that while parts of `cast wallet new` output is constant it
-        // always contains the new wallet's private key and is therefore unique.
+        // Note that while parts of `cast wallet new` output are constant it
+        // always contains the new wallet's secret key and is therefore unique.
         //
         // Note that cast is trusted to create cryptographically secure wallets.
         return uint(keccak256(result));

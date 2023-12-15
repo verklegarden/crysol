@@ -7,7 +7,7 @@ import {console2 as console} from "forge-std/console2.sol";
 import {ECDSA, Signature} from "src/signatures/ECDSA.sol";
 import {ECDSAUnsafe} from "unsafe/ECDSAUnsafe.sol";
 
-import {Secp256k1, PrivateKey, PublicKey} from "src/curves/Secp256k1.sol";
+import {Secp256k1, SecretKey, PublicKey} from "src/curves/Secp256k1.sol";
 
 import {Message} from "src/Message.sol";
 
@@ -15,14 +15,15 @@ import {Message} from "src/Message.sol";
  * @notice ECDSA Unit Tests
  */
 contract ECDSATest is Test {
+    using Secp256k1 for SecretKey;
+    using Secp256k1 for PublicKey;
+
     using ECDSA for address;
-    using ECDSA for PrivateKey;
+    using ECDSA for SecretKey;
     using ECDSA for PublicKey;
     using ECDSA for Signature;
-    using ECDSAUnsafe for Signature;
 
-    using Secp256k1 for PrivateKey;
-    using Secp256k1 for PublicKey;
+    using ECDSAUnsafe for Signature;
 
     ECDSAWrapper wrapper;
 
@@ -33,42 +34,42 @@ contract ECDSATest is Test {
     //--------------------------------------------------------------------------
     // Test: Signature Verification
 
-    function testFuzz_verify(PrivateKey privKey, bytes memory message) public {
-        vm.assume(privKey.isValid());
+    function testFuzz_verify(SecretKey sk, bytes memory message) public {
+        vm.assume(sk.isValid());
 
-        PublicKey memory pubKey = privKey.toPublicKey();
+        PublicKey memory pk = sk.toPublicKey();
         bytes32 digest = keccak256(message);
 
         uint8 v;
         bytes32 r;
         bytes32 s;
-        (v, r, s) = vm.sign(privKey.asUint(), digest);
+        (v, r, s) = vm.sign(sk.asUint(), digest);
 
         Signature memory sig = Signature(v, r, s);
 
-        assertTrue(wrapper.verify(pubKey, message, sig));
-        assertTrue(wrapper.verify(pubKey, digest, sig));
-        assertTrue(wrapper.verify(pubKey.toAddress(), message, sig));
-        assertTrue(wrapper.verify(pubKey.toAddress(), digest, sig));
+        assertTrue(wrapper.verify(pk, message, sig));
+        assertTrue(wrapper.verify(pk, digest, sig));
+        assertTrue(wrapper.verify(pk.toAddress(), message, sig));
+        assertTrue(wrapper.verify(pk.toAddress(), digest, sig));
     }
 
     function testFuzz_verify_FailsIf_SignatureInvalid(
-        PrivateKey privKey,
+        SecretKey sk,
         bytes memory message,
         uint8 vMask,
         uint rMask,
         uint sMask
     ) public {
-        vm.assume(privKey.isValid());
+        vm.assume(sk.isValid());
         vm.assume(vMask != 0 || rMask != 0 || sMask != 0);
 
-        PublicKey memory pubKey = privKey.toPublicKey();
+        PublicKey memory pk = sk.toPublicKey();
         bytes32 digest = keccak256(message);
 
         uint8 v;
         bytes32 r;
         bytes32 s;
-        (v, r, s) = vm.sign(privKey.asUint(), digest);
+        (v, r, s) = vm.sign(sk.asUint(), digest);
 
         v ^= vMask;
         r = bytes32(uint(r) ^ rMask);
@@ -79,53 +80,53 @@ contract ECDSATest is Test {
         // Note that verify() reverts if signature is malleable.
         sig.intoNonMalleable();
 
-        assertFalse(wrapper.verify(pubKey, message, sig));
-        assertFalse(wrapper.verify(pubKey, digest, sig));
-        assertFalse(wrapper.verify(pubKey.toAddress(), message, sig));
-        assertFalse(wrapper.verify(pubKey.toAddress(), digest, sig));
+        assertFalse(wrapper.verify(pk, message, sig));
+        assertFalse(wrapper.verify(pk, digest, sig));
+        assertFalse(wrapper.verify(pk.toAddress(), message, sig));
+        assertFalse(wrapper.verify(pk.toAddress(), digest, sig));
     }
 
     function testFuzz_verify_RevertsIf_SignatureMalleable(
-        PrivateKey privKey,
+        SecretKey sk,
         bytes memory message
     ) public {
-        vm.assume(privKey.isValid());
+        vm.assume(sk.isValid());
 
-        PublicKey memory pubKey = privKey.toPublicKey();
+        PublicKey memory pk = sk.toPublicKey();
         bytes32 digest = keccak256(message);
 
         uint8 v;
         bytes32 r;
         bytes32 s;
-        (v, r, s) = vm.sign(privKey.asUint(), digest);
+        (v, r, s) = vm.sign(sk.asUint(), digest);
 
         Signature memory badSig = Signature(v, r, s).intoMalleable();
 
         vm.expectRevert("SignatureMalleable()");
-        wrapper.verify(pubKey, message, badSig);
+        wrapper.verify(pk, message, badSig);
 
         vm.expectRevert("SignatureMalleable()");
-        wrapper.verify(pubKey, digest, badSig);
+        wrapper.verify(pk, digest, badSig);
 
         vm.expectRevert("SignatureMalleable()");
-        wrapper.verify(pubKey.toAddress(), message, badSig);
+        wrapper.verify(pk.toAddress(), message, badSig);
 
         vm.expectRevert("SignatureMalleable()");
-        wrapper.verify(pubKey.toAddress(), digest, badSig);
+        wrapper.verify(pk.toAddress(), digest, badSig);
     }
 
     function testFuzz_verify_RevertsIf_PublicKeyInvalid(
-        PublicKey memory pubKey,
+        PublicKey memory pk,
         bytes memory message,
         Signature memory sig
     ) public {
-        vm.assume(!pubKey.isValid());
+        vm.assume(!pk.isValid());
 
         vm.expectRevert("PublicKeyInvalid()");
-        wrapper.verify(pubKey, message, sig);
+        wrapper.verify(pk, message, sig);
 
         vm.expectRevert("PublicKeyInvalid()");
-        wrapper.verify(pubKey, keccak256(message), sig);
+        wrapper.verify(pk, keccak256(message), sig);
     }
 
     function testFuzz_verify_RevertsIf_SignerZeroAddress(
@@ -144,74 +145,72 @@ contract ECDSATest is Test {
     //--------------------------------------------------------------------------
     // Test: Signature Creation
 
-    function testFuzz_sign(PrivateKey privKey, bytes memory message) public {
-        vm.assume(privKey.isValid());
+    function testFuzz_sign(SecretKey sk, bytes memory message) public {
+        vm.assume(sk.isValid());
 
-        Signature memory sig1 = wrapper.sign(privKey, message);
-        Signature memory sig2 = wrapper.sign(privKey, keccak256(message));
+        Signature memory sig1 = wrapper.sign(sk, message);
+        Signature memory sig2 = wrapper.sign(sk, keccak256(message));
 
         assertEq(sig1.v, sig2.v);
         assertEq(sig1.r, sig2.r);
         assertEq(sig1.s, sig2.s);
 
-        PublicKey memory pubKey = privKey.toPublicKey();
-        assertTrue(pubKey.verify(message, sig1));
-        assertTrue(pubKey.verify(message, sig2));
+        PublicKey memory pk = sk.toPublicKey();
+        assertTrue(pk.verify(message, sig1));
+        assertTrue(pk.verify(message, sig2));
     }
 
-    function testFuzz_sign_RevertsIf_PrivateKeyInvalid(
-        PrivateKey privKey,
+    function testFuzz_sign_RevertsIf_SecretKeyInvalid(
+        SecretKey sk,
         bytes memory message
     ) public {
-        vm.assume(!privKey.isValid());
+        vm.assume(!sk.isValid());
 
-        vm.expectRevert("PrivateKeyInvalid()");
-        wrapper.sign(privKey, message);
+        vm.expectRevert("SecretKeyInvalid()");
+        wrapper.sign(sk, message);
 
-        vm.expectRevert("PrivateKeyInvalid()");
-        wrapper.sign(privKey, keccak256(message));
+        vm.expectRevert("SecretKeyInvalid()");
+        wrapper.sign(sk, keccak256(message));
     }
 
     function testFuzz_signEthereumSignedMessageHash(
-        PrivateKey privKey,
+        SecretKey sk,
         bytes memory message
     ) public {
-        vm.assume(privKey.isValid());
+        vm.assume(sk.isValid());
 
         Signature memory sig1 =
-            wrapper.signEthereumSignedMessageHash(privKey, message);
+            wrapper.signEthereumSignedMessageHash(sk, message);
         Signature memory sig2 =
-            wrapper.signEthereumSignedMessageHash(privKey, keccak256(message));
+            wrapper.signEthereumSignedMessageHash(sk, keccak256(message));
 
         assertEq(sig1.v, sig2.v);
         assertEq(sig1.r, sig2.r);
         assertEq(sig1.s, sig2.s);
 
-        PublicKey memory pubKey = privKey.toPublicKey();
+        PublicKey memory pk = sk.toPublicKey();
         assertTrue(
-            pubKey.verify(
-                Message.deriveEthereumSignedMessageHash(message), sig1
-            )
+            pk.verify(Message.deriveEthereumSignedMessageHash(message), sig1)
         );
         assertTrue(
-            pubKey.verify(
+            pk.verify(
                 Message.deriveEthereumSignedMessageHash(keccak256(message)),
                 sig2
             )
         );
     }
 
-    function testFuzz_signEthereumSignedMessageHash_RevertsIf_PrivateKeyInvalid(
-        PrivateKey privKey,
+    function testFuzz_signEthereumSignedMessageHash_RevertsIf_SecretKeyInvalid(
+        SecretKey sk,
         bytes memory message
     ) public {
-        vm.assume(!privKey.isValid());
+        vm.assume(!sk.isValid());
 
-        vm.expectRevert("PrivateKeyInvalid()");
-        wrapper.signEthereumSignedMessageHash(privKey, message);
+        vm.expectRevert("SecretKeyInvalid()");
+        wrapper.signEthereumSignedMessageHash(sk, message);
 
-        vm.expectRevert("PrivateKeyInvalid()");
-        wrapper.signEthereumSignedMessageHash(privKey, keccak256(message));
+        vm.expectRevert("SecretKeyInvalid()");
+        wrapper.signEthereumSignedMessageHash(sk, keccak256(message));
     }
 
     //--------------------------------------------------------------------------
@@ -367,32 +366,33 @@ contract ECDSATest is Test {
  * @dev For more info, see https://github.com/foundry-rs/foundry/pull/3128#issuecomment-1241245086.
  */
 contract ECDSAWrapper {
+    using Secp256k1 for SecretKey;
+    using Secp256k1 for PublicKey;
+
     using ECDSA for address;
-    using ECDSA for PrivateKey;
+    using ECDSA for SecretKey;
     using ECDSA for PublicKey;
     using ECDSA for Signature;
-    using ECDSAUnsafe for Signature;
 
-    using Secp256k1 for PrivateKey;
-    using Secp256k1 for PublicKey;
+    using ECDSAUnsafe for Signature;
 
     //--------------------------------------------------------------------------
     // Signature Verification
 
     function verify(
-        PublicKey memory pubKey,
+        PublicKey memory pk,
         bytes memory message,
         Signature memory sig
     ) public pure returns (bool) {
-        return pubKey.verify(message, sig);
+        return pk.verify(message, sig);
     }
 
-    function verify(
-        PublicKey memory pubKey,
-        bytes32 digest,
-        Signature memory sig
-    ) public pure returns (bool) {
-        return pubKey.verify(digest, sig);
+    function verify(PublicKey memory pk, bytes32 digest, Signature memory sig)
+        public
+        pure
+        returns (bool)
+    {
+        return pk.verify(digest, sig);
     }
 
     function verify(address signer, bytes memory message, Signature memory sig)
@@ -414,35 +414,36 @@ contract ECDSAWrapper {
     //--------------------------------------------------------------------------
     // Signature Creation
 
-    function sign(PrivateKey privKey, bytes memory message)
+    function sign(SecretKey sk, bytes memory message)
         public
         view
         returns (Signature memory)
     {
-        return privKey.sign(message);
+        return sk.sign(message);
     }
 
-    function sign(PrivateKey privKey, bytes32 digest)
+    function sign(SecretKey sk, bytes32 digest)
         public
         view
         returns (Signature memory)
     {
-        return privKey.sign(digest);
+        return sk.sign(digest);
     }
 
-    function signEthereumSignedMessageHash(
-        PrivateKey privKey,
-        bytes memory message
-    ) public view returns (Signature memory) {
-        return privKey.signEthereumSignedMessageHash(message);
-    }
-
-    function signEthereumSignedMessageHash(PrivateKey privKey, bytes32 digest)
+    function signEthereumSignedMessageHash(SecretKey sk, bytes memory message)
         public
         view
         returns (Signature memory)
     {
-        return privKey.signEthereumSignedMessageHash(digest);
+        return sk.signEthereumSignedMessageHash(message);
+    }
+
+    function signEthereumSignedMessageHash(SecretKey sk, bytes32 digest)
+        public
+        view
+        returns (Signature memory)
+    {
+        return sk.signEthereumSignedMessageHash(digest);
     }
 
     //--------------------------------------------------------------------------

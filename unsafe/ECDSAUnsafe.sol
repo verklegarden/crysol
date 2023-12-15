@@ -12,7 +12,7 @@
 pragma solidity ^0.8.16;
 
 import {ECDSA, Signature} from "src/signatures/ECDSA.sol";
-import {Secp256k1, PrivateKey, PublicKey} from "src/curves/Secp256k1.sol";
+import {Secp256k1} from "src/curves/Secp256k1.sol";
 import {Secp256k1Arithmetic} from "src/curves/Secp256k1Arithmetic.sol";
 
 /**
@@ -24,45 +24,42 @@ import {Secp256k1Arithmetic} from "src/curves/Secp256k1Arithmetic.sol";
  */
 library ECDSAUnsafe {
     using ECDSA for Signature;
-    using ECDSAUnsafe for PrivateKey;
 
-    using Secp256k1 for PrivateKey;
-
-    /// @dev Mutates signature `self` to be malleable.
-    function intoMalleable(Signature memory self)
+    /// @dev Mutates signature `sig` to be malleable.
+    function intoMalleable(Signature memory sig)
         internal
         pure
         returns (Signature memory)
     {
-        if (self.isMalleable()) {
-            return self;
+        if (sig.isMalleable()) {
+            return sig;
         }
 
-        // Flip self.s to Secp256k1.Q - self.s.
-        self.s = bytes32(Secp256k1.Q - uint(self.s));
+        // Flip sig.s to Secp256k1.Q - sig.s.
+        sig.s = bytes32(Secp256k1.Q - uint(sig.s));
 
         // Flip v.
-        self.v = self.v == 27 ? 28 : 27;
+        sig.v = sig.v == 27 ? 28 : 27;
 
-        return self;
+        return sig;
     }
 
-    /// @dev Mutates signature `self` to be non-malleable.
-    function intoNonMalleable(Signature memory self)
+    /// @dev Mutates signature `sig` to be non-malleable.
+    function intoNonMalleable(Signature memory sig)
         internal
         pure
         returns (Signature memory)
     {
-        if (!self.isMalleable()) {
-            return self;
+        if (!sig.isMalleable()) {
+            return sig;
         }
 
-        // Flip self.s to Secp256k1.Q - self.s.
-        self.s = bytes32(Secp256k1.Q - uint(self.s));
+        // Flip sig.s to Secp256k1.Q - sig.s.
+        sig.s = bytes32(Secp256k1.Q - uint(sig.s));
 
         // Flip v.
-        self.v = self.v == 27 ? 28 : 27;
+        sig.v = sig.v == 27 ? 28 : 27;
 
-        return self;
+        return sig;
     }
 }

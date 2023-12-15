@@ -21,6 +21,8 @@ contract PreludeTest is Test {
     // forgefmt: disable-end
     // ~~~~~~~~~~~~~~~~~~~~~~~
 
+    function vmedFunction() internal vmed {}
+
     function test_vmed() public {
         vmedFunction();
     }
@@ -36,6 +38,4 @@ contract PreludeTest is Test {
             vmedFunction();
         } catch {}
     }
-
-    function vmedFunction() internal vmed {}
 }

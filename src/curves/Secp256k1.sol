@@ -8,6 +8,17 @@
 
 */
 
+// TODO:
+//  - [ ] Complete addition formula from Renes-Costello-Batina 2015?
+//      - See https://eprint.iacr.org/2015/1060 Algorithm 7 + 8
+//      - For double Algorithm 9
+//
+//  - [X] Differentitate between bytes and serialization!
+//      - Serialization:
+//          - toEncodedPoint() -> SEC1 encoded ("normal")
+//          - toCompressedEncodedPoint() -> compressed SEC1 encoded
+//      - TODO: Note that identity case not implemented!!!!
+
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.16;
 
@@ -16,48 +27,51 @@ import {Vm} from "forge-std/Vm.sol";
 import {
     Secp256k1Arithmetic,
     Point,
-    JacobianPoint
+    ProjectivePoint
 } from "./Secp256k1Arithmetic.sol";
 
 import {Random} from "../Random.sol";
 
 /**
- * @notice PrivateKey is a secret scalar
+ * @notice Secret key is an secp256k1 secret key
  *
- * @dev Note that a private key MUST be a field element,
- *      ie private key ∊ [1, Q).
+ * @dev Note that a secret key MUST be a field element, ie sk ∊ [1, Q).
  *
- * @dev Note that a private key MUST be created cryptographically secure!
- *      Generally, this means via randomness sourced from an CSPRNG.
+ * @dev Note that a secret key MUST be created cryptographically sound.
+ *      Generally, this means via randomness sources from an CSPRNG.
  *
- * @custom:example Generating a secure private key:
+ * @custom:example Securly generating a random secret key:
  *
  *      ```solidity
- *      import {Secp256k1, PrivateKey} from "crysol/curves/Secp256k1.sol";
- *      using Secp256k1 for PrivateKey;
+ *      import {Secp256k1, SecretKey} from "crysol/curves/Secp256k1.sol";
+ *      contract Example {
+ *          using Secp256k1 for SecretKey;
  *
- *      PrivateKey privKey = Secp256k1.newPrivateKey();
- *      assert(privKey.isValid());
- *      ```
+ *          SecretKey sk = Secp256k1.newSecretKey();
+ *          assert(sk.isValid());
+ *      }
+ *      ````
  */
-type PrivateKey is uint;
+type SecretKey is uint;
 
 /**
- * @notice PublicKey is a private key's public identifier
+ * @notice PublicKey is a secret key's public identifier
  *
- * @dev A public key is a point on the secp256k1 curve computed via [privKey]G.
+ * @dev A public key is a point on the secp256k1 curve computed via [sk]G.
  *
- * @custom:example Deriving a public key from a private key:
+ * @custom:example Deriving a public key from a secret key:
  *
  *      ```solidity
- *      import {Secp256k1, PrivateKey, PublicKey} from "crysol/curves/Secp256k1.sol";
- *      using Secp256k1 for PrivateKey;
- *      using Secp256k1 for PublicKey;
+ *      import {Secp256k1, SecretKey, PublicKey} from "crysol/curves/Secp256k1.sol";
+ *      contract Example {
+ *          using Secp256k1 for SecretKey;
+ *          using Secp256k1 for PublicKey;
  *
- *      PrivateKey privKey = Secp256k1.newPrivateKey();
+ *          SecretKey sk = Secp256k1.newSecretKey();
  *
- *      PublicKey memory pubKey = privKey.toPublicKey();
- *      assert(pubKey.isValid());
+ *          PublicKey memory pk = sk.toPublicKey();
+ *          assert(pk.isValid());
+ *      }
  *      ```
  */
 struct PublicKey {
@@ -75,9 +89,10 @@ struct PublicKey {
  * @author Inspired by Chronicle Protocol's Scribe (https://github.com/chronicleprotocol/scribe)
  */
 library Secp256k1 {
-    using Secp256k1 for PrivateKey;
+    using Secp256k1 for SecretKey;
     using Secp256k1 for PublicKey;
     using Secp256k1 for Point;
+
     using Secp256k1Arithmetic for Point;
 
     // ~~~~~~~ Prelude ~~~~~~~
@@ -112,84 +127,79 @@ library Secp256k1 {
     uint internal constant Q = Secp256k1Arithmetic.Q;
 
     //--------------------------------------------------------------------------
-    // Private Key
+    // Secret Key
 
-    /// @dev Returns a new cryptographically secure private key.
+    /// @dev Returns a new cryptographically secure secret key.
     ///
     /// @custom:vm Random::readUint()(uint)
-    function newPrivateKey() internal vmed returns (PrivateKey) {
+    function newSecretKey() internal vmed returns (SecretKey) {
         uint scalar;
         while (scalar == 0 || scalar >= Q) {
             // Note to not introduce potential bias via bounding operation.
             scalar = Random.readUint();
         }
-        return privateKeyFromUint(scalar);
+        return secretKeyFromUint(scalar);
     }
 
-    /// @dev Returns whether private key `privKey` is valid.
+    /// @dev Returns whether secret key `sk` is valid.
     ///
-    /// @dev A valid secp256k1 private key ∊ [1, Q).
-    function isValid(PrivateKey privKey) internal pure returns (bool) {
-        return privKey.asUint() != 0 && privKey.asUint() < Q;
+    /// @dev Note that a secret key MUST be a secp256k1 field element in order
+    ///      to be valid, ie sk ∊ [1, Q).
+    function isValid(SecretKey sk) internal pure returns (bool) {
+        uint scalar = sk.asUint();
+
+        return scalar != 0 && scalar < Q;
     }
 
-    /// @dev Returns the public key of private key `privKey`.
+    /// @dev Returns the public key of secret key `sk`.
     ///
     /// @dev Reverts if:
-    ///      - Private key invalid
+    ///      - Secret key invalid
     ///
     /// @custom:vm vm.createWallet(uint)
-    function toPublicKey(PrivateKey privKey)
+    function toPublicKey(SecretKey sk)
         internal
         vmed
         returns (PublicKey memory)
     {
-        if (!privKey.isValid()) {
-            revert("PrivateKeyInvalid()");
+        if (!sk.isValid()) {
+            revert("SecretKeyInvalid()");
         }
 
-        // Compute pubKey = [privKey]G via vm.
-        Vm.Wallet memory wallet = vm.createWallet(privKey.asUint());
+        // Use vm to compute pk = [sk]G.
+        Vm.Wallet memory wallet = vm.createWallet(sk.asUint());
         return PublicKey(wallet.publicKeyX, wallet.publicKeyY);
     }
 
-    /// @dev Returns uint `scalar` as private key.
+    /// @dev Returns uint `scalar` as secret key.
     ///
     /// @dev Reverts if:
     ///      - Scalar not in [1, Q)
-    function privateKeyFromUint(uint scalar)
-        internal
-        pure
-        returns (PrivateKey)
-    {
+    function secretKeyFromUint(uint scalar) internal pure returns (SecretKey) {
         if (scalar == 0 || scalar >= Q) {
             revert("InvalidScalar()");
         }
 
-        return PrivateKey.wrap(scalar);
+        return SecretKey.wrap(scalar);
     }
 
-    /// @dev Returns private key `privKey` as uint.
-    function asUint(PrivateKey privKey) internal pure returns (uint) {
-        return PrivateKey.unwrap(privKey);
+    /// @dev Returns secret key `sk` as uint.
+    function asUint(SecretKey sk) internal pure returns (uint) {
+        return SecretKey.unwrap(sk);
     }
 
     //--------------------------------------------------------------------------
     // Public Key
 
-    /// @dev Returns the address of public key `pubKey`.
+    /// @dev Returns the address of public key `pk`.
     ///
     /// @dev An Ethereum address is defined as the rightmost 160 bits of the
     ///      keccak256 hash of the concatenation of the hex-encoded x and y
     ///      coordinates of the corresponding ECDSA public key.
     ///
     ///      See "Appendix F: Signing Transactions" §134 in the Yellow Paper.
-    function toAddress(PublicKey memory pubKey)
-        internal
-        pure
-        returns (address)
-    {
-        bytes32 digest = pubKey.toHash();
+    function toAddress(PublicKey memory pk) internal pure returns (address) {
+        bytes32 digest = pk.toHash();
 
         address addr;
         assembly ("memory-safe") {
@@ -198,80 +208,83 @@ library Secp256k1 {
         return addr;
     }
 
-    /// @dev Returns the keccak256 hash of public key `pubKey`.
-    function toHash(PublicKey memory pubKey) internal pure returns (bytes32) {
+    /// @dev Returns the keccak256 hash of public key `pk`.
+    function toHash(PublicKey memory pk) internal pure returns (bytes32) {
         bytes32 digest;
         assembly ("memory-safe") {
-            digest := keccak256(pubKey, 0x40)
+            digest := keccak256(pk, 0x40)
         }
         return digest;
     }
 
-    /// @dev Returns whether public key `pubKey` is a valid secp256k1 public key.
-    function isValid(PublicKey memory pubKey) internal pure returns (bool) {
-        return pubKey.intoPoint().isOnCurve();
+    /// @dev Returns whether public key `pk` is a valid secp256k1 public key.
+    ///
+    /// @dev Note that a public key is valid if its either on the curve or the
+    ///      identity (aka point at infinity) point.
+    function isValid(PublicKey memory pk) internal pure returns (bool) {
+        return pk.intoPoint().isOnCurve();
     }
 
-    /// @dev Returns the y parity of public key `pubKey`.
+    /// @dev Returns the y parity of public key `pk`.
     ///
     /// @dev The value 0 represents an even y value and 1 represents an odd y
     ///      value.
     ///
     ///      See "Appendix F: Signing Transactions" in the Yellow Paper.
-    function yParity(PublicKey memory pubKey) internal pure returns (uint) {
-        return pubKey.intoPoint().yParity();
+    function yParity(PublicKey memory pk) internal pure returns (uint) {
+        return pk.intoPoint().yParity();
     }
 
-    /// @dev Mutates public key `pubKey` to Affine point.
-    function intoPoint(PublicKey memory pubKey)
+    /// @dev Mutates public key `pk` to affine point.
+    function intoPoint(PublicKey memory pk)
         internal
         pure
         returns (Point memory)
     {
         Point memory point;
         assembly ("memory-safe") {
-            point := pubKey
+            point := pk
         }
         return point;
     }
 
-    /// @dev Mutates Affine point `point` to Public Key.
+    /// @dev Mutates affine point `point` to a public key.
     function intoPublicKey(Point memory point)
         internal
         pure
         returns (PublicKey memory)
     {
-        PublicKey memory pubKey;
+        PublicKey memory pk;
         assembly ("memory-safe") {
-            pubKey := point
+            pk := point
         }
-        return pubKey;
+        return pk;
     }
 
-    /// @dev Returns public key `pubKey` as Jacobian Point.
-    function toJacobianPoint(PublicKey memory pubKey)
+    /// @dev Returns public key `pk` as projective point.
+    function toProjectivePoint(PublicKey memory pk)
         internal
         pure
-        returns (JacobianPoint memory)
+        returns (ProjectivePoint memory)
     {
-        return JacobianPoint(pubKey.x, pubKey.y, 1);
+        return pk.intoPoint().toProjectivePoint();
     }
 
     //--------------------------------------------------------------------------
     // (De)Serialization
 
     //----------------------------------
-    // Private Key
+    // Secret Key
 
-    /// @dev Returns bytes `blob` as private key.
+    /// @dev Returns bytes `blob` as secret key.
     ///
     /// @dev Reverts if:
     ///      - Length not 32 bytes
     ///      - Deserialized scalar not in [1, Q)
-    function privateKeyFromBytes(bytes memory blob)
+    function secretKeyFromBytes(bytes memory blob)
         internal
         pure
-        returns (PrivateKey)
+        returns (SecretKey)
     {
         if (blob.length != 32) {
             revert("InvalidLength()");
@@ -282,27 +295,29 @@ library Secp256k1 {
             scalar := mload(add(blob, 0x20))
         }
 
-        return privateKeyFromUint(scalar);
+        return secretKeyFromUint(scalar);
     }
 
-    /// @dev Returns private key `privKey` as bytes.
-    function toBytes(PrivateKey privKey) internal pure returns (bytes memory) {
-        return abi.encodePacked(privKey.asUint());
+    /// @dev Returns secret key `sk` as bytes.
+    function toBytes(SecretKey sk) internal pure returns (bytes memory) {
+        return abi.encodePacked(sk.asUint());
     }
 
     //----------------------------------
     // Public Key
 
-    /// @dev Returns public key from bytes `blob`.
+    // TODO: Not totally correct. Identity case is missing!
+    //       See https://www.secg.org/sec1-v2.pdf page 10.
+    /// @dev Decodes public key from SEC1 encoded bytes blob `blob`.
     ///
     /// @dev Reverts if:
     ///      - Length not 65 bytes
     ///      - Prefix byte not 0x04
-    ///      - Deserialized public key invalid
+    ///      - Decoded public key invalid
     ///
     /// @dev Expects uncompressed 65 bytes encoding:
     ///         [0x04 prefix][32 bytes x coordinate][32 bytes y coordinate]
-    function publicKeyFromBytes(bytes memory blob)
+    function publicKeyFromEncoded(bytes memory blob)
         internal
         pure
         returns (PublicKey memory)
@@ -323,7 +338,7 @@ library Secp256k1 {
             revert("InvalidPrefix()");
         }
 
-        // Read x and y coordinates of public key.
+        // Read x and y coordinates.
         uint x;
         uint y;
         assembly ("memory-safe") {
@@ -332,25 +347,76 @@ library Secp256k1 {
         }
 
         // Make public key.
-        PublicKey memory pubKey = PublicKey(x, y);
+        PublicKey memory pk = PublicKey(x, y);
 
         // Revert if public key invalid.
-        if (!pubKey.isValid()) {
+        if (!pk.isValid()) {
             revert("InvalidPublicKey()");
         }
 
-        return pubKey;
+        return pk;
     }
 
-    /// @dev Returns public key `pubKey` as bytes.
+    // TODO: Not totally correct. Identity case is missing!
+    //       See https://www.secg.org/sec1-v2.pdf page 10.
+    /// @dev Encodes public key `pk` as SEC1 encoded bytes.
     ///
     /// @dev Provides uncompressed 65 bytes encoding:
     ///         [0x04 prefix][32 bytes x coordinate][32 bytes y coordinate]
-    function toBytes(PublicKey memory pubKey)
+    function toEncoded(PublicKey memory pk)
+        internal
+        pure
+        returns (bytes memory blob)
+    {
+        return abi.encodePacked(bytes1(0x04), pk.x, pk.y);
+    }
+
+    /// @dev Decodes public key from ABI-encoded bytes `blob`.
+    ///
+    /// @dev Reverts if:
+    ///      - Length not 64 bytes
+    ///      - Decoded public key invalid
+    ///
+    /// @dev Expects 64 bytes encoding:
+    ///         [32 bytes x coordinate][32 bytes y coordinate]
+    function publicKeyFromBytes(bytes memory blob)
+        internal
+        pure
+        returns (PublicKey memory)
+    {
+        // Revert if length not 65.
+        if (blob.length != 64) {
+            revert("InvalidLength()");
+        }
+
+        // Read x and y coordinates of public key.
+        uint x;
+        uint y;
+        assembly ("memory-safe") {
+            x := mload(add(blob, 0x20))
+            y := mload(add(blob, 0x40))
+        }
+
+        // Make public key.
+        PublicKey memory pk = PublicKey(x, y);
+
+        // Revert if public key invalid.
+        if (!pk.isValid()) {
+            revert("InvalidPublicKey()");
+        }
+
+        return pk;
+    }
+
+    /// @dev Encodes public key `pk` as ABI-encoded bytes.
+    ///
+    /// @dev Provides 64 bytes encoding:
+    ///         [32 bytes x coordinate][32 bytes y coordinate]
+    function toBytes(PublicKey memory pk)
         internal
         pure
         returns (bytes memory)
     {
-        return abi.encodePacked(bytes1(0x04), pubKey.x, pubKey.y);
+        return abi.encodePacked(pk.x, pk.y);
     }
 }

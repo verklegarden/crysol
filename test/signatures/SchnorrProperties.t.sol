@@ -6,52 +6,53 @@ import {console2 as console} from "forge-std/console2.sol";
 
 import {Schnorr, Signature} from "src/signatures/Schnorr.sol";
 
-import {Secp256k1, PrivateKey, PublicKey} from "src/curves/Secp256k1.sol";
+import {Secp256k1, SecretKey, PublicKey} from "src/curves/Secp256k1.sol";
 
 /**
  * @notice Schnorr Property Tests
  */
 contract SchnorrPropertiesTest is Test {
-    using Schnorr for PrivateKey;
+    using Schnorr for SecretKey;
     using Schnorr for PublicKey;
     using Schnorr for Signature;
 
-    using Secp256k1 for PrivateKey;
+    using Secp256k1 for SecretKey;
 
     //--------------------------------------------------------------------------
     // Properties: Signature
 
     function testProperty_sign_CreatesVerifiableSignatures(
-        PrivateKey privKey,
+        SecretKey sk,
         bytes memory message
     ) public {
-        vm.assume(privKey.isValid());
+        vm.assume(sk.isValid());
 
-        PublicKey memory pubKey = privKey.toPublicKey();
+        PublicKey memory pk = sk.toPublicKey();
+        Signature memory sig = sk.sign(message);
 
-        assertTrue(pubKey.verify(message, privKey.sign(message)));
+        assertTrue(pk.verify(message, sig));
     }
 
     function testProperty_sign_CreatesDeterministicSignatures(
-        PrivateKey privKey,
+        SecretKey sk,
         bytes memory message
     ) public {
-        vm.assume(privKey.isValid());
+        vm.assume(sk.isValid());
 
-        Signature memory sig1 = privKey.sign(message);
-        Signature memory sig2 = privKey.sign(message);
+        Signature memory sig1 = sk.sign(message);
+        Signature memory sig2 = sk.sign(message);
 
         assertEq(sig1.signature, sig2.signature);
         assertEq(sig1.commitment, sig2.commitment);
     }
 
     function testProperty_sign_CreatesNonMalleableSignatures(
-        PrivateKey privKey,
+        SecretKey sk,
         bytes memory message
     ) public {
-        vm.assume(privKey.isValid());
+        vm.assume(sk.isValid());
 
-        assertFalse(privKey.sign(message).isMalleable());
+        assertFalse(sk.sign(message).isMalleable());
     }
 
     //--------------------------------------------------------------------------

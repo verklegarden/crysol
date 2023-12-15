@@ -12,7 +12,7 @@
 pragma solidity ^0.8.16;
 
 /**
- * @notice Point is a secp256k1 point in Affine coordinates
+ * @notice Point is a secp256k1 point in affine coordinates
  *
  * @dev The point at infinity is represented via:
  *          x = y = type(uint).max
@@ -23,14 +23,14 @@ struct Point {
 }
 
 /**
- * @notice JacobianPoint is a secp256k1 point in Jacobian coordinates
+ * @notice ProjectivePoint is a secp256k1 point in projective coordinates
  *
- * @dev Jacobian point represents Affine point (x, y) as (X, Y, Z) satisfying
- *      the following equations:
+ * @dev A projective point represents an affine point (x, y) as (X, Y, Z)
+ *      satisfying the following equations:
  *          x = X / Z²
  *          y = Y / Z³
  */
-struct JacobianPoint {
+struct ProjectivePoint {
     uint x;
     uint y;
     uint z;
@@ -51,7 +51,7 @@ struct JacobianPoint {
  */
 library Secp256k1Arithmetic {
     using Secp256k1Arithmetic for Point;
-    using Secp256k1Arithmetic for JacobianPoint;
+    using Secp256k1Arithmetic for ProjectivePoint;
 
     //--------------------------------------------------------------------------
     // Secp256k1 Constants
@@ -66,7 +66,11 @@ library Secp256k1Arithmetic {
         0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFEFFFFFC2F;
 
     /// @dev The generator G as Point.
+    ///
+    /// @dev Note that the generator is also called base point.
     function G() internal pure returns (Point memory) {
+        // Gₓ = 79be667e f9dcbbac 55a06295 ce870b07 029bfcdb 2dce28d9 59f2815b 16f81798
+        // Gᵧ = 483ada77 26a3c465 5da4fbfc 0e1108a8 fd17b448 a6855419 9c47d08f fb10d4b8
         return Point(
             0x79be667ef9dcbbac55a06295ce870b07029bfcdb2dce28d959f2815b16f81798,
             0x483ada7726a3c4655da4fbfc0e1108a8fd17b448a68554199c47d08ffb10d4b8
@@ -96,33 +100,39 @@ library Secp256k1Arithmetic {
         return (point.x | point.y) == 0;
     }
 
-    /// @dev Returns the point at infinity.
+    /// @dev Returns the additive identity.
     ///
-    /// @dev Note that point at infinity is represented via:
+    /// @dev Note that the identity is represented via:
     ///         point.x = point.y = type(uint).max
-    function PointAtInfinity() internal pure returns (Point memory) {
+    ///
+    /// @dev Note that the identity is also called point at infinity.
+    function Identity() internal pure returns (Point memory) {
         return Point(type(uint).max, type(uint).max);
     }
 
-    /// @dev Returns whether point `point` is the point at infinity.
+    /// @dev Returns whether point `point` is the identity.
     ///
-    /// @dev Note that point at infinity is represented via:
+    /// @dev Note that the identity is represented via:
     ///         point.x = point.y = type(uint).max
-    function isPointAtInfinity(Point memory point)
-        internal
-        pure
-        returns (bool)
-    {
+    ///
+    /// @dev Note that the identity is also called point at infinity.
+    function isIdentity(Point memory point) internal pure returns (bool) {
         return (point.x & point.y) == type(uint).max;
     }
 
     /// @dev Returns whether point `point` is on the curve.
     ///
-    /// @dev Note that secp256k1 curve is specified as y² ≡ x³ + ax + b (mod P)
+    /// @dev Note that secp256k1 curve is specified as y² ≡ x³ + ax + b (mod p)
     ///      where:
     ///         a = 0
     ///         b = 7
+    ///
+    /// @dev Note that the identity is also on the curve.
     function isOnCurve(Point memory point) internal pure returns (bool) {
+        if (point.isIdentity()) {
+            return true;
+        }
+
         uint left = mulmod(point.y, point.y, P);
         // Note that adding a * x can be waived as ∀x: a * x = 0.
         uint right =
@@ -142,7 +152,7 @@ library Secp256k1Arithmetic {
     }
 
     //--------------------------------------------------------------------------
-    // Jacobian Point
+    // Projective Point
     //
     // Coming soon...
 
@@ -152,49 +162,49 @@ library Secp256k1Arithmetic {
     //----------------------------------
     // Point
 
-    /// @dev Returns point `point` as Jacobian point.
-    function toJacobianPoint(Point memory point)
+    /// @dev Returns point `point` as projective point.
+    function toProjectivePoint(Point memory point)
         internal
         pure
-        returns (JacobianPoint memory)
+        returns (ProjectivePoint memory)
     {
-        return JacobianPoint(point.x, point.y, 1);
+        return ProjectivePoint(point.x, point.y, 1);
     }
 
     //----------------------------------
-    // Jacobian Point
+    // Projective Point
 
-    /// @dev Mutates Jacobian point `jacPoint` to Affine point.
-    function intoPoint(JacobianPoint memory jacPoint)
+    /// @dev Mutates projective point `jPoint` to affine point.
+    function intoPoint(ProjectivePoint memory jPoint)
         internal
         pure
         returns (Point memory)
     {
-        // Compute z⁻¹, i.e. the modular inverse of jacPoint.z.
-        uint zInv = modularInverseOf(jacPoint.z);
+        // Compute z⁻¹, i.e. the modular inverse of jPoint.z.
+        uint zInv = modularInverseOf(jPoint.z);
 
-        // Compute (z⁻¹)² (mod P)
+        // Compute (z⁻¹)² (mod p)
         uint zInv_2 = mulmod(zInv, zInv, P);
 
-        // Compute jacPoint.x * (z⁻¹)² (mod P), i.e. the x coordinate of given
-        // Jacobian point in Affine representation.
-        uint x = mulmod(jacPoint.x, zInv_2, P);
+        // Compute jPoint.x * (z⁻¹)² (mod p), i.e. the x coordinate of given
+        // projective point in affine representation.
+        uint x = mulmod(jPoint.x, zInv_2, P);
 
-        // Compute jacPoint.y * (z⁻¹)³ (mod P), i.e. the y coordinate of given
-        // Jacobian point in Affine representation.
-        uint y = mulmod(jacPoint.y, mulmod(zInv, zInv_2, P), P);
+        // Compute jPoint.y * (z⁻¹)³ (mod p), i.e. the y coordinate of given
+        // projective point in affine representation.
+        uint y = mulmod(jPoint.y, mulmod(zInv, zInv_2, P), P);
 
-        // Store x and y in jacPoint.
+        // Store x and y in jPoint.
         assembly ("memory-safe") {
-            mstore(jacPoint, x)
-            mstore(add(jacPoint, 0x20), y)
+            mstore(jPoint, x)
+            mstore(add(jPoint, 0x20), y)
         }
 
-        // Return as Point(jacPoint.x, jacPoint.y).
-        // Note that jacPoint.z is from now on dirty memory!
+        // Return as Point(jPoint.x, jPoint.y).
+        // Note that from this moment, jPoint.z is dirty memory!
         Point memory point;
         assembly ("memory-safe") {
-            point := jacPoint
+            point := jPoint
         }
         return point;
     }
@@ -208,7 +218,7 @@ library Secp256k1Arithmetic {
 
     /// @dev Returns the modular inverse of `x` for modulo `P`.
     ///
-    ///      The modular inverse of `x` is x⁻¹ such that x * x⁻¹ ≡ 1 (mod P).
+    ///      The modular inverse of `x` is x⁻¹ such that x * x⁻¹ ≡ 1 (mod p).
     ///
     /// @dev Reverts if:
     ///      - x not in [1, P)
@@ -268,6 +278,7 @@ library Secp256k1Arithmetic {
         return t;
     }
 
+    /// @dev Returns whether `xInv` is the modular inverse of `x`.
     function areModularInverse(uint x, uint xInv)
         internal
         pure

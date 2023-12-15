@@ -30,16 +30,18 @@ Schnorr signatures provide a number of advantages compared to ECDSA signatures:
 
 ### Variables
 
-- `x :: Secp256k1::PrivateKey` - The signer's private key
-- `P :: Secp256k1::PublicKey` - The signer's public key, ie `[x]G`
+- `sk :: Secp256k1::SecretKey` - The signer's secret key
+- `Pk :: Secp256k1::PublicKey` - The signer's public key, ie `[sk]G`
 - `m :: bytes32` - The keccak256 hash digest to sign
 
 
 ## Signature Creation
 
-1. Derive a cryptographically secure nonce from `m` and `x` via `keccak256(x ‖ m) % Q`
+1. Derive a cryptographically secure nonce from `m` and `sk`.
 
-Note that the probability of `keccak256(x ‖ m) ∊ {0, Q}` is negligible.
+> TODO: Current implementation uses `keccak256(sk ‖ m) % Q`. Want to move to RFC...
+> 
+> Note that the probability of `keccak256(sk ‖ m) ∊ {0, Q}` is negligible.
 
 ```
 k ∊ [1, Q)
@@ -60,36 +62,36 @@ commitment = Rₑ
 4. Construct challenge `e`
 
 ```
-e = H(Pₓ ‖ Pₚ ‖ m ‖ r)
+e = H(Pkₓ ‖ Pkₚ ‖ m ‖ r)
 ```
 
 5. Compute `signature`
 
 ```
-signature = k + (e * x) (mod Q)
+signature = k + (e * sk) (mod Q)
 ```
 
 => Let tuple `(signature, commitment)` be the Schnorr signature
 
 ## Signature Verification
 
-* **Input**: `(P, m, signature, commitment)`
+* **Input**: `(Pk, m, signature, commitment)`
 * **Output**: `True` if signature verification succeeds, `False` otherwise
 
 1. Construct challenge `e`
 
 ```
-e = H(Pₓ ‖ Pₚ ‖ m ‖ r)
+e = H(Pkₓ ‖ Pkₚ ‖ m ‖ r)
 ```
 
 2. Compute Ethereum address of nonce's public key
 
 ```
-  ([signature]G - [e]P)ₑ       | signature = k + (e * x)
-= ([k + (e * x)]G - [e]P)ₑ     | P = [x]G
-= ([k + (e * x)]G - [e * x]G)ₑ | Distributive Law
-= ([k + (e * x) - (e * x)]G)ₑ  | (e * x) - (e * x) = 0
-= ([k]G)ₑ                      | R = [k]G
+  ([signature]G - [e]Pk)ₑ        | signature = k + (e * sk)
+= ([k + (e * sk)]G - [e]Pk)ₑ     | Pk = [sk]G
+= ([k + (e * sk)]G - [e * sk]G)ₑ | Distributive Law
+= ([k + (e * sk) - (e * sk)]G)ₑ  | (e * sk) - (e * sk) = 0
+= ([k]G)ₑ                        | R = [k]G
 = Rₑ
 ```
 
@@ -97,9 +99,12 @@ e = H(Pₓ ‖ Pₚ ‖ m ‖ r)
 
 ## Security Notes
 
+> TODO: End goal musig2 and as much BIP-340 compatible as possible.
+
 Note that `crysol`'s Schnorr scheme deviates slightly from the classical Schnorr signature scheme.
 
-Instead of using the secp256k1 point `R = [k]G` directly, this scheme uses the Ethereum address of the point `R`, which decreases the difficulty of brute-forcing the signature from 256 bits (trying random secp256k1 points) to 160 bits (trying random Ethereum addresses).
+Instead of using the secp256k1 point `R = [k]G` directly, this scheme uses the Ethereum address of the point `R` which decreases the difficulty of brute-forcing the signature 
+from 256 bits (trying random secp256k1 points) to 160 bits (trying random Ethereum addresses).
 
 However, the difficulty of cracking a secp256k1 public key using the baby-step giant-step algorithm is `O(√Q)`[^baby-step-giant-step-wikipedia]. Note that `√Q ~ 3.4e38 < 128 bit`.
 
@@ -121,38 +126,37 @@ def ecdsa_raw_recover(msghash, vrs):
    return from_jacobian(N)
 ```
 
-A single ecrecover call can compute `([signature]G - [e]P)ₑ = ([k]G)ₑ = Rₑ = commitment` via the
-following inputs:
+A single ecrecover call can compute `([signature]G - [e]Pk)ₑ = ([k]G)ₑ = Rₑ = commitment` via the following inputs:
 ```
-msghash = -signature * Pₓ
-v       = Pₚ + 27
-r       = Pₓ
-s       = Q - (e * Pₓ)
+msghash = -signature * Pkₓ
+v       = Pkₚ + 27
+r       = Pkₓ
+s       = Q - (e * Pkₓ)
 ```
 
 Note that ecrecover returns the Ethereum address of `R` and not `R` itself.
 
 The ecrecover call then digests to:
 ```
-Gz = [Q - (-signature * Pₓ)]G     | Double negation
-   = [Q + (signature * Pₓ)]G      | Addition with Q can be removed in (mod Q)
-   = [signature * Pₓ]G            | sig = k + (e * x)
-   = [(k + (e * x)) * Pₓ]G
+Gz = [Q - (-signature * Pkₓ)]G  | Double negation
+   = [Q + (signature * Pkₓ)]G   | Addition with Q can be removed in (mod Q)
+   = [signature * Pkₓ]G         | sig = k + (e * sk)
+   = [(k + (e * sk)) * Pkₓ]G
 
-XY = [Q - (e * Pₓ)]P        | P = [x]G
-   = [(Q - (e * Pₓ)) * x]G
+XY = [Q - (e * Pkₓ)]Pk        | Pk = [sk]G
+   = [(Q - (e * Pkₓ)) * sk]G  
 
-Qr = Gz + XY                                        | Gz = [(k + (e * x)) * Pₓ]G
-   = [(k + (e * x)) * Pₓ]G + XY                     | XY = [(Q - (e * Pₓ)) * x]G
-   = [(k + (e * x)) * Pₓ]G + [(Q - (e * Pₓ)) * x]G
+Qr = Gz + XY                                            | Gz = [(k + (e * sk)) * Pkₓ]G
+   = [(k + (e * sk)) * Pkₓ]G + XY                       | XY = [(Q - (e * Pkₓ)) * sk]G
+   = [(k + (e * sk)) * Pkₓ]G + [(Q - (e * Pkₓ)) * sk]G
 
-N  = Qr * Pₓ⁻¹                                                    | Qr = [(k + (e * x)) * Pₓ]G + [(Q - (e * Pₓ)) * x]G
-   = [(k + (e * x)) * Pₓ]G + [(Q - (e * Pₓ)) * x]G * Pₓ⁻¹         | Distributive law
-   = [(k + (e * x)) * Pₓ * Pₓ⁻¹]G + [(Q - (e * Pₓ)) * x * Pₓ⁻¹]G  | Pₓ * Pₓ⁻¹ = 1
-   = [(k + (e * x))]G + [Q - e * x]G                              | signature = k + (e * x)
-   = [signature]G + [Q - e * x]G                                  | Q - (e * x) = -(e * x) in (mod Q)
-   = [signature]G - [e * x]G                                      | P = [x]G
-   = [signature]G - [e]P
+N  = Qr * Pkₓ⁻¹                                                         | Qr = [(k + (e * sk)) * Pkₓ]G + [(Q - (e * Pkₓ)) * sk]G
+   = [(k + (e * sk)) * Pkₓ]G + [(Q - (e * Pkₓ)) * sk]G * Pkₓ⁻¹          | Distributive law
+   = [(k + (e * sk)) * Pkₓ * Pkₓ⁻¹]G + [(Q - (e * Pkₓ)) * sk * Pkₓ⁻¹]G  | Pkₓ * Pkₓ⁻¹ = 1
+   = [(k + (e * sk))]G + [Q - e * sk]G                                  | signature = k + (e * sk)
+   = [signature]G + [Q - e * x]G                                        | Q - (e * sk) = -(e * sk) in (mod Q)
+   = [signature]G - [e * sk]G                                           | Pk = [sk]G
+   = [signature]G - [e]Pk
 ```
 
 

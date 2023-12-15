@@ -4,33 +4,39 @@ pragma solidity ^0.8.16;
 import {Script} from "forge-std/Script.sol";
 import {console2 as console} from "forge-std/console2.sol";
 
-import {Secp256k1, PrivateKey, PublicKey} from "src/curves/Secp256k1.sol";
-import {Secp256k1Arithmetic, Point, JacobianPoint} from "src/curves/Secp256k1Arithmetic.sol";
+import {Secp256k1, SecretKey, PublicKey} from "src/curves/Secp256k1.sol";
+import {Secp256k1Arithmetic, Point, ProjectivePoint} from 
+    "src/curves/Secp256k1Arithmetic.sol";
 
 contract Secp256k1Example is Script {
-    using Secp256k1 for PrivateKey;
+    using Secp256k1 for SecretKey;
     using Secp256k1 for PublicKey;
 
     function run() public {
-        // Create new cryptographically sound private key.
-        PrivateKey privKey = Secp256k1.newPrivateKey();
+        // Create new cryptographically sound secret key.
+        SecretKey sk = Secp256k1.newSecretKey();
+        assert(sk.isValid());
 
         // Derive public key.
-        PublicKey memory pubKey = privKey.toPublicKey();
+        PublicKey memory pk = sk.toPublicKey();
+        assert(pk.isValid());
 
         // Arithmetic types.
-        // into() -> no memory allocation, to() -> new memory allocation
-        Point memory point = pubKey.intoPoint();
-        JacobianPoint memory jacPoint = pubKey.toJacobianPoint();
+        // into***() -> no memory allocation
+        // to***() -> new memory allocation
+        Point memory point = pk.intoPoint();
+        ProjectivePoint memory jPoint = pk.toProjectivePoint();
 
-        // Print some stuff.
-        console.log("Address", pubKey.toAddress());
-        console.log("Parity", pubKey.yParity());
-        console.logBytes32(pubKey.toHash());
-        console.log("Valid", pubKey.isValid());
+        // Derive common constructs.
+        address addr = pk.toAddress();
+        bytes32 digest = pk.toHash();
+        uint yParity = pk.yParity();
 
-        // Serialization.
-        privKey = Secp256k1.privateKeyFromBytes(privKey.toBytes());
-        pubKey = Secp256k1.publicKeyFromBytes(pubKey.toBytes());
+        // ABI serialization.
+        sk = Secp256k1.secretKeyFromBytes(sk.toBytes());
+        pk = Secp256k1.publicKeyFromBytes(pk.toBytes());
+
+        // SEC1 serialization.
+        pk = Secp256k1.publicKeyFromEncoded(pk.toEncoded());
     }
 }
