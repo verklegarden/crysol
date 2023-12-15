@@ -75,9 +75,7 @@ contract SchnorrTest is Test {
         );
         vm.expectRevert("PublicKeyInvalid()");
         wrapper.verify(
-            pk,
-            keccak256(message),
-            Secp256k1.secretKeyFromUint(1).sign(message)
+            pk, keccak256(message), Secp256k1.secretKeyFromUint(1).sign(message)
         );
     }
 
@@ -162,14 +160,10 @@ contract SchnorrTest is Test {
 
         PublicKey memory pk = sk.toPublicKey();
         assertTrue(
-            pk.verify(
-                Message.deriveEthereumSignedMessageHash(message), sig1
-            )
+            pk.verify(Message.deriveEthereumSignedMessageHash(message), sig1)
         );
         assertTrue(
-            pk.verify(
-                Message.deriveEthereumSignedMessageHash(message), sig2
-            )
+            pk.verify(Message.deriveEthereumSignedMessageHash(message), sig2)
         );
     }
 
@@ -247,11 +241,11 @@ contract SchnorrWrapper {
         return pk.verify(message, sig);
     }
 
-    function verify(
-        PublicKey memory pk,
-        bytes32 digest,
-        Signature memory sig
-    ) public pure returns (bool) {
+    function verify(PublicKey memory pk, bytes32 digest, Signature memory sig)
+        public
+        pure
+        returns (bool)
+    {
         return pk.verify(digest, sig);
     }
 
@@ -272,10 +266,10 @@ contract SchnorrWrapper {
         return sk.sign(digest);
     }
 
-    function signEthereumSignedMessageHash(
-        SecretKey sk,
-        bytes memory message
-    ) public returns (Signature memory) {
+    function signEthereumSignedMessageHash(SecretKey sk, bytes memory message)
+        public
+        returns (Signature memory)
+    {
         return sk.signEthereumSignedMessageHash(message);
     }
 

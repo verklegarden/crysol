@@ -183,9 +183,7 @@ contract Secp256k1Test is Test {
         assertEq(pk.y, point.y);
     }
 
-    function testFuzz_PublicKey_toProjectivePoint(PublicKey memory pk)
-        public
-    {
+    function testFuzz_PublicKey_toProjectivePoint(PublicKey memory pk) public {
         ProjectivePoint memory jPoint = wrapper.toProjectivePoint(pk);
 
         assertEq(jPoint.x, pk.x);
@@ -196,7 +194,7 @@ contract Secp256k1Test is Test {
     //--------------------------------------------------------------------------
     // Test: (De)Serialization
 
-/*
+    /*
 
     //----------------------------------
     // Private Key
@@ -347,8 +345,7 @@ contract Secp256k1Test is Test {
     function test_PublicKey_asBytes_ViaGenerator() public {
         assertEq(GENERATOR_BYTES_UNCOMPRESSED, wrapper.toBytes(Secp256k1.G()));
     }
-*/
-
+    */
 }
 
 /**
@@ -381,10 +378,7 @@ contract Secp256k1Wrapper {
         return sk.isValid();
     }
 
-    function toPublicKey(SecretKey sk)
-        public
-        returns (PublicKey memory)
-    {
+    function toPublicKey(SecretKey sk) public returns (PublicKey memory) {
         return sk.toPublicKey();
     }
 
@@ -468,11 +462,7 @@ contract Secp256k1Wrapper {
         return Secp256k1.publicKeyFromBytes(blob);
     }
 
-    function toBytes(PublicKey memory pk)
-        public
-        pure
-        returns (bytes memory)
-    {
+    function toBytes(PublicKey memory pk) public pure returns (bytes memory) {
         return pk.toBytes();
     }
 }

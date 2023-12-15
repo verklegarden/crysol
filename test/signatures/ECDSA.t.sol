@@ -190,9 +190,7 @@ contract ECDSATest is Test {
 
         PublicKey memory pk = sk.toPublicKey();
         assertTrue(
-            pk.verify(
-                Message.deriveEthereumSignedMessageHash(message), sig1
-            )
+            pk.verify(Message.deriveEthereumSignedMessageHash(message), sig1)
         );
         assertTrue(
             pk.verify(
@@ -389,11 +387,11 @@ contract ECDSAWrapper {
         return pk.verify(message, sig);
     }
 
-    function verify(
-        PublicKey memory pk,
-        bytes32 digest,
-        Signature memory sig
-    ) public pure returns (bool) {
+    function verify(PublicKey memory pk, bytes32 digest, Signature memory sig)
+        public
+        pure
+        returns (bool)
+    {
         return pk.verify(digest, sig);
     }
 
@@ -432,10 +430,11 @@ contract ECDSAWrapper {
         return sk.sign(digest);
     }
 
-    function signEthereumSignedMessageHash(
-        SecretKey sk,
-        bytes memory message
-    ) public view returns (Signature memory) {
+    function signEthereumSignedMessageHash(SecretKey sk, bytes memory message)
+        public
+        view
+        returns (Signature memory)
+    {
         return sk.signEthereumSignedMessageHash(message);
     }
 
