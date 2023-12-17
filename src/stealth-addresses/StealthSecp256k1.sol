@@ -16,19 +16,24 @@ import {console2 as console} from "forge-std/console2.sol";
 
 import {Vm} from "forge-std/Vm.sol";
 
-import {Secp256k1, PrivateKey, PublicKey} from "../curves/Secp256k1.sol";
+import {Secp256k1, SecretKey, PublicKey} from "../curves/Secp256k1.sol";
 import {Secp256k1Arithmetic, Point} from "../curves/Secp256k1Arithmetic.sol";
 
 uint constant SCHEME_ID = 1;
 
+/// @custom:field spendPk The spending public key
+/// @custom:field viewPk The viewing public key
 struct StealthMetaAddress {
-    PublicKey spendingPubKey;
-    PublicKey viewingPubKey;
+    PublicKey spendPk;
+    PublicKey viewPk;
 }
 
+/// @custom:field recipient
+/// @custom:field ephPk The ephemeral public key
+/// @custom:field viewTag
 struct StealthAddress {
     address recipient;
-    PublicKey ephemeralPubKey;
+    PublicKey ephPk;
     uint8 viewTag;
 }
 
@@ -47,7 +52,7 @@ struct StealthAddress {
  * @author crysol (https://github.com/pmerkleplant/crysol)
  */
 library StealthSecp256k1 {
-    using Secp256k1 for PrivateKey;
+    using Secp256k1 for SecretKey;
     using Secp256k1 for PublicKey;
     using Secp256k1 for Point;
     using Secp256k1Arithmetic for Point;
@@ -68,8 +73,8 @@ library StealthSecp256k1 {
     //
     //       st:eth:0x<spendingKey><viewingKey>
 
-    /// @dev Returns the string representation of stealth meta address 
-    ///      `stealthMetaAddress` for chain `chain`.
+    /// @dev Returns the string representation of stealth meta address `sma` for
+    ///      chain `chain`.
     ///
     /// @dev Note that `chain` should be the chain's short name as defined via
     ///      https://github.com/ethereum-lists/chains.
@@ -78,26 +83,27 @@ library StealthSecp256k1 {
     ///         `st:<chain>:0x<spendingKey><viewingKey>`
     ///
     /// @custom:vm vm.toString(bytes)
-    function toString(
-        StealthMetaAddress memory stealthMetaAddress,
-        string memory chain
-    ) internal vmed returns (string memory) {
+    function toString(StealthMetaAddress memory sma, string memory chain)
+        internal
+        vmed
+        returns (string memory)
+    {
         string memory prefix = string.concat("st:", chain, ":0x");
 
         bytes memory spendingKey;
         bytes memory viewingKey;
 
         string memory key;
-        key = vm.toString(abi.encodePacked(stealthMetaAddress.spendingPubKey.x, stealthMetaAddress.spendingPubKey.y));
+        key = vm.toString(abi.encodePacked(sma.spendPk.x, sma.spendPk.y));
         spendingKey = new bytes(bytes(key).length - 2);
         for (uint i = 2; i < bytes(key).length; i++) {
-            spendingKey[i-2] = bytes(key)[i];
+            spendingKey[i - 2] = bytes(key)[i];
         }
 
-        key = vm.toString(abi.encodePacked(stealthMetaAddress.viewingPubKey.x, stealthMetaAddress.viewingPubKey.y));
+        key = vm.toString(abi.encodePacked(sma.viewPk.x, sma.viewPk.y));
         viewingKey = new bytes(bytes(key).length - 2);
         for (uint i = 2; i < bytes(key).length; i++) {
-            viewingKey[i-2] = bytes(key)[i];
+            viewingKey[i - 2] = bytes(key)[i];
         }
 
         return string.concat(prefix, string(spendingKey), string(viewingKey));
@@ -111,23 +117,17 @@ library StealthSecp256k1 {
     ///
     /// @dev Provides following encoding:
     ///         `st:<chain>:0x<spendingKey><viewingKey>`
-    function toBytes(
-        StealthMetaAddress memory stealthMetaAddress,
-        string memory chain
-    ) internal pure returns (bytes memory) {
-        return bytes.concat(
-            bytes("st:"),
-            bytes(chain),
-            bytes(":0x")
-        );
-
+    function toBytes(StealthMetaAddress memory sma, string memory chain)
+        internal
+        pure
+        returns (bytes memory)
+    {
+        return bytes.concat(bytes("st:"), bytes(chain), bytes(":0x"));
 
         bytes memory prefix = bytes(string.concat("st:", chain, ":0x"));
 
-        bytes memory keys = bytes.concat(
-            stealthMetaAddress.spendingPubKey.toBytes(),
-            stealthMetaAddress.viewingPubKey.toBytes()
-        );
+        bytes memory keys =
+            bytes.concat(sma.spendPk.toBytes(), sma.viewPk.toBytes());
 
         return bytes.concat(prefix, keys);
         //bytes.concat(bytes("st:"), bytes(chain));
@@ -150,17 +150,16 @@ library StealthSecp256k1 {
         returns (StealthAddress memory)
     {
         // Create ephemeral key pair.
-        PrivateKey ephemeralPrivKey = Secp256k1.newPrivateKey();
-        PublicKey memory ephemeralPubKey = ephemeralPrivKey.toPublicKey();
+        SecretKey ephSk = Secp256k1.newSecretKey();
+        PublicKey memory ephPk = ephSk.toPublicKey();
 
         console.log("[internal] newStealthAddress: Ephemeral key pair created");
 
         // Compute shared secret.
         // forgefmt: disable-next-item
-        PublicKey memory sharedPubKey = sma.viewingPubKey
-                                            .intoPoint()
-                                            .mul(ephemeralPrivKey.asUint())
-                                            .intoPublicKey();
+        PublicKey memory sharedPk = sma.viewPk.intoPoint()
+                                              .mul(ephSk.asUint())
+                                              .intoPublicKey();
 
         console.log(
             "[internal] newStealthAddress: Shared secret based public key computed"
@@ -169,107 +168,96 @@ library StealthSecp256k1 {
         // TODO: EIP not exact: sharedSecret must be bounded to field.
         // TODO: If sharedSecret is zero, loop with new ephemeral key!
         //       Currently reverts.
-        PrivateKey sharedSecretPrivKey = Secp256k1.privateKeyFromUint(
-            uint(sharedPubKey.toHash()) % Secp256k1.Q
-        );
+        SecretKey sharedSecretSk =
+            Secp256k1.secretKeyFromUint(uint(sharedPk.toHash()) % Secp256k1.Q);
 
         // Extract view tag from shared secret.
-        uint8 viewTag = uint8(sharedSecretPrivKey.asUint() >> 152);
+        uint8 viewTag = uint8(sharedSecretSk.asUint() >> 152);
 
-        // Compute public key from shared secret private key.
-        PublicKey memory sharedSecretPubKey = sharedSecretPrivKey.toPublicKey();
+        // Compute public key from shared secret secret key.
+        PublicKey memory sharedSecretPk = sharedSecretSk.toPublicKey();
 
         // Compute recipients public key.
         // forgefmt: disable-next-item
-        PublicKey memory recipientPubKey = sma.spendingPubKey
-                                                .intoPoint()
-                                                .add(sharedSecretPubKey
-                                                        .intoPoint())
-                                                .intoPublicKey();
+        PublicKey memory recipientPk = sma.spendPk
+                                          .intoPoint()
+                                          .add(sharedSecretPk.intoPoint())
+                                          .intoPublicKey();
 
         // Derive recipients address from their public key.
-        address recipientAddr = recipientPubKey.toAddress();
+        address recipientAddr = recipientPk.toAddress();
 
-        return StealthAddress(recipientAddr, ephemeralPubKey, viewTag);
+        return StealthAddress(recipientAddr, ephPk, viewTag);
     }
 
     /// @custom:invariant Shared secret private key is not zero.
-    ///     ∀ (viewPrivKey, ephPubKey) ∊ (PrivateKey, PublicKey):
-    ///         ([viewPrivKey]ephPubKey).toHash() != 0 (mod Q)
+    ///     ∀ (viewSk, ephPk) ∊ (SecretKey, PublicKey):
+    ///         ([viewSk]ephPk).toHash() != 0 (mod Q)
     function checkStealthAddress(
-        PrivateKey viewingPrivKey,
-        PublicKey memory spendingPubKey,
-        StealthAddress memory stealthAddress
+        SecretKey viewSk,
+        PublicKey memory spendPk,
+        StealthAddress memory sa
     ) internal returns (bool) {
-        // Compute shared secret.
+        // Compute shared public key.
         // forgefmt: disable-next-item
-        PublicKey memory sharedPubKey = stealthAddress.ephemeralPubKey
-                                            .intoPoint()
-                                            .mul(viewingPrivKey.asUint())
-                                            .intoPublicKey();
+        PublicKey memory sharedPk = sa.ephPk
+                                      .intoPoint()
+                                      .mul(viewSk.asUint())
+                                      .intoPublicKey();
 
         // TODO: EIP not exact: sharedSecret must be bound to field.
-        PrivateKey sharedSecretPrivKey = Secp256k1.privateKeyFromUint(
-            uint(sharedPubKey.toHash()) % Secp256k1.Q
-        );
+        SecretKey sharedSecretSk =
+            Secp256k1.secretKeyFromUint(uint(sharedPk.toHash()) % Secp256k1.Q);
 
         // Extract view tag from shared secret.
-        uint8 viewTag = uint8(sharedSecretPrivKey.asUint() >> 152);
+        uint8 viewTag = uint8(sharedSecretSk.asUint() >> 152);
 
         // Return early if view tags do not match.
-        if (viewTag != stealthAddress.viewTag) {
+        if (viewTag != sa.viewTag) {
             return false;
         }
 
-        // Compute public key from shared secret private key.
-        PublicKey memory sharedSecretPubKey = sharedSecretPrivKey.toPublicKey();
+        // Compute public key from shared secret secret key.
+        PublicKey memory sharedSecretPk = sharedSecretSk.toPublicKey();
 
         // Compute recipients public key.
         // forgefmt: disable-next-item
-        PublicKey memory recipientPubKey = spendingPubKey
-                                                .intoPoint()
-                                                .add(sharedSecretPubKey
-                                                        .intoPoint())
-                                                .intoPublicKey();
+        PublicKey memory recipientPk = spendPk.intoPoint()
+                                              .add(sharedSecretPk.intoPoint())
+                                              .intoPublicKey();
 
         // Derive recipients address from their public key.
-        address recipientAddr = recipientPubKey.toAddress();
+        address recipientAddr = recipientPk.toAddress();
 
         // Return true if stealth address' address matches computed recipients
         // address.
-        return recipientAddr == stealthAddress.recipient;
+        return recipientAddr == sa.recipient;
     }
 
     // Private Key
 
-    function computeStealthPrivateKey(
-        PrivateKey spendingPrivKey,
-        PrivateKey viewingPrivKey,
-        StealthAddress memory stealthAddress
-    ) internal returns (PrivateKey) {
-        // Compute shared secret.
+    function computeStealthSecretKey(
+        SecretKey spendSk,
+        SecretKey viewSk,
+        StealthAddress memory sa
+    ) internal returns (SecretKey) {
+        // Compute shared secret public key.
         // forgefmt: disable-next-item
-        PublicKey memory sharedPubKey = stealthAddress.ephemeralPubKey
-                                            .intoPoint()
-                                            .mul(viewingPrivKey.asUint())
+        PublicKey memory sharedPk = sa.ephPk.intoPoint()
+                                            .mul(viewSk.asUint())
                                             .intoPublicKey();
 
         // TODO: EIP not exact: sharedSecret must be bounded to field.
         // TODO: If sharedSecret is zero, loop with new ephemeral key!
         //       Currently reverts.
-        PrivateKey sharedSecretPrivKey = Secp256k1.privateKeyFromUint(
-            uint(sharedPubKey.toHash()) % Secp256k1.Q
-        );
+        SecretKey sharedSecretSk =
+            Secp256k1.secretKeyFromUint(uint(sharedPk.toHash()) % Secp256k1.Q);
 
         // Compute stealth private key.
-        PrivateKey stealthPrivKey = Secp256k1.privateKeyFromUint(
-            addmod(
-                spendingPrivKey.asUint(),
-                sharedSecretPrivKey.asUint(),
-                Secp256k1.Q
-            )
+        SecretKey stealthSk = Secp256k1.secretKeyFromUint(
+            addmod(spendSk.asUint(), sharedSecretSk.asUint(), Secp256k1.Q)
         );
 
-        return stealthPrivKey;
+        return stealthSk;
     }
 }

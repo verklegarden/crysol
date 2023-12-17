@@ -78,8 +78,8 @@ contract Secp256k1ArithmeticTest is Test {
         assertTrue(wrapper.isOnCurve(point));
     }
 
-    function test_Point_isOnCurve_PointAtInfinity() public {
-        assertTrue(wrapper.isOnCurve(Secp256k1Arithmetic.PointAtInfinity()));
+    function test_Point_isOnCurve_Identity() public {
+        assertTrue(wrapper.isOnCurve(Secp256k1Arithmetic.Identity()));
     }
 
     // -- yParity
@@ -94,24 +94,24 @@ contract Secp256k1ArithmeticTest is Test {
 
     // -- equals
 
-    function testFuzz_Point_equals(PrivateKey privKey) public {
-        vm.assume(privKey.isValid());
+    function testFuzz_Point_equals(SecretKey sk) public {
+        vm.assume(sk.isValid());
 
-        Point memory point = privKey.toPublicKey().intoPoint();
+        Point memory point = sk.toPublicKey().intoPoint();
 
         assertTrue(wrapper.equals(point, point));
     }
 
     function testFuzz_Point_equals_FailsIfPointsDoNotEqual(
-        PrivateKey privKey1,
-        PrivateKey privKey2
+        SecretKey sk1,
+        SecretKey sk2
     ) public {
-        vm.assume(privKey1.asUint() != privKey2.asUint());
-        vm.assume(privKey1.isValid());
-        vm.assume(privKey2.isValid());
+        vm.assume(sk1.asUint() != sk2.asUint());
+        vm.assume(sk1.isValid());
+        vm.assume(sk2.isValid());
 
-        Point memory point1 = privKey1.toPublicKey().intoPoint();
-        Point memory point2 = privKey2.toPublicKey().intoPoint();
+        Point memory point1 = sk1.toPublicKey().intoPoint();
+        Point memory point2 = sk2.toPublicKey().intoPoint();
 
         assertFalse(wrapper.equals(point1, point2));
     }
