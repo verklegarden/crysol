@@ -33,7 +33,7 @@ import {
 import {Random} from "../Random.sol";
 
 /**
- * @notice Secret key is an secp256k1 secret key
+ * @notice SecretKey is an secp256k1 secret key
  *
  * @dev Note that a secret key MUST be a field element, ie sk ∊ [1, Q).
  *

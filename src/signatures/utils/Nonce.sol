@@ -13,8 +13,7 @@ pragma solidity ^0.8.16;
 
 import {Secp256k1, SecretKey} from "../../curves/Secp256k1.sol";
 
-// TODO: Goal: Library to derive deterministic nonces following RFC 6979.
-//
+// TODO: Derive deterministic nonces following RFC 6979.
 //       For Rust implementation (used by foundry), see:
 //       - https://github.com/RustCrypto/signatures/blob/master/rfc6979/src/lib.rs#L77
 //       - https://github.com/RustCrypto/signatures/blob/master/rfc6979/src/lib.rs#L135
@@ -33,8 +32,8 @@ library Nonce {
 
     using Nonce for SecretKey;
 
-    /// @dev Derives a deterministic nonce from secret key `sk` and message
-    ///      `message`.
+    /// @dev Derives a deterministic non-zero nonce from secret key `sk` and
+    ///      message `message`.
     ///
     /// @dev Note that a nonce is of type uint and not bounded by any field!
     ///
@@ -50,8 +49,8 @@ library Nonce {
         return sk.deriveNonce(digest);
     }
 
-    /// @dev Derives a deterministic nonce from secret key `sk` and message
-    ///      `message`.
+    /// @dev Derives a deterministic non-zero nonce from secret key `sk` and
+    ///      hash digest `digest`.
     ///
     /// @dev Note that a nonce is of type uint and not bounded to any field!
     ///

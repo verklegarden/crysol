@@ -197,6 +197,7 @@ library Schnorr {
         vmed
         returns (Signature memory)
     {
+        // Note that public key derivation fails if secret key invalid.
         PublicKey memory pk = sk.toPublicKey();
 
         // Derive deterministic nonce ∊ [1, Q).

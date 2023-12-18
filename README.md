@@ -10,12 +10,14 @@
 
 > **Warning**
 >
-> Still in early development. Don't use yet except you know what your doing!
+> Still in early development. 
+> Don't use yet except you know what your doing!
+>
 > Expect breaking changes!
 
-`crysol` is a set of Solidity libraries providing **clean** and **well-tested** implementations of cryptographic algorithms.
+`crysol` is a collection of pure Solidity libraries providing clean 
+implementations of cryptographic algorithms for on- and offchain usage.
 
-Differentiating to other projects, `crysol` also provides functionality to create cryptographic objects.
 
 ## Installation
 

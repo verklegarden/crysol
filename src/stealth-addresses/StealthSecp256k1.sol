@@ -17,20 +17,79 @@ import {console2 as console} from "forge-std/console2.sol";
 import {Vm} from "forge-std/Vm.sol";
 
 import {Secp256k1, SecretKey, PublicKey} from "../curves/Secp256k1.sol";
-import {Secp256k1Arithmetic, Point} from "../curves/Secp256k1Arithmetic.sol";
+import {
+    Secp256k1Arithmetic,
+    Point,
+    ProjectivePoint
+} from "../curves/Secp256k1Arithmetic.sol";
 
 uint constant SCHEME_ID = 1;
 
+/// @notice
+///
 /// @custom:field spendPk The spending public key
 /// @custom:field viewPk The viewing public key
+
+/**
+ * @notice StealthMetaAddress encapsulates a receiver's spending and viewing
+ *         public keys from which a [StealthAddress] can be computed.
+ *
+ * @dev Stealth meta addresses offer TODO...
+ *
+ * @dev Secret keys for stealth addresses derived from a stealth meta address
+ *      can be computed via the spending secret key. The viewing secret key
+ *      can be used to determine whether a tx belongs to the stealth meta
+ *      address.
+ *
+ * @custom:example Generate a stealth meta address:
+ *
+ *      ```solidity
+ *      import {Secp256k1, SecretKey, PublicKey} from "crysol/curves/Secp256k1.sol";
+ *      import {StealthSecp256k1, StealthMetaAddress} from "crysol/stealth-addresses/StealthSecp256k1.sol";
+ *      contract Example {
+ *          using Secp256k1 for SecretKey;
+ *
+ *          // Create spending and viewing secret keys.
+ *          SecretKey spendSk = Secp256k1.newSecretKey();
+ *          SecretKey viewSk = Secp256k1.newSecretKey();
+ *
+ *          // Stealth meta address is their set of public keys.
+ *          StealthMetaAddress memory sma = StealthMetaAddress({
+ *              spendPk: spendSk.toPublicKey(),
+ *              viewPk: viewSk.toPublicKey()
+ *          })
+ *      }
+ *      ```
+ */
 struct StealthMetaAddress {
     PublicKey spendPk;
     PublicKey viewPk;
 }
 
-/// @custom:field recipient
-/// @custom:field ephPk The ephemeral public key
-/// @custom:field viewTag
+/**
+ * @notice StealthAddress
+ *
+ *
+ * @custom:example Generate a stealth meta address:
+ *
+ *      ```solidity
+ *      import {Secp256k1, SecretKey, PublicKey} from "crysol/curves/Secp256k1.sol";
+ *      import {StealthSecp256k1, StealthMetaAddress} from "crysol/stealth-addresses/StealthSecp256k1.sol";
+ *      contract Example {
+ *          using Secp256k1 for SecretKey;
+ *
+ *          // Create spending and viewing secret keys.
+ *          SecretKey spendSk = Secp256k1.newSecretKey();
+ *          SecretKey viewSk = Secp256k1.newSecretKey();
+ *
+ *          // Stealth meta address is their set of public keys.
+ *          StealthMetaAddress memory sma = StealthMetaAddress({
+ *              spendPk: spendSk.toPublicKey(),
+ *              viewPk: viewSk.toPublicKey()
+ *          })
+ *      }
+ *      ```
+ */
 struct StealthAddress {
     address recipient;
     PublicKey ephPk;
@@ -56,6 +115,7 @@ library StealthSecp256k1 {
     using Secp256k1 for PublicKey;
     using Secp256k1 for Point;
     using Secp256k1Arithmetic for Point;
+    using Secp256k1Arithmetic for ProjectivePoint;
 
     // ~~~~~~~ Prelude ~~~~~~~
     // forgefmt: disable-start
@@ -80,7 +140,7 @@ library StealthSecp256k1 {
     ///      https://github.com/ethereum-lists/chains.
     ///
     /// @dev A stealth meta address' string representation is defined as:
-    ///         `st:<chain>:0x<spendingKey><viewingKey>`
+    ///         `st:<chain>:0x<spendPk><viewPk>`
     ///
     /// @custom:vm vm.toString(bytes)
     function toString(StealthMetaAddress memory sma, string memory chain)
@@ -90,61 +150,32 @@ library StealthSecp256k1 {
     {
         string memory prefix = string.concat("st:", chain, ":0x");
 
-        bytes memory spendingKey;
-        bytes memory viewingKey;
+        bytes memory spendPkBytes;
+        bytes memory viewPkBytes;
 
-        string memory key;
-        key = vm.toString(abi.encodePacked(sma.spendPk.x, sma.spendPk.y));
-        spendingKey = new bytes(bytes(key).length - 2);
-        for (uint i = 2; i < bytes(key).length; i++) {
-            spendingKey[i - 2] = bytes(key)[i];
+        string memory buffer;
+
+        // Note to remove "0x" prefix.
+        buffer = vm.toString(sma.spendPk.toBytes());
+        spendPkBytes = new bytes(bytes(buffer).length - 2);
+        for (uint i = 2; i < bytes(buffer).length; i++) {
+            spendPkBytes[i - 2] = bytes(buffer)[i];
         }
 
-        key = vm.toString(abi.encodePacked(sma.viewPk.x, sma.viewPk.y));
-        viewingKey = new bytes(bytes(key).length - 2);
-        for (uint i = 2; i < bytes(key).length; i++) {
-            viewingKey[i - 2] = bytes(key)[i];
+        // Note to remove "0x" prefix.
+        buffer = vm.toString(sma.viewPk.toBytes());
+        viewPkBytes = new bytes(bytes(buffer).length - 2);
+        for (uint i = 2; i < bytes(buffer).length; i++) {
+            viewPkBytes[i - 2] = bytes(buffer)[i];
         }
 
-        return string.concat(prefix, string(spendingKey), string(viewingKey));
-    }
-
-    /// @dev Returns stealth meta address `stealthMetaAddress` for chain `chain`
-    ///      as bytes.
-    ///
-    /// @dev Note that `chain` should be the chain's short name as defined via
-    ///      https://github.com/ethereum-lists/chains.
-    ///
-    /// @dev Provides following encoding:
-    ///         `st:<chain>:0x<spendingKey><viewingKey>`
-    function toBytes(StealthMetaAddress memory sma, string memory chain)
-        internal
-        pure
-        returns (bytes memory)
-    {
-        return bytes.concat(bytes("st:"), bytes(chain), bytes(":0x"));
-
-        bytes memory prefix = bytes(string.concat("st:", chain, ":0x"));
-
-        bytes memory keys =
-            bytes.concat(sma.spendPk.toBytes(), sma.viewPk.toBytes());
-
-        return bytes.concat(prefix, keys);
-        //bytes.concat(bytes("st:"), bytes(chain));
-        //bytes memory prefix =
-        //    abi.encodePacked(bytes("st:"), bytes(chain), bytes(":0x"));
-
-        //bytes memory pubKeys = abi.encodePacked(
-        //    stealthMetaAddress.spendingPubKey.toBytes(),
-        //    stealthMetaAddress.viewingPubKey.toBytes()
-        //);
-
-        //return abi.encodePacked(prefix, pubKeys);
+        return string.concat(prefix, string(spendPkBytes), string(viewPkBytes));
     }
 
     // Stealth Address
 
     // TODO: See https://eips.ethereum.org/EIPS/eip-5564#generation---generate-stealth-address-from-stealth-meta-address.
+    // TODO: Rename to derive?
     function newStealthAddress(StealthMetaAddress memory sma)
         internal
         returns (StealthAddress memory)
@@ -153,21 +184,25 @@ library StealthSecp256k1 {
         SecretKey ephSk = Secp256k1.newSecretKey();
         PublicKey memory ephPk = ephSk.toPublicKey();
 
-        console.log("[internal] newStealthAddress: Ephemeral key pair created");
+        console.log("[INTERNAL] newStealthAddress: Created ephemeral key pair");
 
-        // Compute shared secret.
+        // TODO: Move sharedPk stuff into own function?
+        //       Otherwise naming overload.
+
+        // Compute shared secret = [ephSk]viewPk.
         // forgefmt: disable-next-item
         PublicKey memory sharedPk = sma.viewPk.intoPoint()
                                               .mul(ephSk.asUint())
                                               .intoPublicKey();
 
         console.log(
-            "[internal] newStealthAddress: Shared secret based public key computed"
+            "[INTERNAL] newStealthAddress: Computed shared secret's public key"
         );
 
         // TODO: EIP not exact: sharedSecret must be bounded to field.
         // TODO: If sharedSecret is zero, loop with new ephemeral key!
         //       Currently reverts.
+        //       => Should be negligible propability though.
         SecretKey sharedSecretSk =
             Secp256k1.secretKeyFromUint(uint(sharedPk.toHash()) % Secp256k1.Q);
 
@@ -180,8 +215,9 @@ library StealthSecp256k1 {
         // Compute recipients public key.
         // forgefmt: disable-next-item
         PublicKey memory recipientPk = sma.spendPk
+                                          .toProjectivePoint()
+                                          .add(sharedSecretPk.toProjectivePoint())
                                           .intoPoint()
-                                          .add(sharedSecretPk.intoPoint())
                                           .intoPublicKey();
 
         // Derive recipients address from their public key.

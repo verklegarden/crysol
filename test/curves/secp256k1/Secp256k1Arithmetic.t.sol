@@ -119,7 +119,7 @@ contract Secp256k1ArithmeticTest is Test {
     function test_Point_equals_DoesNotRevert_IfPointsNotOnCurve(
         Point memory point1,
         Point memory point2
-    ) public {
+    ) public view {
         wrapper.equals(point1, point2);
     }
 
@@ -143,6 +143,29 @@ contract Secp256k1ArithmeticTest is Test {
 
     //--------------------------------------------------------------------------
     // Test: Projective Point
+
+    //----------------------------------
+    // Test: Arithmetic
+
+    // TODO: Get vectors from Paul Miller's noble curve projects.
+    function test_ProjectivePoint_add() public {}
+
+    // TODO: Needs to use wrapper :(
+    function test_ProjectivePoint_add_Identity() public {
+        ProjectivePoint memory g = Secp256k1.G().toProjectivePoint();
+        ProjectivePoint memory id =
+            Secp256k1Arithmetic.Identity().toProjectivePoint();
+
+        Point memory sum;
+
+        sum = g.add(id).intoPoint();
+        assertEq(sum.x, g.x);
+        assertEq(sum.y, g.y);
+
+        sum = id.add(g).intoPoint();
+        assertEq(sum.x, g.x);
+        assertEq(sum.y, g.y);
+    }
 
     //----------------------------------
     // Test: Type Conversion
