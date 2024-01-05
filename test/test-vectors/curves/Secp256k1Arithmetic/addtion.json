@@ -1,0 +1,11 @@
+{
+    "title": "Secp256k1 addition test vectors",
+    "description": "Provides the result of repeated addition of the generator",
+    "source": "Stolen from RustCrypto's k256 crate",
+    "vectors": [
+        {
+            "x": "55066263022277343669578718895168534326250603453777594175500187360389116729240",
+            "y": ""
+        }
+    ]
+}

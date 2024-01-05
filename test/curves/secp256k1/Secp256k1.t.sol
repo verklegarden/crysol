@@ -19,6 +19,9 @@ contract Secp256k1Test is Test {
     using Secp256k1 for PublicKey;
     using Secp256k1 for Point;
 
+    using Secp256k1Arithmetic for Point;
+    using Secp256k1Arithmetic for ProjectivePoint;
+
     // Uncompressed Generator G.
     // Copied from [Sec 2 v2].
     bytes constant GENERATOR_ENCODED_UNCOMPRESSED =
@@ -95,6 +98,33 @@ contract Secp256k1Test is Test {
 
         vm.expectRevert("SecretKeyInvalid()");
         wrapper.toPublicKey(sk);
+    }
+
+    // -- secretKeyFromUint
+
+    function testFuzz_SecretKey_secretKeyFromUint(uint scalar) public {
+        vm.assume(scalar != 0 && scalar < Secp256k1.Q);
+
+        SecretKey sk = wrapper.secretKeyFromUint(scalar);
+
+        assertEq(sk.asUint(), scalar);
+    }
+
+    function testFuzz_SecretKey_secretKeyFromUint_RevertsIf_ScalarInvalid(
+        uint scalar
+    ) public {
+        vm.assume(scalar == 0 || scalar >= Secp256k1.Q);
+
+        vm.expectRevert("ScalarInvalid()");
+        wrapper.secretKeyFromUint(scalar);
+    }
+
+    // -- asUint
+
+    function testFuzz_SecretKey_asUint(SecretKey sk) public {
+        uint scalar = SecretKey.unwrap(sk);
+
+        assertEq(sk.asUint(), scalar);
     }
 
     //--------------------------------------------------------------------------
@@ -184,11 +214,21 @@ contract Secp256k1Test is Test {
     }
 
     function testFuzz_PublicKey_toProjectivePoint(PublicKey memory pk) public {
+        vm.assume(!pk.intoPoint().isIdentity());
+
         ProjectivePoint memory jPoint = wrapper.toProjectivePoint(pk);
 
         assertEq(jPoint.x, pk.x);
         assertEq(jPoint.y, pk.y);
         assertEq(jPoint.z, 1);
+    }
+
+    function test_PublicKey_toProjectivePoint_Identity() public {
+        PublicKey memory pk = Secp256k1Arithmetic.Identity().intoPublicKey();
+
+        ProjectivePoint memory point = wrapper.toProjectivePoint(pk);
+
+        assertTrue(point.isIdentity());
     }
 
     //--------------------------------------------------------------------------

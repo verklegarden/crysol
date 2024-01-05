@@ -54,6 +54,11 @@ library Secp256k1Arithmetic {
     using Secp256k1Arithmetic for ProjectivePoint;
 
     //--------------------------------------------------------------------------
+    // Optimization Constants
+
+    uint private constant B3 = mulmod(B, 3, P);
+
+    //--------------------------------------------------------------------------
     // Secp256k1 Constants
     //
     // Secp256k1 is a Koblitz curve specified as:
@@ -157,100 +162,8 @@ library Secp256k1Arithmetic {
         pure
         returns (bool)
     {
+        // TODO: (point.x ^ other.y) | (point.y ^ other.y) ?
         return (point.x == other.x) && (point.y == other.y);
-    }
-
-    //----------------------------------
-    // Arithmetic
-
-    // TODO: Provide add(Projective, Projective) -> Projective for simple one-time additions.
-    //       Users needs to convert intoPoint() to realize expense.
-    //       Use complete addition formula Alg 7 from https://eprint.iacr.org/2015/1060.pdf.
-    //
-    // TODO: Provide add(Projective, Affine) -> Projective for sequential additions.
-    //       Users needs to convert intoPoint() to realize expense.
-    //       Use complete addition formula Alg 8 from https://eprint.iacr.org/2015/1060.pdf.
-    //       => Only if cheaper though, otherwise same as Affine->Projective is constant operation.
-    //       => Therefore not important for now. Only optimization issue -> After initial release.
-
-    /// @dev Returns the sum of points `point` and `other` as new point.
-    ///
-    /// @dev TODO Note about performance. intoPoint() conversion is expensive.
-    ///           Also created new point struct in memory.
-    ///
-    /// @dev Reverts if:
-    ///      - Point not on curve
-    function add(Point memory point, Point memory other)
-        internal
-        pure
-        returns (Point memory)
-    {
-        // Revert if any point not on curve.
-        if (!point.isOnCurve()) {
-            revert("PointNotOnCurve(point)");
-        }
-        if (!other.isOnCurve()) {
-            revert("PointNotOnCurve(other)");
-        }
-
-        // Catch addition with identity.
-        if (point.isIdentity()) {
-            return other;
-        }
-        if (other.isIdentity()) {
-            return point;
-        }
-
-        // Perform addition in projective coordinates.
-        ProjectivePoint memory jSum;
-        ProjectivePoint memory jPoint = point.toProjectivePoint();
-
-        if (point.equals(other)) {
-            // point = other → sum = point + point
-            jSum = _jDouble(jPoint);
-        } else {
-            // point != other → sum = point + other
-            jSum = _jAdd(jPoint, other.toProjectivePoint());
-        }
-
-        // TODO: Don't convert. MUST be done by user!
-        // Return sum as Affine point.
-        // Note that conversion is expensive!
-        return jSum.intoPoint();
-    }
-
-    /// @dev Returns a new point being the product of point `point` and scalar
-    ///      `scalar`.
-    ///
-    /// @dev TODO Note about performance. intoPoint() conversion is expensive.
-    ///           Also created new point struct in memory.
-    ///
-    /// @dev Reverts if:
-    ///      - Point not on curve
-    function mul(Point memory point, uint scalar)
-        internal
-        pure
-        returns (Point memory)
-    {
-        if (!point.isOnCurve()) {
-            revert("PointNotOnCurve(point)");
-        }
-
-        // Catch muliplication with identity or scalar of zero.
-        if (point.isIdentity() || scalar == 0) {
-            return Identity();
-        }
-
-        // Perform multiplicatino in projective coordinates.
-        ProjectivePoint memory jProduct;
-        ProjectivePoint memory jPoint = point.toProjectivePoint();
-
-        jProduct = _jMul(jPoint, scalar);
-
-        // TODO: Don't convert. Must be done by user!
-        // Return product as affine point.
-        // Note that conversion is expensive!
-        return jProduct.intoPoint();
     }
 
     //--------------------------------------------------------------------------
@@ -268,22 +181,28 @@ library Secp256k1Arithmetic {
         returns (bool)
     {
         return point.x == 0 && point.y == 1 && point.z == 0;
-        // return point.y == 1 && (point.x | point.y) == 0;
+        // TODO: return point.y == 1 && (point.x | point.y) == 0;
     }
 
     //----------------------------------
     // Arithmetic
 
-    /// @dev
+    // TODO: Add negate() function.
+
+    // TODO: What about intoAdd()? Saves memory allocations...
+    /// @dev Returns the sum of projective points `point` and `other` as new
+    ///      projective point.
+    ///
+    /// @dev Assumes:
+    ///      - Points are on curve
     function add(ProjectivePoint memory point, ProjectivePoint memory other)
         internal
         pure
         returns (ProjectivePoint memory)
     {
+        /*
         // Uses complete addition formula from Renes-Costello-Batina 2015.
-        // See https://eprint.iacr.org/2015/1060.pdf Alg 7.
-
-        // forgefmt: disable-start
+        // See https://eprint.iacr.org/2015/1060.pdf Alg 1.
 
         if (point.isIdentity()) {
             return other;
@@ -292,9 +211,11 @@ library Secp256k1Arithmetic {
             return point;
         }
 
+        // forgefmt: disable-start
+
         // Inputs: P = (x1, y1, z1), Q = (x2, y2, z2)
-        uint x1 = point.x; uint x2 = other.x;   
-        uint y1 = point.y; uint y2 = other.y; 
+        uint x1 = point.x; uint x2 = other.x;
+        uint y1 = point.y; uint y2 = other.y;
         uint z1 = point.z; uint z2 = other.z;
 
         // Output: P + Q = (x3, y3, z3)
@@ -302,51 +223,161 @@ library Secp256k1Arithmetic {
         uint y3;
         uint z3;
 
-        // Constants: TODO Make constant
-        uint b3 = mulmod(3, B, P);
+        // Constants used:
+        // - B3 = mulmod(B, 3, P)
+
+        // Variables:
+        {
+        uint t0; uint t1; uint t2; uint t3; uint t4; uint t5;
+
+        // Alg:
+        t0 = mulmod(x1, x2, P);
+        t1 = mulmod(y1, y2, P);
+        t2 = mulmod(z1, z2, P);
+        t3 = addmod(x1, y1, P);
+        t4 = mulmod(x2, y2, P); // step 5
+        t3 = mulmod(t3, t4, P);
+        t4 = addmod(t0, t1, P);
+        t3 = addmod(t3, P - t4, P);
+        t4 = addmod(x1, z1, P);
+        t5 = addmod(x2, z2, P); // step 10
+        t4 = mulmod(t4, t5, P);
+        t5 = addmod(t0, t2, P);
+        t4 = addmod(t4, P - t5, P);
+        t5 = addmod(y1, z1, P);
+        x3 = addmod(y2, z2, P); // step 15
+        t5 = mulmod(t5, x3, P);
+        x3 = addmod(t1, t2, P);
+        t5 = addmod(t5, P - x3, P);
+        z3 = mulmod(A, t4, P);
+        x3 = mulmod(B3, t2, P); // step 20
+        z3 = addmod(x3, z3, P);
+        x3 = addmod(t1, P - z3, P);
+        z3 = addmod(t1, z3, P);
+        y3 = mulmod(x3, z3, P);
+        t1 = addmod(t0, t0, P); // step 25
+        t1 = addmod(t1, t0, P);
+        t2 = mulmod(A, t2, P);
+        t4 = mulmod(B3, t4, P);
+        t1 = addmod(t1, t2, P);
+        t2 = addmod(t0, P - t2, P); // step 30
+        t2 = mulmod(A, t2, P);
+        t4 = addmod(t4, t2, P);
+        t0 = mulmod(t1, t4, P);
+        y3 = addmod(y3, t0, P);
+        t0 = mulmod(t5, t4, P); // step 35
+        x3 = mulmod(t3, x3, P);
+        x3 = addmod(x3, P - t0, P);
+        t0 = mulmod(t3, t1, P);
+        z3 = mulmod(t5, z3, P);
+        z3 = addmod(z3, t0, P); // step 40
+        }
+        // forgefmt: disable-end
+
+        return ProjectivePoint(x3, y3, z3);
+        */
+
+        // Uses complete addition formula from Renes-Costello-Batina 2015.
+        // See https://eprint.iacr.org/2015/1060.pdf Alg 7.
+        //
+        // TODO: This implementation can be optimized.
+        //       See for example https://github.com/RustCrypto/elliptic-curves/blob/master/k256/src/arithmetic/projective.rs#L96.
+
+        // TODO: Can be removed... Should be?
+        //if (point.isIdentity()) {
+        //    return other;
+        //}
+        //if (other.isIdentity()) {
+        //    return point;
+        //}
+
+        // forgefmt: disable-start
+
+        // Inputs: P = (x1, y1, z1), Q = (x2, y2, z2)
+        uint x1 = point.x; uint x2 = other.x;
+        uint y1 = point.y; uint y2 = other.y;
+        uint z1 = point.z; uint z2 = other.z;
+
+        // Output: (x3, y3, z3) = P + Q
+        uint x3;
+        uint y3;
+        uint z3;
+
+        // Constants used:
+        // - B3 = mulmod(B, 3, P)
 
         // Variables:
         uint t0; uint t1; uint t2; uint t3; uint t4;
 
         // Alg:
-        // Note that x - y = (Q - y) + x (mod P)
-        t0 = mulmod(x1, x2, P);
+        // Note that x - y = x + (P - y) (mod P)
+        t0 = mulmod(x1, x2, P); // Step 1
         t1 = mulmod(y1, y2, P);
         t2 = mulmod(z1, z2, P);
         t3 = addmod(x1, y1, P);
-        t4 = addmod(x2, y2, P);
+        t4 = addmod(x2, y2, P); // Step 5
         t3 = mulmod(t3, t4, P);
         t4 = addmod(t0, t1, P);
-        unchecked { t3 = addmod(Q - t4, t3, P); }
+        unchecked { t3 = addmod(t3, P - t4, P); }
         t4 = addmod(y1, z1, P);
-        x3 = addmod(y2, z2, P);
+        x3 = addmod(y2, z2, P); // Step 10
         t4 = mulmod(t4, x3, P);
         x3 = addmod(t1, t2, P);
-        unchecked { t4 = addmod(Q - x3, t4, P); }
+        unchecked { t4 = addmod(t4, P - x3, P); }
         x3 = addmod(x1, z1, P);
-        y3 = addmod(x2, z2, P);
+        y3 = addmod(x2, z2, P); // Step 15
         x3 = mulmod(x3, y3, P);
         y3 = addmod(t0, t2, P);
-        unchecked { y3 = addmod(Q - y3, x3, P); }
+        unchecked { y3 = addmod(x3, P - y3, P); }
         x3 = addmod(t0, t0, P);
-        t0 = addmod(x3, t0, P);
-        t2 = mulmod(b3, t2, P);
+        t0 = addmod(x3, t0, P); // Step 20
+        t2 = mulmod(B3, t2, P);
         z3 = addmod(t1, t2, P);
-        unchecked { t1 = addmod(Q - t2, t1, P); }
-        y3 = mulmod(b3, y3, P);
-        x3 = mulmod(t4, y3, P);
+        unchecked { t1 = addmod(t1, P - t2, P); }
+        y3 = mulmod(B3, y3, P);
+        x3 = mulmod(t4, y3, P); // Step 25
         t2 = mulmod(t3, t1, P);
-        unchecked { x3 = addmod(Q - x3, t2, P); }
+        unchecked { x3 = addmod(t2, P - x3, P); }
         y3 = mulmod(y3, t0, P);
         t1 = mulmod(t1, z3, P);
-        y3 = addmod(t1, y3, P);
-        t0 = mulmod(t0, t2, P);
+        y3 = addmod(t1, y3, P); // Step 30
+        t0 = mulmod(t0, t3, P);
         z3 = mulmod(z3, t4, P);
         z3 = addmod(z3, t0, P);
         // forgefmt: disable-end
 
-        // Return as ProjectivePoint.
         return ProjectivePoint(x3, y3, z3);
+    }
+
+    /// @dev Returns the product of projective point `point` and scalar `scalar`.
+    ///
+    /// @dev Assumes:
+    ///      - Points are on curve
+    function mul(ProjectivePoint memory point, uint scalar)
+        internal
+        pure
+        returns (ProjectivePoint memory)
+    {
+        // TODO: Should revert if scalar not in [0, Q)?
+
+        // Catch multiplication with identity or scalar of zero.
+        if (point.isIdentity() || scalar == 0) {
+            // TODO: Need Identity()(ProjectivePoint) function.
+            return ProjectivePoint(0, 1, 0);
+        }
+
+        ProjectivePoint memory copy = point;
+        ProjectivePoint memory product = ProjectivePoint(0, 0, 0);
+
+        while (scalar != 0) {
+            if (scalar & 1 == 1) {
+                product = product.add(copy);
+            }
+            scalar >>= 1; // Divide by 2.
+            copy = copy.add(copy);
+        }
+
+        return product;
     }
 
     //--------------------------------------------------------------------------
@@ -484,8 +515,8 @@ library Secp256k1Arithmetic {
     /// @dev Note that there is no modular inverse for zero.
     ///
     /// @dev Reverts if:
-    ///      - x not in [1, P)
-    ///      - xInv not in [1, P)
+    ///      - x not in [0, P)
+    ///      - xInv not in [0, P)
     function areModularInverse(uint x, uint xInv)
         internal
         pure
@@ -499,149 +530,5 @@ library Secp256k1Arithmetic {
         }
 
         return mulmod(x, xInv, P) == 1;
-    }
-
-    //--------------------------------------------------------------------------
-    // Private Functions
-
-    //----------------------------------
-    // Projective Point
-    //
-    // Functionality stolen from Jordi Baylina's [ecsol](https://github.com/jbaylina/ecsol/blob/c2256afad126b7500e6f879a9369b100e47d435d/ec.sol).
-
-    /// @dev Assumptions:
-    ///      - Each point is on the curve
-    ///      - No point is the point at infinity
-    function _jAdd(ProjectivePoint memory jPoint, ProjectivePoint memory other)
-        private
-        pure
-        returns (ProjectivePoint memory)
-    {
-        // TODO: Define identity for ProjectPoint.
-        // assert(!jPoint.isIdentity() && !other.isIdentity());
-
-        ProjectivePoint memory sum;
-
-        uint l;
-        uint lz;
-        uint da;
-        uint db;
-
-        if (jPoint.x == other.x && jPoint.y == other.y) {
-            (l, lz) = _mul(jPoint.x, jPoint.z, jPoint.x, jPoint.z);
-            (l, lz) = _mul(l, lz, 3, 1);
-            (l, lz) = _add(l, lz, A, 1);
-
-            (da, db) = _mul(jPoint.y, jPoint.z, 2, 1);
-        } else {
-            (l, lz) = _sub(other.y, other.z, jPoint.y, jPoint.z);
-            (da, db) = _sub(other.x, other.z, jPoint.x, jPoint.z);
-        }
-
-        (l, lz) = _div(l, lz, da, db);
-
-        (sum.x, da) = _mul(l, lz, l, lz);
-        (sum.x, da) = _sub(sum.x, da, jPoint.x, jPoint.z);
-        (sum.x, da) = _sub(sum.x, da, other.x, other.z);
-
-        (sum.y, db) = _sub(jPoint.x, jPoint.z, sum.x, da);
-        (sum.y, db) = _mul(sum.y, db, l, lz);
-        (sum.y, db) = _sub(sum.y, db, jPoint.y, jPoint.z);
-
-        if (da != db) {
-            sum.x = mulmod(sum.x, db, P);
-            sum.y = mulmod(sum.y, da, P);
-            sum.z = mulmod(da, db, P);
-        } else {
-            sum.z = da;
-        }
-
-        return sum;
-    }
-
-    /// @dev Assumptions:
-    ///      - Point is on the curve
-    ///      - Point is not the point at infinity
-    function _jDouble(ProjectivePoint memory jPoint)
-        private
-        pure
-        returns (ProjectivePoint memory)
-    {
-        // TODO: There are faster doubling formulas.
-        return _jAdd(jPoint, jPoint);
-    }
-
-    /// @dev Assumptions:
-    ///      - Point is on the curve
-    ///      - Point is not the point at infinity
-    ///      - Scalar is not zero
-    function _jMul(ProjectivePoint memory jPoint, uint scalar)
-        private
-        pure
-        returns (ProjectivePoint memory)
-    {
-        // TODO: Define identity for ProjectPoint.
-        // assert(!jPoint.isIdentity());
-        assert(scalar != 0);
-
-        ProjectivePoint memory copy = jPoint;
-        ProjectivePoint memory product = ZeroPoint().toProjectivePoint();
-
-        while (scalar != 0) {
-            if (scalar & 1 == 1) {
-                product = _jAdd(product, copy);
-            }
-            scalar = scalar >> 1; // Divide by 2.
-            copy = _jDouble(copy);
-        }
-
-        return product;
-    }
-
-    //----------------------------------
-    // Helpers
-
-    function _add(uint x1, uint z1, uint x2, uint z2)
-        private
-        pure
-        returns (uint, uint)
-    {
-        uint x3 = addmod(mulmod(z2, x1, P), mulmod(x2, z1, P), P);
-        uint z3 = mulmod(z1, z2, P);
-
-        return (x3, z3);
-    }
-
-    function _sub(uint x1, uint z1, uint x2, uint z2)
-        private
-        pure
-        returns (uint, uint)
-    {
-        uint x3 = addmod(mulmod(z2, x1, P), mulmod(P - x2, z1, P), P);
-        uint z3 = mulmod(z1, z2, P);
-
-        return (x3, z3);
-    }
-
-    function _mul(uint x1, uint z1, uint x2, uint z2)
-        private
-        pure
-        returns (uint, uint)
-    {
-        uint x3 = mulmod(x1, x2, P);
-        uint z3 = mulmod(z1, z2, P);
-
-        return (x3, z3);
-    }
-
-    function _div(uint x1, uint z1, uint x2, uint z2)
-        private
-        pure
-        returns (uint, uint)
-    {
-        uint x3 = mulmod(x1, z2, P);
-        uint z3 = mulmod(z1, x2, P);
-
-        return (x3, z3);
     }
 }

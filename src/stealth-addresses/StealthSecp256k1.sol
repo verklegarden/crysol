@@ -25,11 +25,6 @@ import {
 
 uint constant SCHEME_ID = 1;
 
-/// @notice
-///
-/// @custom:field spendPk The spending public key
-/// @custom:field viewPk The viewing public key
-
 /**
  * @notice StealthMetaAddress encapsulates a receiver's spending and viewing
  *         public keys from which a [StealthAddress] can be computed.
@@ -57,7 +52,7 @@ uint constant SCHEME_ID = 1;
  *          StealthMetaAddress memory sma = StealthMetaAddress({
  *              spendPk: spendSk.toPublicKey(),
  *              viewPk: viewSk.toPublicKey()
- *          })
+ *          });
  *      }
  *      ```
  */
@@ -142,7 +137,7 @@ library StealthSecp256k1 {
     /// @dev A stealth meta address' string representation is defined as:
     ///         `st:<chain>:0x<spendPk><viewPk>`
     ///
-    /// @custom:vm vm.toString(bytes)
+    /// @custom:vm vm.toString(bytes)(string)
     function toString(StealthMetaAddress memory sma, string memory chain)
         internal
         vmed
@@ -191,9 +186,11 @@ library StealthSecp256k1 {
 
         // Compute shared secret = [ephSk]viewPk.
         // forgefmt: disable-next-item
-        PublicKey memory sharedPk = sma.viewPk.intoPoint()
-                                              .mul(ephSk.asUint())
-                                              .intoPublicKey();
+        PublicKey memory sharedPk = sma.viewPk
+                                       .toProjectivePoint()
+                                       .mul(ephSk.asUint())
+                                       .intoPoint()
+                                       .intoPublicKey();
 
         console.log(
             "[INTERNAL] newStealthAddress: Computed shared secret's public key"
@@ -236,10 +233,10 @@ library StealthSecp256k1 {
     ) internal returns (bool) {
         // Compute shared public key.
         // forgefmt: disable-next-item
-        PublicKey memory sharedPk = sa.ephPk
-                                      .intoPoint()
-                                      .mul(viewSk.asUint())
-                                      .intoPublicKey();
+        PublicKey memory sharedPk = sa.ephPk.toProjectivePoint()
+                                            .mul(viewSk.asUint())
+                                            .intoPoint()
+                                            .intoPublicKey();
 
         // TODO: EIP not exact: sharedSecret must be bound to field.
         SecretKey sharedSecretSk =
@@ -258,8 +255,9 @@ library StealthSecp256k1 {
 
         // Compute recipients public key.
         // forgefmt: disable-next-item
-        PublicKey memory recipientPk = spendPk.intoPoint()
-                                              .add(sharedSecretPk.intoPoint())
+        PublicKey memory recipientPk = spendPk.toProjectivePoint()
+                                              .add(sharedSecretPk.toProjectivePoint())
+                                              .intoPoint()
                                               .intoPublicKey();
 
         // Derive recipients address from their public key.
@@ -279,8 +277,9 @@ library StealthSecp256k1 {
     ) internal returns (SecretKey) {
         // Compute shared secret public key.
         // forgefmt: disable-next-item
-        PublicKey memory sharedPk = sa.ephPk.intoPoint()
+        PublicKey memory sharedPk = sa.ephPk.toProjectivePoint()
                                             .mul(viewSk.asUint())
+                                            .intoPoint()
                                             .intoPublicKey();
 
         // TODO: EIP not exact: sharedSecret must be bounded to field.

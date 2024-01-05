@@ -177,7 +177,7 @@ library Secp256k1 {
     ///      - Scalar not in [1, Q)
     function secretKeyFromUint(uint scalar) internal pure returns (SecretKey) {
         if (scalar == 0 || scalar >= Q) {
-            revert("InvalidScalar()");
+            revert("ScalarInvalid()");
         }
 
         return SecretKey.wrap(scalar);
