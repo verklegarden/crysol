@@ -2,7 +2,8 @@
 
 ## What are `vmed` functions?
 
-Traditionally, Solidity has been primarily used for verifying cryptographic objects and rarely for creating them, eg we verify ECDSA signatures in Solidity via `ecrecover` and create them via our non-Solidity based wallet libraries.
+Traditionally, Solidity has been primarily used for verifying cryptographic objects and rarely for creating them, eg we
+verify ECDSA signatures in Solidity via `ecrecover` and create them via our non-Solidity based wallet libraries.
 
 `crysol` takes a more comprehensive approach and also provides functionality to create cryptographic objects, allowing developers to test and experiment with cryptographic systems from within their Solidity environment.
 
