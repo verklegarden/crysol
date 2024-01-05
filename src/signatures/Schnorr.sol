@@ -197,6 +197,7 @@ library Schnorr {
         vmed
         returns (Signature memory)
     {
+        // Note that public key derivation fails if secret key is invalid.
         PublicKey memory pk = sk.toPublicKey();
 
         // Derive deterministic nonce ∊ [1, Q).
@@ -304,6 +305,5 @@ library Schnorr {
     //--------------------------------------------------------------------------
     // (De)Serialization
     //
-    // TODO: Schnorr Serde
-    //       Any other standard except BIP-340?
+    // TODO: Schnorr Serde defined via BIP-340.
 }

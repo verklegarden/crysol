@@ -33,7 +33,7 @@ import {
 import {Random} from "../Random.sol";
 
 /**
- * @notice Secret key is an secp256k1 secret key
+ * @notice SecretKey is an secp256k1 secret key
  *
  * @dev Note that a secret key MUST be a field element, ie sk ∊ [1, Q).
  *
@@ -177,7 +177,7 @@ library Secp256k1 {
     ///      - Scalar not in [1, Q)
     function secretKeyFromUint(uint scalar) internal pure returns (SecretKey) {
         if (scalar == 0 || scalar >= Q) {
-            revert("InvalidScalar()");
+            revert("ScalarInvalid()");
         }
 
         return SecretKey.wrap(scalar);

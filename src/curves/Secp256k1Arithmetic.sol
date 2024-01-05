@@ -151,10 +151,23 @@ library Secp256k1Arithmetic {
         return point.y & 1;
     }
 
+    /// @dev Returns whether point `point` equals point `other`.
+    function eq(Point memory point, Point memory other) internal pure returns (uint) {
+        return (point.x == other.x) && (point.y == other.y);
+    }
+
     //--------------------------------------------------------------------------
     // Projective Point
     //
     // Coming soon...
+
+    // TODO: Define identity for project point = (0, 1, 0)
+
+    // TODO: Provide add() function using complete addition formula from
+    //       Renes-Costello-Batina 2015.
+    //       See https://eprint.iacr.org/2015/1060.pdf Alg 7.
+
+    // TODO: Provide mul() function.
 
     //--------------------------------------------------------------------------
     // (De)Serialization
@@ -168,11 +181,15 @@ library Secp256k1Arithmetic {
         pure
         returns (ProjectivePoint memory)
     {
+        // TODO: Catch if point.isIdentity():
+        //                return identity()
         return ProjectivePoint(point.x, point.y, 1);
     }
 
     //----------------------------------
     // Projective Point
+
+    // TODO: General: Rename jPoint to point.
 
     /// @dev Mutates projective point `jPoint` to affine point.
     function intoPoint(ProjectivePoint memory jPoint)
@@ -180,6 +197,9 @@ library Secp256k1Arithmetic {
         pure
         returns (Point memory)
     {
+        // TODO: Catch identity case if point.isIdentity():
+        //                              return identity()
+
         // Compute z⁻¹, i.e. the modular inverse of jPoint.z.
         uint zInv = modularInverseOf(jPoint.z);
 
@@ -212,10 +232,6 @@ library Secp256k1Arithmetic {
     //--------------------------------------------------------------------------
     // Utils
 
-    // @todo Use Fermats Little Theorem. While generally less performant, it is
-    //       cheaper on EVM due to the modexp precompile.
-    //       See "Speeding up Elliptic Curve Computations for Ethereum Account Abstraction" page 4.
-
     /// @dev Returns the modular inverse of `x` for modulo `P`.
     ///
     ///      The modular inverse of `x` is x⁻¹ such that x * x⁻¹ ≡ 1 (mod p).
@@ -227,6 +243,12 @@ library Secp256k1Arithmetic {
     ///
     /// @custom:invariant Terminates in finite time.
     function modularInverseOf(uint x) internal pure returns (uint) {
+        // TODO: Refactor to use Fermats Little Theorem. 
+        //       While generally less performant, it is cheaper on EVM due to 
+        //       the modexp precompile pricing.
+        //       See "Speeding up Elliptic Curve Computations for Ethereum Account Abstraction" page 4.
+
+        // TODO: Define appropriate errors.
         if (x == 0) {
             revert("Modular inverse of zero does not exist");
         }
@@ -279,6 +301,12 @@ library Secp256k1Arithmetic {
     }
 
     /// @dev Returns whether `xInv` is the modular inverse of `x`.
+    ///
+    /// @dev Note that there is no modular inverse for zero.
+    ///
+    /// @dev Reverts if:
+    ///      - x not in [0, P)
+    ///      - xInv not in [0, P)
     function areModularInverse(uint x, uint xInv)
         internal
         pure
