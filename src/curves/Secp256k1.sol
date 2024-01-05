@@ -8,17 +8,6 @@
 
 */
 
-// TODO:
-//  - [ ] Complete addition formula from Renes-Costello-Batina 2015?
-//      - See https://eprint.iacr.org/2015/1060 Algorithm 7 + 8
-//      - For double Algorithm 9
-//
-//  - [X] Differentitate between bytes and serialization!
-//      - Serialization:
-//          - toEncodedPoint() -> SEC1 encoded ("normal")
-//          - toCompressedEncodedPoint() -> compressed SEC1 encoded
-//      - TODO: Note that identity case not implemented!!!!
-
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.16;
 
@@ -38,7 +27,7 @@ import {Random} from "../Random.sol";
  * @dev Note that a secret key MUST be a field element, ie sk ∊ [1, Q).
  *
  * @dev Note that a secret key MUST be created cryptographically sound.
- *      Generally, this means via randomness sources from an CSPRNG.
+ *      Generally, this means via randomness sourced from an CSPRNG.
  *
  * @custom:example Securly generating a random secret key:
  *
@@ -71,6 +60,7 @@ type SecretKey is uint;
  *
  *          PublicKey memory pk = sk.toPublicKey();
  *          assert(pk.isValid());
+ *          assert(pk.toAddress() != address(0));
  *      }
  *      ```
  */
@@ -84,6 +74,11 @@ struct PublicKey {
  *
  * @notice Providing common cryptography-related functionality for the secp256k1
  *         elliptic curve
+ *
+ * @custom:references
+ *      - [SEC-1 v2]: https://www.secg.org/sec1-v2.pdf
+ *      - [SEC-2 v2]: https://www.secg.org/sec2-v2.pdf
+ *      - [Yellow Paper]: https://github.com/ethereum/yellowpaper
  *
  * @author crysol (https://github.com/pmerkleplant/crysol)
  * @author Inspired by Chronicle Protocol's Scribe (https://github.com/chronicleprotocol/scribe)
@@ -197,7 +192,7 @@ library Secp256k1 {
     ///      keccak256 hash of the concatenation of the hex-encoded x and y
     ///      coordinates of the corresponding ECDSA public key.
     ///
-    ///      See "Appendix F: Signing Transactions" §134 in the Yellow Paper.
+    ///      See "Appendix F: Signing Transactions" §134 in the [Yellow Paper].
     function toAddress(PublicKey memory pk) internal pure returns (address) {
         bytes32 digest = pk.toHash();
 
@@ -230,9 +225,18 @@ library Secp256k1 {
     /// @dev The value 0 represents an even y value and 1 represents an odd y
     ///      value.
     ///
-    ///      See "Appendix F: Signing Transactions" in the Yellow Paper.
+    ///      See "Appendix F: Signing Transactions" in the [Yellow Paper].
     function yParity(PublicKey memory pk) internal pure returns (uint) {
         return pk.intoPoint().yParity();
+    }
+
+    /// @dev Returns whether public key `pk` equals public key `other`.
+    function eq(PublicKey memory pk, PublicKey memory other)
+        internal
+        pure
+        returns (bool)
+    {
+        return pk.intoPoint().eq(other.intoPoint());
     }
 
     /// @dev Mutates public key `pk` to affine point.
@@ -280,14 +284,13 @@ library Secp256k1 {
     ///
     /// @dev Reverts if:
     ///      - Length not 32 bytes
-    ///      - Deserialized scalar not in [1, Q)
     function secretKeyFromBytes(bytes memory blob)
         internal
         pure
         returns (SecretKey)
     {
         if (blob.length != 32) {
-            revert("InvalidLength()");
+            revert("LengthInvalid()");
         }
 
         uint scalar;
@@ -295,7 +298,10 @@ library Secp256k1 {
             scalar := mload(add(blob, 0x20))
         }
 
-        return secretKeyFromUint(scalar);
+        // Note to not use secretKeyFromUint(uint) to not revert in case secrect
+        // key is invalid.
+        // This responsibility is delegated to the caller.
+        return SecretKey.wrap(scalar);
     }
 
     /// @dev Returns secret key `sk` as bytes.
@@ -306,76 +312,10 @@ library Secp256k1 {
     //----------------------------------
     // Public Key
 
-    // TODO: Not totally correct. Identity case is missing!
-    //       See https://www.secg.org/sec1-v2.pdf page 10.
-    /// @dev Decodes public key from SEC1 encoded bytes blob `blob`.
-    ///
-    /// @dev Reverts if:
-    ///      - Length not 65 bytes
-    ///      - Prefix byte not 0x04
-    ///      - Decoded public key invalid
-    ///
-    /// @dev Expects uncompressed 65 bytes encoding:
-    ///         [0x04 prefix][32 bytes x coordinate][32 bytes y coordinate]
-    function publicKeyFromEncoded(bytes memory blob)
-        internal
-        pure
-        returns (PublicKey memory)
-    {
-        // Revert if length not 65.
-        if (blob.length != 65) {
-            revert("InvalidLength()");
-        }
-
-        // Read prefix byte.
-        bytes32 prefix;
-        assembly ("memory-safe") {
-            prefix := byte(0, mload(add(blob, 0x20)))
-        }
-
-        // Revert if prefix not 0x04.
-        if (uint(prefix) != 0x04) {
-            revert("InvalidPrefix()");
-        }
-
-        // Read x and y coordinates.
-        uint x;
-        uint y;
-        assembly ("memory-safe") {
-            x := mload(add(blob, 0x21))
-            y := mload(add(blob, 0x41))
-        }
-
-        // Make public key.
-        PublicKey memory pk = PublicKey(x, y);
-
-        // Revert if public key invalid.
-        if (!pk.isValid()) {
-            revert("InvalidPublicKey()");
-        }
-
-        return pk;
-    }
-
-    // TODO: Not totally correct. Identity case is missing!
-    //       See https://www.secg.org/sec1-v2.pdf page 10.
-    /// @dev Encodes public key `pk` as SEC1 encoded bytes.
-    ///
-    /// @dev Provides uncompressed 65 bytes encoding:
-    ///         [0x04 prefix][32 bytes x coordinate][32 bytes y coordinate]
-    function toEncoded(PublicKey memory pk)
-        internal
-        pure
-        returns (bytes memory blob)
-    {
-        return abi.encodePacked(bytes1(0x04), pk.x, pk.y);
-    }
-
     /// @dev Decodes public key from ABI-encoded bytes `blob`.
     ///
     /// @dev Reverts if:
     ///      - Length not 64 bytes
-    ///      - Decoded public key invalid
     ///
     /// @dev Expects 64 bytes encoding:
     ///         [32 bytes x coordinate][32 bytes y coordinate]
@@ -384,9 +324,9 @@ library Secp256k1 {
         pure
         returns (PublicKey memory)
     {
-        // Revert if length not 65.
+        // Revert if length not 64.
         if (blob.length != 64) {
-            revert("InvalidLength()");
+            revert("LengthInvalid()");
         }
 
         // Read x and y coordinates of public key.
@@ -400,11 +340,8 @@ library Secp256k1 {
         // Make public key.
         PublicKey memory pk = PublicKey(x, y);
 
-        // Revert if public key invalid.
-        if (!pk.isValid()) {
-            revert("InvalidPublicKey()");
-        }
-
+        // Note that public key's validity is not verified.
+        // This responsibility is delegated to the caller.
         return pk;
     }
 
@@ -418,5 +355,70 @@ library Secp256k1 {
         returns (bytes memory)
     {
         return abi.encodePacked(pk.x, pk.y);
+    }
+
+    /// @dev Decodes public key from [SEC-1 v2] encoded bytes blob `blob`.
+    ///
+    /// @dev Reverts if:
+    ///      - Length not 65 bytes
+    ///      - Prefix byte not 0x04
+    ///
+    /// @dev Expects uncompressed 65 bytes encoding:
+    ///         [0x04 prefix][32 bytes x coordinate][32 bytes y coordinate]
+    ///
+    ///      See [SEC-1 v2] section 2.3.3 "Elliptic-Curve-Point-to-Octet-String".
+    function publicKeyFromEncoded(bytes memory blob)
+        internal
+        pure
+        returns (PublicKey memory)
+    {
+        // TODO: [SEC-1 v2] specifies 0x00 as encoding for identity.
+
+        // Revert if length not 65.
+        if (blob.length != 65) {
+            revert("LengthInvalid()");
+        }
+
+        // Read prefix byte.
+        bytes32 prefix;
+        assembly ("memory-safe") {
+            prefix := byte(0, mload(add(blob, 0x20)))
+        }
+
+        // Revert if prefix not 0x04.
+        if (uint(prefix) != 0x04) {
+            revert("PrefixInvalid()");
+        }
+
+        // Read x and y coordinates.
+        uint x;
+        uint y;
+        assembly ("memory-safe") {
+            x := mload(add(blob, 0x21))
+            y := mload(add(blob, 0x41))
+        }
+
+        // Make public key.
+        PublicKey memory pk = PublicKey(x, y);
+
+        // Note that public key's validity is not verified.
+        // This responsibility is delegated to the caller.
+        return pk;
+    }
+
+    /// @dev Encodes public key `pk` as [SEC-1 v2] encoded bytes.
+    ///
+    /// @dev Provides uncompressed 65 bytes encoding:
+    ///         [0x04 prefix][32 bytes x coordinate][32 bytes y coordinate]
+    ///
+    ///      See [SEC-1 v2] section 2.3.3 "Elliptic-Curve-Point-to-Octet-String".
+    function toEncoded(PublicKey memory pk)
+        internal
+        pure
+        returns (bytes memory blob)
+    {
+        // TODO: [SEC-1 v2] specifies 0x00 as encoding for identity.
+
+        return abi.encodePacked(bytes1(0x04), pk.x, pk.y);
     }
 }

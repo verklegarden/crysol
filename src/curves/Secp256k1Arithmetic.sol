@@ -43,8 +43,8 @@ struct ProjectivePoint {
  *         elliptic curve
  *
  * @custom:references
- *      - [SEC 2 v2]: https://www.secg.org/sec2-v2.pdf
- *      - [Yellow Paper]: TODO
+ *      - [SEC-2 v2]: https://www.secg.org/sec2-v2.pdf
+ *      - [Yellow Paper]: https://github.com/ethereum/yellowpaper
  *
  * @author crysol (https://github.com/pmerkleplant/crysol)
  * @author Inspired by Chronicle Protocol's Scribe (https://github.com/chronicleprotocol/scribe)
@@ -81,7 +81,7 @@ library Secp256k1Arithmetic {
     uint internal constant Q =
         0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFEBAAEDCE6AF48A03BBFD25E8CD0364141;
 
-    // Taken from [SEC 2 v2] section 2.4.1 "Recommended Parameters secp256k1".
+    // Taken from [SEC-2 v2] section 2.4.1 "Recommended Parameters secp256k1".
     //--------------------------------------------------------------------------
 
     //--------------------------------------------------------------------------

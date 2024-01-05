@@ -8,9 +8,9 @@
 
 </div>
 
-> **Warning**
+> [!WARNING]
 >
-> Still in early development. Don't use yet except you know what your doing!
+> This project is in a very early stage and important tests are still missing.
 >
 > Expect breaking changes!
 
@@ -70,15 +70,16 @@ $ forge fmt [--check]
 
 ## Tests
 
-| **Library**                  | **Unit Tests** | **Property-Based Tests** | **Specification-Based Tests** |
-| ---------------------------- | -------------- | ------------------------ | ----------------------------- |
-| `Random`                     | ✅              | ❌                        | ❌                             |
-| `Message`                    | ✅              | ❌                        | ❌                             |
-| `curves/Secp256k1`           | ✅              | ❌                        | ❌                             |
-| `curves/Secp256k1Arithmetic` | ✅              | ❌                        | ❌                             |
-| `signatures/ECDSA`           | ✅              | ✅                        | ❌                             |
-| `signatures/Schnorr`         | ✅              | ✅                        | ❌                             |
-| `signatures/utils/Nonce`     | ✅              | ❌                        | ❌                             |
+| **Library**                              | **Unit Tests** | **Property-Based Tests** | **Specification-Based Tests** |
+| ---------------------------------------- | -------------- | ------------------------ | ----------------------------- |
+| `Random`                                 | ✅              | ❌                        | ❌                             |
+| `Message`                                | ✅              | ❌                        | ❌                             |
+| `curves/Secp256k1`                       | ✅              | ❌                        | ❌                             |
+| `curves/Secp256k1Arithmetic`             | ❌              | ❌                        | ❌                             |
+| `signatures/ECDSA`                       | ✅              | ✅                        | ❌                             |
+| `signatures/Schnorr`                     | ❌              | ✅                        | ❌                             |
+| `signatures/utils/Nonce`                 | ❌              | ❌                        | ❌                             |
+| `stealth-addresses/ERC5564Announcer`     | ❌              | ❌                        | ❌                             |
 
 ✅ Test Type Implemented &emsp; ❌ Test Type Not Implemented
 
