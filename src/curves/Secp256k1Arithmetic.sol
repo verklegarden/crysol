@@ -152,7 +152,11 @@ library Secp256k1Arithmetic {
     }
 
     /// @dev Returns whether point `point` equals point `other`.
-    function eq(Point memory point, Point memory other) internal pure returns (uint) {
+    function eq(Point memory point, Point memory other)
+        internal
+        pure
+        returns (bool)
+    {
         return (point.x == other.x) && (point.y == other.y);
     }
 
@@ -243,8 +247,8 @@ library Secp256k1Arithmetic {
     ///
     /// @custom:invariant Terminates in finite time.
     function modularInverseOf(uint x) internal pure returns (uint) {
-        // TODO: Refactor to use Fermats Little Theorem. 
-        //       While generally less performant, it is cheaper on EVM due to 
+        // TODO: Refactor to use Fermats Little Theorem.
+        //       While generally less performant, it is cheaper on EVM due to
         //       the modexp precompile pricing.
         //       See "Speeding up Elliptic Curve Computations for Ethereum Account Abstraction" page 4.
 
