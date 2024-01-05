@@ -33,11 +33,13 @@ src
 ├─ curves
 │   ├─ Secp256k1 - "Provides common cryptography-related functionality for the secp256k1 elliptic curve"
 │   └─ Secp256k1Arithmetic — "Provides common arithmetic-related functionality for the secp256k1 elliptic curve"
-└─ signatures
-    ├─ ECDSA — "Provides ECDSA signature functionality"
-    ├─ Schnorr — "Provides Schnorr signature functionality"
-    └─ utils
-        └─ Nonce - "Provides deterministic nonce derivation"
+├─ signatures
+│   ├─ ECDSA — "Provides ECDSA signature functionality"
+│   ├─ Schnorr — "Provides Schnorr signature functionality"
+│   └─ utils
+│       └─ Nonce - "Provides deterministic nonce derivation"
+└─ stealth-addresses
+    └─ ERC5564Announcer - "Minimal ERC-5564 stealth address announcement contract and interface"
 ```
 
 ## Contributing

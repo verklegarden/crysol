@@ -8,6 +8,8 @@
 
 */
 
+// TODO: Rename EIP-5564 to ERC-5564.
+
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.16;
 
