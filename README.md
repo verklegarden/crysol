@@ -72,16 +72,16 @@ $ forge fmt [--check]
 
 | **Library**                              | **Unit Tests** | **Property-Based Tests** | **Specification-Based Tests** |
 | ---------------------------------------- | -------------- | ------------------------ | ----------------------------- |
-| `Random`                                 | ✅              | ❌                        | ❌                             |
-| `Message`                                | ✅              | ❌                        | ❌                             |
+| `Random`                                 | ✅              | ❔                        | ❔                             |
+| `Message`                                | ✅              | ❔                        | ❔                             |
 | `curves/Secp256k1`                       | ✅              | 🚧                        | ❌                             |
 | `curves/Secp256k1Arithmetic`             | ❌              | ❌                        | ❌                             |
 | `signatures/ECDSA`                       | ✅              | ✅                        | ❌                             |
-| `signatures/Schnorr`                     | ❌              | ✅                        | ❌                             |
-| `signatures/utils/Nonce`                 | ❌              | ❌                        | ❌                             |
+| `signatures/Schnorr`                     | ✅              | ✅                        | ❌                             |
+| `signatures/utils/Nonce`                 | ✅              | ❌                        | ❌                             |
 | `stealth-addresses/ERC5564Announcer`     | ❌              | ❌                        | ❌                             |
 
-✅ Test Type Implemented &emsp; ❌ Test Type Not Implemented &emsp; 🚧 Test Type Partially Implemented
+✅ Test Type Implemented &emsp; ❌ Test Type Not Implemented &emsp; 🚧 Test Type Partially Implemented &emsp; ❔ Test Type Not Applicable
 
 ## Safety
 
