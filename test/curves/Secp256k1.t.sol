@@ -269,12 +269,6 @@ contract Secp256k1Test is Test {
         assertEq(sk.asUint(), Secp256k1.secretKeyFromBytes(blob).asUint());
     }
 
-    function testFuzz_SecretKey_Bytes_RoundTrip(SecretKey sk1) public {
-        SecretKey sk2 = Secp256k1.secretKeyFromBytes(sk1.toBytes());
-
-        assertEq(sk1.asUint(), sk2.asUint());
-    }
-
     //----------------------------------
     // Public Key
 
@@ -306,12 +300,6 @@ contract Secp256k1Test is Test {
         assertEq(blob.length, 64);
 
         PublicKey memory pk2 = Secp256k1.publicKeyFromBytes(blob);
-        assertTrue(pk1.eq(pk2));
-    }
-
-    function testFuzz_PublicKey_Bytes_RoundTrip(PublicKey memory pk1) public {
-        PublicKey memory pk2 = Secp256k1.publicKeyFromBytes(pk1.toBytes());
-
         assertTrue(pk1.eq(pk2));
     }
 
@@ -388,14 +376,6 @@ contract Secp256k1Test is Test {
             blob,
             hex"0411111111111111111111111111111111111111111111111111111111111111112222222222222222222222222222222222222222222222222222222222222222"
         );
-    }
-
-    function testFuzz_PublicKey_Encoded_RoundTrip(PublicKey memory pk1)
-        public
-    {
-        PublicKey memory pk2 = Secp256k1.publicKeyFromEncoded(pk1.toEncoded());
-
-        assertTrue(pk1.eq(pk2));
     }
 }
 

@@ -256,67 +256,39 @@ contract ECDSATest is Test {
     //--------------------------------------------------------------------------
     // Test: (De)Serialization
 
-    function testFuzz_Signature_toBytes(Signature memory sig) public {
-        bytes memory got = wrapper.toBytes(sig);
-        bytes memory want = abi.encodePacked(sig.r, sig.s, sig.v);
+    // -- Signature <-> Encoded
 
-        assertEq(got, want);
-    }
-
-    function testFuzz_signatureFromBytes(uint8 v, bytes32 r, bytes32 s)
+    function testFuzz_signatureFromEncoded(uint8 v, bytes32 r, bytes32 s)
         public
     {
         bytes memory blob = abi.encodePacked(r, s, v);
 
-        Signature memory got = wrapper.signatureFromBytes(blob);
-
-        console.log(string.concat("Got:", got.toString()));
+        Signature memory got = wrapper.signatureFromEncoded(blob);
 
         assertEq(got.v, v);
         assertEq(got.r, r);
         assertEq(got.s, s);
     }
 
-    function testFuzz_signatureFromBytes_RevertsIf_LengthInvalid(
+    function testFuzz_signatureFromEncoded_RevertsIf_LengthInvalid(
         bytes memory blob
     ) public {
         vm.assume(blob.length != 65);
 
         vm.expectRevert("LengthInvalid()");
-        wrapper.signatureFromBytes(blob);
+        wrapper.signatureFromEncoded(blob);
     }
 
-    function test_Signature_toCompactBytes() public {
-        // Note that test cases are taken from EIP-2098.
+    function testFuzz_Signature_toEncoded(Signature memory sig) public {
+        bytes memory got = wrapper.toEncoded(sig);
+        bytes memory want = abi.encodePacked(sig.r, sig.s, sig.v);
 
-        // Test Case 1:
-        Signature memory sig1 = Signature({
-            v: 27,
-            r: 0x68a020a209d3d56c46f38cc50a33f704f4a9a10a59377f8dd762ac66910e9b90,
-            s: 0x7e865ad05c4035ab5792787d4a0297a43617ae897930a6fe4d822b8faea52064
-        });
-        bytes memory got1 = wrapper.toCompactBytes(sig1);
-        bytes memory want1 = bytes.concat(
-            hex"68a020a209d3d56c46f38cc50a33f704f4a9a10a59377f8dd762ac66910e9b90",
-            hex"7e865ad05c4035ab5792787d4a0297a43617ae897930a6fe4d822b8faea52064"
-        );
-        assertEq(got1, want1);
-
-        // Test Case 2:
-        Signature memory sig2 = Signature({
-            v: 28,
-            r: 0x9328da16089fcba9bececa81663203989f2df5fe1faa6291a45381c81bd17f76,
-            s: 0x139c6d6b623b42da56557e5e734a43dc83345ddfadec52cbe24d0cc64f550793
-        });
-        bytes memory got2 = wrapper.toCompactBytes(sig2);
-        bytes memory want2 = bytes.concat(
-            hex"9328da16089fcba9bececa81663203989f2df5fe1faa6291a45381c81bd17f76",
-            hex"939c6d6b623b42da56557e5e734a43dc83345ddfadec52cbe24d0cc64f550793"
-        );
-        assertEq(got2, want2);
+        assertEq(got, want);
     }
 
-    function test_signatureFromCompactBytes() public {
+    // -- Signature <-> Compact Encoded
+
+    function test_signatureFromCompactEncoded() public {
         // Note that test cases are taken from EIP-2098.
 
         // Test Case 1:
@@ -324,7 +296,7 @@ contract ECDSATest is Test {
             hex"68a020a209d3d56c46f38cc50a33f704f4a9a10a59377f8dd762ac66910e9b90",
             hex"7e865ad05c4035ab5792787d4a0297a43617ae897930a6fe4d822b8faea52064"
         );
-        Signature memory got1 = wrapper.signatureFromCompactBytes(blob1);
+        Signature memory got1 = wrapper.signatureFromCompactEncoded(blob1);
         Signature memory want1 = Signature({
             v: 27,
             r: 0x68a020a209d3d56c46f38cc50a33f704f4a9a10a59377f8dd762ac66910e9b90,
@@ -339,7 +311,7 @@ contract ECDSATest is Test {
             hex"9328da16089fcba9bececa81663203989f2df5fe1faa6291a45381c81bd17f76",
             hex"939c6d6b623b42da56557e5e734a43dc83345ddfadec52cbe24d0cc64f550793"
         );
-        Signature memory got2 = wrapper.signatureFromCompactBytes(blob2);
+        Signature memory got2 = wrapper.signatureFromCompactEncoded(blob2);
         Signature memory want2 = Signature({
             v: 28,
             r: 0x9328da16089fcba9bececa81663203989f2df5fe1faa6291a45381c81bd17f76,
@@ -350,13 +322,43 @@ contract ECDSATest is Test {
         assertEq(got2.s, want2.s);
     }
 
-    function testFuzz_signatureFromCompactBytes_RevertsIf_LengthInvalid(
+    function testFuzz_signatureFromCompactEncoded_RevertsIf_LengthInvalid(
         bytes memory blob
     ) public {
         vm.assume(blob.length != 64);
 
         vm.expectRevert("LengthInvalid()");
-        wrapper.signatureFromCompactBytes(blob);
+        wrapper.signatureFromCompactEncoded(blob);
+    }
+
+    function test_Signature_toCompactEncoded() public {
+        // Note that test cases are taken from EIP-2098.
+
+        // Test Case 1:
+        Signature memory sig1 = Signature({
+            v: 27,
+            r: 0x68a020a209d3d56c46f38cc50a33f704f4a9a10a59377f8dd762ac66910e9b90,
+            s: 0x7e865ad05c4035ab5792787d4a0297a43617ae897930a6fe4d822b8faea52064
+        });
+        bytes memory got1 = wrapper.toCompactEncoded(sig1);
+        bytes memory want1 = bytes.concat(
+            hex"68a020a209d3d56c46f38cc50a33f704f4a9a10a59377f8dd762ac66910e9b90",
+            hex"7e865ad05c4035ab5792787d4a0297a43617ae897930a6fe4d822b8faea52064"
+        );
+        assertEq(got1, want1);
+
+        // Test Case 2:
+        Signature memory sig2 = Signature({
+            v: 28,
+            r: 0x9328da16089fcba9bececa81663203989f2df5fe1faa6291a45381c81bd17f76,
+            s: 0x139c6d6b623b42da56557e5e734a43dc83345ddfadec52cbe24d0cc64f550793
+        });
+        bytes memory got2 = wrapper.toCompactEncoded(sig2);
+        bytes memory want2 = bytes.concat(
+            hex"9328da16089fcba9bececa81663203989f2df5fe1faa6291a45381c81bd17f76",
+            hex"939c6d6b623b42da56557e5e734a43dc83345ddfadec52cbe24d0cc64f550793"
+        );
+        assertEq(got2, want2);
     }
 }
 
@@ -464,31 +466,35 @@ contract ECDSAWrapper {
     //--------------------------------------------------------------------------
     // (De)Serialization
 
-    function toBytes(Signature memory sig) public pure returns (bytes memory) {
-        return sig.toBytes();
-    }
-
-    function signatureFromBytes(bytes memory blob)
+    function signatureFromEncoded(bytes memory blob)
         public
         pure
         returns (Signature memory)
     {
-        return ECDSA.signatureFromBytes(blob);
+        return ECDSA.signatureFromEncoded(blob);
     }
 
-    function toCompactBytes(Signature memory sig)
+    function toEncoded(Signature memory sig)
         public
         pure
         returns (bytes memory)
     {
-        return sig.toCompactBytes();
+        return sig.toEncoded();
     }
 
-    function signatureFromCompactBytes(bytes memory blob)
+    function signatureFromCompactEncoded(bytes memory blob)
         public
         pure
         returns (Signature memory)
     {
-        return ECDSA.signatureFromCompactBytes(blob);
+        return ECDSA.signatureFromCompactEncoded(blob);
+    }
+
+    function toCompactEncoded(Signature memory sig)
+        public
+        pure
+        returns (bytes memory)
+    {
+        return sig.toCompactEncoded();
     }
 }

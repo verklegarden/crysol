@@ -36,10 +36,9 @@ contract ECDSAExample is Script {
         // Print signature to stdout.
         console.log(sig.toString());
 
-        // Serialization.
-        bytes memory blob = sig.toBytes();
-        sig = ECDSA.signatureFromBytes(blob);
-        bytes memory blob2 = sig.toCompactBytes(); // See EIP-2098
-        sig = ECDSA.signatureFromCompactBytes(blob2);
+        // Default serialization (65 bytes).
+        sig = ECDSA.signatureFromEncoded(sig.toEncoded());
+        // EIP-2098 serialization (64 bytes).
+        sig = ECDSA.signatureFromCompactEncoded(sig.toCompactEncoded());
     }
 }

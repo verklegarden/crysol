@@ -74,14 +74,14 @@ $ forge fmt [--check]
 | ---------------------------------------- | -------------- | ------------------------ | ----------------------------- |
 | `Random`                                 | ✅              | ❌                        | ❌                             |
 | `Message`                                | ✅              | ❌                        | ❌                             |
-| `curves/Secp256k1`                       | ✅              | ❌                        | ❌                             |
+| `curves/Secp256k1`                       | ✅              | 🚧                        | ❌                             |
 | `curves/Secp256k1Arithmetic`             | ❌              | ❌                        | ❌                             |
 | `signatures/ECDSA`                       | ✅              | ✅                        | ❌                             |
 | `signatures/Schnorr`                     | ❌              | ✅                        | ❌                             |
 | `signatures/utils/Nonce`                 | ❌              | ❌                        | ❌                             |
 | `stealth-addresses/ERC5564Announcer`     | ❌              | ❌                        | ❌                             |
 
-✅ Test Type Implemented &emsp; ❌ Test Type Not Implemented
+✅ Test Type Implemented &emsp; ❌ Test Type Not Implemented &emsp; 🚧 Test Type Partially Implemented
 
 ## Safety
 

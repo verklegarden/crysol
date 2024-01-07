@@ -61,28 +61,28 @@ contract ECDSAPropertiesTest is Test {
     //--------------------------------------------------------------------------
     // Properties: (De)Serialization
 
-    function testProperty_Bytes_SerializationLoop(Signature memory sig)
+    function testProperty_Encoding_SerializationLoop(Signature memory start)
         public
     {
-        Signature memory got = ECDSA.signatureFromBytes(sig.toBytes());
+        Signature memory end = ECDSA.signatureFromEncoded(start.toEncoded());
 
-        assertEq(got.v, sig.v);
-        assertEq(got.r, sig.r);
-        assertEq(got.s, sig.s);
+        assertEq(start.v, end.v);
+        assertEq(start.r, end.r);
+        assertEq(start.s, end.s);
     }
 
-    function testProperty_CompactBytes_SerializationLoop(
+    function testProperty_CompactEncoding_SerializationLoop(
         SecretKey sk,
         bytes memory message
     ) public {
         vm.assume(sk.isValid());
 
-        Signature memory want = sk.sign(message);
-        Signature memory got =
-            ECDSA.signatureFromCompactBytes(want.toCompactBytes());
+        Signature memory start = sk.sign(message);
+        Signature memory end =
+            ECDSA.signatureFromCompactEncoded(start.toCompactEncoded());
 
-        assertEq(got.v, want.v);
-        assertEq(got.r, want.r);
-        assertEq(got.s, want.s);
+        assertEq(start.v, end.v);
+        assertEq(start.r, end.r);
+        assertEq(start.s, end.s);
     }
 }

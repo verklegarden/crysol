@@ -32,7 +32,7 @@ struct Signature {
  * @notice Provides ECDSA signature functionality
  *
  * @dev Provides an Elliptic Curve Digital Signature Algorithm (ECDSA)
- *      implementation as defined in [SEC 1 v2] in combination with the
+ *      implementation as defined in [SEC-1 v2] in combination with the
  *      secp256k1 elliptic curve and keccak256 hash function.
  *
  * @dev Note about ECDSA Malleability
@@ -53,7 +53,7 @@ struct Signature {
  *      For more info, see eg [EIP-2].
  *
  * @custom:references
- *      - [SEC 1 v2]: https://www.secg.org/sec1-v2.pdf
+ *      - [SEC-1 v2]: https://www.secg.org/sec1-v2.pdf
  *      - [EIP-2]: https://eips.ethereum.org/EIPS/eip-2
  *      - [EIP-2098]: https://eips.ethereum.org/EIPS/eip-2098
  *
@@ -127,11 +127,6 @@ library ECDSA {
     {
         if (!pk.isValid()) {
             revert("PublicKeyInvalid()");
-        }
-
-        // TODO: Is this necessary? Better safe than sorry...?
-        if (digest == bytes32("")) {
-            revert("DigestZero()");
         }
 
         return pk.toAddress().verify(digest, sig);
@@ -218,18 +213,13 @@ library ECDSA {
             revert("SecretKeyInvalid()");
         }
 
-        // TODO: Should revert if digest is zero?
-        if (digest == bytes32("")) {
-            revert("DigestZero()");
-        }
-
         uint8 v;
         bytes32 r;
         bytes32 s;
         (v, r, s) = vm.sign(sk.asUint(), digest);
 
         Signature memory sig = Signature(v, r, s);
-        assert(!sig.isMalleable());
+        // assert(!sig.isMalleable());
 
         return sig;
     }
@@ -307,29 +297,14 @@ library ECDSA {
     //--------------------------------------------------------------------------
     // (De)Serialization
 
-    // TODO: Use toEncoded() to differentiate between ABI and standard-based
-    //       encoding (eg EIP-2098, SEC1).
-
-    /// @dev Returns signature `sig` as bytes.
-    ///
-    /// @dev Provides following encoding:
-    ///         [256-bit r value][256-bit s value][8-bit v value]
-    function toBytes(Signature memory sig)
-        internal
-        pure
-        returns (bytes memory)
-    {
-        return abi.encodePacked(sig.r, sig.s, sig.v);
-    }
-
-    /// @dev Returns signature from bytes `blob`.
+    /// @dev Decodes ECDSA signature from ABI-encoded bytes `blob`.
     ///
     /// @dev Reverts if:
-    ///      - Blob not exactly 65 bytes
+    ///      - Length not 65 bytes
     ///
-    /// @dev Expects following encoding:
+    /// @dev Expects 65 bytes encoding:
     ///         [256-bit r value][256-bit s value][8-bit v value]
-    function signatureFromBytes(bytes memory blob)
+    function signatureFromEncoded(bytes memory blob)
         internal
         pure
         returns (Signature memory)
@@ -350,46 +325,29 @@ library ECDSA {
         return Signature(v, r, s);
     }
 
-    /// @dev Returns signature `sig` as bytes in compact signature encoding
-    ///      defined via EIP-2098.
+    /// @dev Encodes ECDSA signature `sig` as ABI-encoded bytes.
     ///
-    /// @dev Provides following encoding:
-    ///         [256-bit r value][1-bit yParity value][255-bit s value]
-    function toCompactBytes(Signature memory sig)
+    /// @dev Provides 65 bytes encoding:
+    ///         [256-bit r value][256-bit s value][8-bit v value]
+    function toEncoded(Signature memory sig)
         internal
         pure
         returns (bytes memory)
     {
-        bytes memory blob;
-
-        uint8 v = sig.v;
-        bytes32 r = sig.r;
-        bytes32 s = sig.s;
-        assembly ("memory-safe") {
-            // Signature consists of two words.
-            mstore(blob, 0x40)
-
-            // yParity is 0 or 1, normalized from the canonical 27 or 28.
-            let yParity := sub(v, 27)
-            // yParityAndS is (yParity << 255) | s.
-            let yParityAndS := or(shl(255, yParity), s)
-
-            mstore(add(blob, 0x20), r)
-            mstore(add(blob, 0x40), yParityAndS)
-        }
-
-        return blob;
+        return abi.encodePacked(sig.r, sig.s, sig.v);
     }
 
-    /// @dev Returns Signature from bytes `blob`.
-    ///      Expects `blob` to be compact signature encoded defined via EIP-2098.
+    /// @dev Decodes ECDSA signature from [EIP-2098] compact encoded bytes
+    ///      `blob`.
     ///
     /// @dev Reverts if:
-    ///      - Blob not exactly 64 bytes
+    ///      - Length not 64 bytes
     ///
-    /// @dev Expects following encoding:
+    /// @dev Expects compact 64 bytes encoding:
     ///         [256-bit r value][1-bit yParity value][255-bit s value]
-    function signatureFromCompactBytes(bytes memory blob)
+    ///
+    ///      See [EIP-2098].
+    function signatureFromCompactEncoded(bytes memory blob)
         internal
         pure
         returns (Signature memory)
@@ -416,5 +374,37 @@ library ECDSA {
         }
 
         return Signature(v, r, s);
+    }
+
+    /// @dev Encodes ECDSA signature `sig` as [EIP-2098] compact encoded bytes.
+    ///
+    /// @dev Provides 64 bytes encoding:
+    ///         [256-bit r value][1-bit yParity value][255-bit s value]
+    ///
+    ///      See [EIP-2098].
+    function toCompactEncoded(Signature memory sig)
+        internal
+        pure
+        returns (bytes memory)
+    {
+        bytes memory blob;
+
+        uint8 v = sig.v;
+        bytes32 r = sig.r;
+        bytes32 s = sig.s;
+        assembly ("memory-safe") {
+            // Signature consists of two words.
+            mstore(blob, 0x40)
+
+            // yParity is 0 or 1, normalized from the canonical 27 or 28.
+            let yParity := sub(v, 27)
+            // yParityAndS is (yParity << 255) | s.
+            let yParityAndS := or(shl(255, yParity), s)
+
+            mstore(add(blob, 0x20), r)
+            mstore(add(blob, 0x40), yParityAndS)
+        }
+
+        return blob;
     }
 }

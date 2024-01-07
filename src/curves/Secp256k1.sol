@@ -357,7 +357,7 @@ library Secp256k1 {
         return abi.encodePacked(pk.x, pk.y);
     }
 
-    /// @dev Decodes public key from [SEC-1 v2] encoded bytes blob `blob`.
+    /// @dev Decodes public key from [SEC-1 v2] encoded bytes `blob`.
     ///
     /// @dev Reverts if:
     ///      - Length not 65 bytes
