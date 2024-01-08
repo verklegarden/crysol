@@ -1,32 +1,22 @@
-name: Solc Version Tests
+name: "Solidity Version Tests"
 
 on:
-  push:
-    branches:
-      - main
-  pull_request:
+  workflow_dispatch:
+  schedule:
+    - cron: "0 3 * * 0" # Run at 3:00am UTC every Sunday
 
 jobs:
-  tests:
-    runs-on: ubuntu-latest
+  solc-version-tests:
+    runs-on: "ubuntu-latest"
     steps:
-      - uses: actions/checkout@v3
+      - name: "Check out repo"
+        uses: "actions/checkout@v3"
         with:
-          submodules: recursive
-      - run: yarn install
+          submodules: "recursive"
 
-      - name: Install Foundry
-        uses: foundry-rs/foundry-toolchain@v1
+      - name: "Build and test with each supported Solidity version"
+        uses: "PaulRBerg/foundry-multibuild@v1"
         with:
-          version: nightly
-
-      - name: Run Forge tests for each supported solc version
-        run: >
-          forge test --use 0.8.16 &&
-          forge test --use 0.8.17 &&
-          forge test --use 0.8.18 &&
-          forge test --use 0.8.19 &&
-          forge test --use 0.8.20 &&
-          forge test --use 0.8.21 &&
-          forge test --use 0.8.22 &&
-          forge test --use 0.8.23
+          min: "0.8.16"
+          max: "0.8.23"
+          skip-test: "false"

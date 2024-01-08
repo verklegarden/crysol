@@ -1,0 +1,66 @@
+name: "CI"
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+
+jobs:
+  lint:
+    runs-on: "ubuntu-latest"
+    steps:
+      - name: "Check out repo"
+      - uses: "actions/checkout@v3"
+        with:
+          submodules: "recursive"
+
+      - name: "Install Foundry"
+        uses: "foundry-rs/foundry-toolchain@v1"
+        with:
+          version: "nightly"
+
+      - name: "Check formatting"
+        run: "forge fmt --check"
+
+  tests-unit:
+    runs-on: "ubuntu-latest"
+    steps:
+      - name: "Check out repo"
+      - uses: "actions/checkout@v3"
+        with:
+          submodules: "recursive"
+
+      - name: "Install Foundry"
+        uses: "foundry-rs/foundry-toolchain@v1"
+        with:
+          version: "nightly"
+
+      - name: "Run Forge build"
+        run: "forge build"
+        id: "build"
+
+      - name: "Run unit tests"
+        run: "FOUNDRY_PROFILE=ci forge test -vvv --nmt \"Property\""
+        id: "test-unit"
+
+  tests-property:
+    runs-on: "ubuntu-latest"
+    steps:
+      - name: "Check out repo"
+      - uses: "actions/checkout@v3"
+        with:
+          submodules: "recursive"
+
+      - name: "Install Foundry"
+        uses: "foundry-rs/foundry-toolchain@v1"
+        with:
+          version: "nightly"
+
+      - name: "Run Forge build"
+        run: "forge build"
+        id: "build"
+
+      - name: "Run property-based tests"
+        run: "FOUNDRY_PROFILE=ci forge test -vvv --mt \"Property\""
+        id: "test-property"
