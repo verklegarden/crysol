@@ -192,7 +192,11 @@ library Secp256k1Arithmetic {
         return (jPoint.x | jPoint.z == 0) && jPoint.y == 1;
     }
 
-    function add(ProjectivePoint memory jPoint, ProjectivePoint memory jOther) internal pure returns (ProjectivePoint memory) {
+    function add(ProjectivePoint memory jPoint, ProjectivePoint memory jOther)
+        internal
+        pure
+        returns (ProjectivePoint memory)
+    {
         // Uses https://hyperelliptic.org/EFD/g1p/auto-shortw-jacobian-0.html#addition-add-2007-bl.
         //
         // TODO: Use x3, y3, z3!
@@ -225,76 +229,83 @@ library Secp256k1Arithmetic {
         }
 
         // Cache variables on stack.
-        uint x1 = jPoint.x; uint y1 = jPoint.y; uint z1 = jPoint.z; 
-        uint x2 = jOther.x; uint y2 = jOther.y; uint z2 = jOther.z; 
+        //uint x1 = jPoint.x; uint y1 = jPoint.y; uint z1 = jPoint.z;
+        //uint x2 = jOther.x; uint y2 = jOther.y; uint z2 = jOther.z;
 
         // Results.
-        uint x3; uint y3; uint z3;
+        uint x3;
+        uint y3;
+        uint z3;
 
         {
+            // Compute z1_2 = z1² and z2_2 = z2².
+            uint z1_2 = mulmod(jPoint.z, jPoint.z, P);
+            uint z2_2 = mulmod(jOther.z, jOther.z, P);
 
-        // Compute z1_2 = z1² and z2_2 = z2².
-        uint z1_2 = mulmod(jPoint.z, jPoint.z, P);
-        uint z2_2 = mulmod(jOther.z, jOther.z, P);
+            // Compute u1 = x1 * z2² and u2 = x2 * z1².
+            uint u1 = mulmod(jPoint.x, z2_2, P);
+            uint u2 = mulmod(jOther.x, z1_2, P);
 
-        // Compute u1 = x1 * z2² and u2 = x2 * z1².
-        uint u1 = mulmod(jPoint.x, z2_2, P);
-        uint u2 = mulmod(jOther.x, z1_2, P);
+            // Compute s1 = y1 * z2³ and s2 = y2 * z1³.
+            uint s1 = mulmod(jPoint.y, mulmod(z2_2, jOther.z, P), P);
+            uint s2 = mulmod(jOther.y, mulmod(z1_2, jPoint.z, P), P);
 
-        // Compute s1 = y1 * z2³ and s2 = y2 * z1³.
-        uint s1 = mulmod(jPoint.y, mulmod(z2_2, jOther.z, P), P);
-        uint s2 = mulmod(jOther.y, mulmod(z1_2, jPoint.z, P), P);
+            // Compute h = u2 - u1
+            //           = u2 + (P - u1)
+            uint h = addmod(u2, P - u1, P);
 
-        // Compute h = u2 - u1
-        //           = u2 + (P - u1)
-        uint h = addmod(u2, P - u1, P);
+            // Compute i = (2 * h)²
+            uint i = mulmod(mulmod(2, h, P), mulmod(2, h, P), P);
 
-        // Compute i = (2 * h)²
-        uint i = mulmod(mulmod(2, h, P), mulmod(2, h, P), P);
+            // Compute j = (h * i)
+            uint j = mulmod(h, i, P);
 
-        // Compute j = (h * i)
-        uint j = mulmod(h, i, P);
+            // Compute r = 2 * (s2 - s1)
+            //           = 2 * (s2 + (P - s1))
+            uint r = mulmod(2, addmod(s2, P - s1, P), P);
 
-        // Compute r = 2 * (s2 - s1)
-        //           = 2 * (s2 + (P - s1))
-        uint r = mulmod(2, addmod(s2, P - s1, P), P);
+            // Compute v = u1 * i
+            uint v = mulmod(u1, i, P);
 
-        // Compute v = u1 * i
-        uint v = mulmod(u1, i, P);
+            // Compute x3 = r² - j - (2 * v)
+            uint r_2 = mulmod(r, r, P);
+            x3 = addmod(r_2, P - j, P);
+            x3 = addmod(x3, P - mulmod(2, v, P), P);
 
-        // Compute x3 = r² - j - (2 * v)
-        uint r_2 = mulmod(r, r, P);
-        x3 = addmod(r_2, P - j, P);
-        x3 = addmod(x3, P - mulmod(2, v, P), P);
+            // Compute y3 = (r * (v - x)) - 2 * s1 * j
+            //              ^ left        | ^ right
+            uint left = mulmod(r, addmod(v, P - x3, P), P);
+            uint right = mulmod(2, mulmod(s1, j, P), P);
+            y3 = addmod(left, P - right, P);
 
-        // Compute y3 = (r * (v - x)) - 2 * s1 * j
-        //              ^ left        | ^ right
-        uint left = mulmod(r, addmod(v, P - x3, P), P);
-        uint right = mulmod(2, mulmod(s1, j, P), P);
-        y3 = addmod(left, P - right, P);
+            // Compute z3 = ((z1 + z2)² - (z1 * z1) - (z2 * z2)) * h
+            //                  first     second      third
+            uint first = mulmod(
+                addmod(jPoint.z, jOther.z, P), addmod(jPoint.z, jOther.z, P), P
+            );
+            uint second = mulmod(jPoint.z, jPoint.z, P);
+            uint third = mulmod(jOther.z, jOther.z, P);
 
+            uint sum = addmod(first, P - second, P);
+            sum = addmod(sum, P - third, P);
 
-        // Compute z3 = ((z1 + z2)² - (z1 * z1) - (z2 * z2)) * h
-        //                  first     second      third
-        uint first = mulmod(addmod(jPoint.z, jOther.z, P), addmod(jPoint.z, jOther.z, P), P);
-        uint second = mulmod(jPoint.z, jPoint.z, P);
-        uint third = mulmod(jOther.z, jOther.z, P);
-
-        uint sum = addmod(first, P - second, P);
-        sum = addmod(sum, P - third, P);
-
-        z3 = mulmod(sum, h, P);
-
+            z3 = mulmod(sum, h, P);
         }
 
         if (x3 | y3 | z3 == 0) {
-            revert("TODO: Implement full addition formula. Doubling not supported.");
+            revert(
+                "TODO: Implement full addition formula. Doubling not supported."
+            );
         }
 
         return ProjectivePoint(x3, y3, z3);
     }
 
-    function double(ProjectivePoint memory jPoint) internal pure returns (ProjectivePoint memory) {
+    function double(ProjectivePoint memory jPoint)
+        internal
+        pure
+        returns (ProjectivePoint memory)
+    {
         // Uses https://hyperelliptic.org/EFD/g1p/auto-shortw-jacobian-0.html#doubling-dbl-2009-l.
 
         uint x1 = jPoint.x;
@@ -413,7 +424,11 @@ library Secp256k1Arithmetic {
     }
     */
 
-    function mul(ProjectivePoint memory jPoint, uint scalar) internal pure returns (ProjectivePoint memory) {
+    function mul(ProjectivePoint memory jPoint, uint scalar)
+        internal
+        pure
+        returns (ProjectivePoint memory)
+    {
         if (scalar == 0) {
             // TODO: [0]P defines as zero point?
             return zeroPoint().toProjectivePoint();
