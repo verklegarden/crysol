@@ -41,7 +41,7 @@ jobs:
         id: "build"
 
       - name: "Run unit tests"
-        run: "FOUNDRY_PROFILE=ci forge test -vvv --nmt \"Property\""
+        run: "FOUNDRY_PROFILE=ci forge test -vvv --nmt \"Property\" --nmc \"Examples\""
         id: "test-unit"
 
   tests-property:
@@ -62,5 +62,26 @@ jobs:
         id: "build"
 
       - name: "Run property-based tests"
-        run: "FOUNDRY_PROFILE=ci forge test -vvv --mt \"Property\""
+        run: "FOUNDRY_PROFILE=ci forge test -vvv --mt \"Property\" --nmc \"Examples\""
         id: "test-property"
+
+  tests-example:
+    runs-on: "ubuntu-latest"
+    steps:
+      - name: "Check out repo"
+        uses: "actions/checkout@v3"
+        with:
+          submodules: "recursive"
+
+      - name: "Install Foundry"
+        uses: "foundry-rs/foundry-toolchain@v1"
+        with:
+          version: "nightly"
+
+      - name: "Run Forge build"
+        run: "forge build"
+        id: "build"
+
+      - name: "Run example tests"
+        run: "FOUNDRY_PROFILE=ci forge test -vvv --mc \"Examples\""
+        id: "test-example"
