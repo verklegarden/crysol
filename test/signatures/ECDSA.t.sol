@@ -368,15 +368,10 @@ contract ECDSATest is Test {
  * @dev For more info, see https://github.com/foundry-rs/foundry/pull/3128#issuecomment-1241245086.
  */
 contract ECDSAWrapper {
-    using Secp256k1 for SecretKey;
-    using Secp256k1 for PublicKey;
-
     using ECDSA for address;
     using ECDSA for SecretKey;
     using ECDSA for PublicKey;
     using ECDSA for Signature;
-
-    using ECDSAUnsafe for Signature;
 
     //--------------------------------------------------------------------------
     // Signature Verification

@@ -19,6 +19,9 @@ contract Secp256k1Test is Test {
     using Secp256k1 for PublicKey;
     using Secp256k1 for Point;
 
+    using Secp256k1Arithmetic for Point;
+    using Secp256k1Arithmetic for ProjectivePoint;
+
     // Uncompressed Generator G.
     // Copied from [SEC-2 v2].
     bytes constant GENERATOR_ENCODED =
@@ -165,7 +168,7 @@ contract Secp256k1Test is Test {
     }
 
     function test_PublicKey_isValid_If_Identity() public {
-        PublicKey memory pk = Secp256k1Arithmetic.Identity().intoPublicKey();
+        PublicKey memory pk = Secp256k1Arithmetic.identity().intoPublicKey();
 
         assertTrue(pk.isValid());
     }
@@ -231,9 +234,13 @@ contract Secp256k1Test is Test {
     function testFuzz_PublicKey_toProjectivePoint(PublicKey memory pk) public {
         ProjectivePoint memory jPoint = wrapper.toProjectivePoint(pk);
 
-        assertEq(jPoint.x, pk.x);
-        assertEq(jPoint.y, pk.y);
-        assertEq(jPoint.z, 1);
+        if (pk.intoPoint().isIdentity()) {
+            assertTrue(jPoint.isIdentity());
+        } else {
+            assertEq(jPoint.x, pk.x);
+            assertEq(jPoint.y, pk.y);
+            assertEq(jPoint.z, 1);
+        }
     }
 
     //--------------------------------------------------------------------------
