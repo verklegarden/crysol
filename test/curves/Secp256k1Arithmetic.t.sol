@@ -189,11 +189,23 @@ contract Secp256k1ArithmeticTest is Test {
     }
 
     function testFuzz_ProjectivePoint_mul_ReturnsIdentityIfPointIsIdentity(
-        uint scalar
+        SecretKey sk
     ) public {
+        vm.assume(sk.isValid());
+
         ProjectivePoint memory id = Secp256k1Arithmetic.projectiveIdentity();
 
-        assertTrue(wrapper.mul(id, scalar).isIdentity());
+        assertTrue(wrapper.mul(id, sk.asUint()).isIdentity());
+    }
+
+    function testFuzz_ProjectivePoint_mul_RevertsIf_ScalarNotFelt(
+        ProjectivePoint memory point,
+        uint scalar
+    ) public {
+        vm.assume(scalar >= Secp256k1Arithmetic.Q);
+
+        vm.expectRevert("ScalarMustBeFelt()");
+        wrapper.mul(point, scalar);
     }
 
     //--------------------------------------------------------------------------

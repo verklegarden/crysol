@@ -194,8 +194,8 @@ library Secp256k1Arithmetic {
     /// @dev Returns the sum of projective points `point` and `other` as
     ///      projective point.
     ///
-    /// @dev Uses Alg 7 from [Renes-Costello-Batina 2015] based on a complete
-    ///      addition formula for Weierstrass curves with a = 0.
+    /// @dev Uses algorithm 7 from [Renes-Costello-Batina 2015] based on a
+    ///      complete addition formula for Weierstrass curves with a = 0.
     function add(ProjectivePoint memory point, ProjectivePoint memory other)
         internal
         pure
@@ -228,36 +228,36 @@ library Secp256k1Arithmetic {
 
         // Computations:
         // Note that x - y = x + (P - y) (mod P)
-        t0 = mulmod(x1, x2, P); // Step 1
+        t0 = mulmod(x1, x2, P);
         t1 = mulmod(y1, y2, P);
         t2 = mulmod(z1, z2, P);
         t3 = addmod(x1, y1, P);
-        t4 = addmod(x2, y2, P); // Step 5
+        t4 = addmod(x2, y2, P);
         t3 = mulmod(t3, t4, P);
         t4 = addmod(t0, t1, P);
         unchecked { t3 = addmod(t3, P - t4, P); }
         t4 = addmod(y1, z1, P);
-        x3 = addmod(y2, z2, P); // Step 10
+        x3 = addmod(y2, z2, P);
         t4 = mulmod(t4, x3, P);
         x3 = addmod(t1, t2, P);
         unchecked { t4 = addmod(t4, P - x3, P); }
         x3 = addmod(x1, z1, P);
-        y3 = addmod(x2, z2, P); // Step 15
+        y3 = addmod(x2, z2, P);
         x3 = mulmod(x3, y3, P);
         y3 = addmod(t0, t2, P);
         unchecked { y3 = addmod(x3, P - y3, P); }
         x3 = addmod(t0, t0, P);
-        t0 = addmod(x3, t0, P); // Step 20
+        t0 = addmod(x3, t0, P);
         t2 = mulmod(B3, t2, P);
         z3 = addmod(t1, t2, P);
         unchecked { t1 = addmod(t1, P - t2, P); }
         y3 = mulmod(B3, y3, P);
-        x3 = mulmod(t4, y3, P); // Step 25
+        x3 = mulmod(t4, y3, P);
         t2 = mulmod(t3, t1, P);
         unchecked { x3 = addmod(t2, P - x3, P); }
         y3 = mulmod(y3, t0, P);
         t1 = mulmod(t1, z3, P);
-        y3 = addmod(t1, y3, P); // Step 30
+        y3 = addmod(t1, y3, P);
         t0 = mulmod(t0, t3, P);
         z3 = mulmod(z3, t4, P);
         z3 = addmod(z3, t0, P);
@@ -273,6 +273,11 @@ library Secp256k1Arithmetic {
         pure
         returns (ProjectivePoint memory)
     {
+        // TODO: Should introduce Felt type?
+        if (scalar >= Q) {
+            revert("ScalarMustBeFelt()");
+        }
+
         if (scalar == 0) {
             return projectiveIdentity();
         }

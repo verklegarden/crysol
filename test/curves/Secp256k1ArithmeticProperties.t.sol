@@ -65,6 +65,9 @@ contract Secp256k1ArithmeticPropertiesTest is Test {
     ) public {
         vm.assume(sk.isValid());
 
+        // TODO: Make Felt type to circumvent manual bounding?
+        vm.assume(scalar < Secp256k1Arithmetic.Q);
+
         ProjectivePoint memory p = sk.toPublicKey().toProjectivePoint();
 
         Point memory product = p.mul(scalar).intoPoint();
@@ -77,6 +80,9 @@ contract Secp256k1ArithmeticPropertiesTest is Test {
         uint scalar
     ) public {
         vm.assume(sk.isValid());
+
+        // TODO: Make Felt type to circumvent manual bounding?
+        vm.assume(scalar < Secp256k1Arithmetic.Q);
 
         ProjectivePoint memory p = sk.toPublicKey().toProjectivePoint();
 
