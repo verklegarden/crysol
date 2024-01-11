@@ -360,11 +360,14 @@ library Secp256k1 {
     /// @dev Decodes public key from [SEC-1 v2] encoded bytes `blob`.
     ///
     /// @dev Reverts if:
-    ///      - Length not 65 bytes
-    ///      - Prefix byte not 0x04
+    ///        Blob not 0x00
+    ///      ∧   Length not 65 bytes        TODO: ?
+    ///        ∨ Prefix byte not 0x04
     ///
     /// @dev Expects uncompressed 65 bytes encoding:
     ///         [0x04 prefix][32 bytes x coordinate][32 bytes y coordinate]
+    ///
+    ///      Note that the identity is encoded via 0x00.
     ///
     ///      See [SEC-1 v2] section 2.3.3 "Elliptic-Curve-Point-to-Octet-String".
     function publicKeyFromEncoded(bytes memory blob)
@@ -372,7 +375,10 @@ library Secp256k1 {
         pure
         returns (PublicKey memory)
     {
-        // TODO: [SEC-1 v2] specifies 0x00 as encoding for identity.
+        // TODO: publicKeyFromEncoded identity case.
+        //if (blob.length == 1 && bytes1(blob) == bytes1(0x00)) {
+        //    return Secp256k1Arithmetic.identity().intoPublicKey();
+        //}
 
         // Revert if length not 65.
         if (blob.length != 65) {
@@ -411,14 +417,96 @@ library Secp256k1 {
     /// @dev Provides uncompressed 65 bytes encoding:
     ///         [0x04 prefix][32 bytes x coordinate][32 bytes y coordinate]
     ///
+    ///      Note that the identity is encoded via 0x00. TODO
+    ///
     ///      See [SEC-1 v2] section 2.3.3 "Elliptic-Curve-Point-to-Octet-String".
     function toEncoded(PublicKey memory pk)
         internal
         pure
         returns (bytes memory blob)
     {
-        // TODO: [SEC-1 v2] specifies 0x00 as encoding for identity.
+        // TODO: toEncoded identity case.
+        //if (pk.intoPoint().isIdentity()) {
+        //    return bytes(hex"00");
+        //}
 
         return abi.encodePacked(bytes1(0x04), pk.x, pk.y);
+    }
+
+    /// @dev Decodes public key from [SEC-1 v2] compressed encoded bytes `blob`.
+    ///
+    /// @dev Reverts if:
+    ///        Blob not 0x00
+    ///      ∧   Length not 33 bytes        TODO: ?
+    ///        ∨ Prefix byte not one in [0x02, 0x03]
+    ///
+    /// @dev Expects compressed 33 bytes encoding:
+    ///         [0x02 or 0x03 prefix][32 bytes x coordinate]
+    ///
+    ///      Note that the identity is encoded via 0x00.
+    ///
+    ///      See [SEC-1 v2] section 2.3.3 "Elliptic-Curve-Point-to-Octet-String".
+    function publicKeyFromCompressedEncoded(bytes memory blob)
+        internal
+        pure
+        returns (PublicKey memory)
+    {
+        revert("NotImplemented");
+
+        /*
+        // TODO: publicKeyFromCompressedEncoded identity case.
+        if (blob.length == 1 && bytes1(blob) == bytes1(0x00)) {
+            return Secp256k1Arithmetic.identity().intoPublicKey();
+        }
+
+        // Revert if length not 33.
+        if (blob.length != 33) {
+            revert("LengthInvalid()");
+        }
+
+        // Read prefix byte.
+        bytes32 prefix;
+        assembly ("memory-safe") {
+            prefix := byte(0, mload(add(blob, 0x20)))
+        }
+
+        // Revert if prefix not 0x02 or 0x03.
+        if (uint(prefix) != 0x02 && uint(prefix) != 0x03) {
+            revert("PrefixInvalid()");
+        }
+
+        // Read x coordinates.
+        uint x;
+        assembly ("memory-safe") {
+            x := mload(add(blob, 0x21))
+        }
+
+        // TODO: Compute y coordinate from x coordinate and yParity.
+
+        // Make public key.
+        PublicKey memory pk; // = PublicKey(x, y);
+
+        // Note that public key's validity is not verified.
+        // This responsibility is delegated to the caller.
+        return pk;
+        */
+    }
+
+    /// @dev Encodes public key `pk` as [SEC-1 v2] compressed encoded bytes.
+    ///
+    /// @dev Provides compressed 33 bytes encoding:
+    ///         [0x02 or 0x03 prefix][32 bytes x coordinate]
+    ///
+    ///      Note that the identity is encoded via 0x00.
+    ///
+    ///      See [SEC-1 v2] section 2.3.3 "Elliptic-Curve-Point-to-Octet-String".
+    function toCompressedEncoded(PublicKey memory pk)
+        internal
+        pure
+        returns (bytes memory blob)
+    {
+        bytes1 prefix = pk.yParity() == 0 ? bytes1(0x02) : bytes1(0x03);
+
+        return abi.encodePacked(prefix, pk.x);
     }
 }

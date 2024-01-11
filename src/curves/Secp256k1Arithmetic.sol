@@ -106,6 +106,8 @@ library Secp256k1Arithmetic {
         return (point.x | point.y) == 0;
     }
 
+    // TODO: identity() -> Identity() ?
+    //          also projectiveIdentity() -> ProjectiveIdentity
     /// @dev Returns the additive identity.
     ///
     /// @dev Note that the identity is represented via:
