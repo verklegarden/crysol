@@ -75,7 +75,7 @@ $ forge fmt [--check]
 | `Random`                                 | ✅              | ❔                        | ❔                             |
 | `Message`                                | ✅              | ❔                        | ❔                             |
 | `curves/Secp256k1`                       | ✅              | 🚧                        | ❌                             |
-| `curves/Secp256k1Arithmetic`             | ❌              | ❌                        | ❌                             |
+| `curves/Secp256k1Arithmetic`             | ✅              | 🚧                        | ❌                             |
 | `signatures/ECDSA`                       | ✅              | ✅                        | ❌                             |
 | `signatures/Schnorr`                     | ✅              | ✅                        | ❌                             |
 | `signatures/utils/Nonce`                 | ✅              | ❌                        | ❌                             |

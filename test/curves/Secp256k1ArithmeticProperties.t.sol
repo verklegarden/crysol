@@ -25,6 +25,8 @@ contract Secp256k1ArithmeticPropertiesTest is Test {
     //--------------------------------------------------------------------------
     // Test: Projective Point
 
+    // -- add
+
     function testProperty_ProjectivePoint_add_NeverReturnsZeroPoint(
         SecretKey sk1,
         SecretKey sk2
@@ -53,6 +55,34 @@ contract Secp256k1ArithmeticPropertiesTest is Test {
         Point memory sum = p1.add(p2).intoPoint();
 
         assertTrue(sum.isOnCurve());
+    }
+
+    // -- mul
+
+    function testProperty_ProjectivePoint_mul_NeverReturnsZeroPoint(
+        SecretKey sk,
+        uint scalar
+    ) public {
+        vm.assume(sk.isValid());
+
+        ProjectivePoint memory p = sk.toPublicKey().toProjectivePoint();
+
+        Point memory product = p.mul(scalar).intoPoint();
+
+        assertFalse(product.isZeroPoint());
+    }
+
+    function testProperty_ProjectivePoint_mul_ResultIsOnCurve(
+        SecretKey sk,
+        uint scalar
+    ) public {
+        vm.assume(sk.isValid());
+
+        ProjectivePoint memory p = sk.toPublicKey().toProjectivePoint();
+
+        Point memory product = p.mul(scalar).intoPoint();
+
+        assertTrue(product.isOnCurve());
     }
 
     //--------------------------------------------------------------------------

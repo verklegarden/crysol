@@ -208,7 +208,6 @@ library Secp256k1Arithmetic {
         if (other.isIdentity()) {
             return point;
         }
-
         // forgefmt: disable-start
 
         // Inputs:
@@ -217,49 +216,48 @@ library Secp256k1Arithmetic {
         // - Q = (x2, y2, z2)
         uint x2 = other.x; uint y2 = other.y; uint z2 = other.z;
 
-
         // Output:
         // - (x3, y3, z3) = P + Q
         uint x3; uint y3; uint z3;
 
-        // Constants used:
+        // Constants:
         // - B3 = mulmod(B, 3, P)
 
         // Variables:
         uint t0; uint t1; uint t2; uint t3; uint t4;
 
-        // Alg:
+        // Computations:
         // Note that x - y = x + (P - y) (mod P)
-        t0 = mulmod(x1, x2, P);// Step 1
+        t0 = mulmod(x1, x2, P); // Step 1
         t1 = mulmod(y1, y2, P);
         t2 = mulmod(z1, z2, P);
         t3 = addmod(x1, y1, P);
-        t4 = addmod(x2, y2, P);// Step 5
+        t4 = addmod(x2, y2, P); // Step 5
         t3 = mulmod(t3, t4, P);
         t4 = addmod(t0, t1, P);
         unchecked { t3 = addmod(t3, P - t4, P); }
         t4 = addmod(y1, z1, P);
-        x3 = addmod(y2, z2, P);// Step 10
+        x3 = addmod(y2, z2, P); // Step 10
         t4 = mulmod(t4, x3, P);
         x3 = addmod(t1, t2, P);
         unchecked { t4 = addmod(t4, P - x3, P); }
         x3 = addmod(x1, z1, P);
-        y3 = addmod(x2, z2, P);// Step 15
+        y3 = addmod(x2, z2, P); // Step 15
         x3 = mulmod(x3, y3, P);
         y3 = addmod(t0, t2, P);
         unchecked { y3 = addmod(x3, P - y3, P); }
         x3 = addmod(t0, t0, P);
-        t0 = addmod(x3, t0, P);// Step 20
+        t0 = addmod(x3, t0, P); // Step 20
         t2 = mulmod(B3, t2, P);
         z3 = addmod(t1, t2, P);
         unchecked { t1 = addmod(t1, P - t2, P); }
         y3 = mulmod(B3, y3, P);
-        x3 = mulmod(t4, y3, P);// Step 25
+        x3 = mulmod(t4, y3, P); // Step 25
         t2 = mulmod(t3, t1, P);
         unchecked { x3 = addmod(t2, P - x3, P); }
         y3 = mulmod(y3, t0, P);
         t1 = mulmod(t1, z3, P);
-        y3 = addmod(t1, y3, P);// Step 30
+        y3 = addmod(t1, y3, P); // Step 30
         t0 = mulmod(t0, t3, P);
         z3 = mulmod(z3, t4, P);
         z3 = addmod(z3, t0, P);
