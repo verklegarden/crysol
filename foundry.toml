@@ -7,8 +7,8 @@ ffi = true
 # Compilation
 evm_version = "shanghai"
 solc_version = "0.8.23"
-via_ir = true             # TODO: Disable once stack-too-deep resolved
-optimizer = true
+via_ir = false
+optimizer = false
 optimizer_runs = 100_000
 extra_output_files = ["irOptimized"]
 

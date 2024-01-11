@@ -11,6 +11,9 @@ import {
     ProjectivePoint
 } from "src/curves/Secp256k1Arithmetic.sol";
 
+import {Secp256k1ArithmeticTestVectors} from
+    "./test-vectors/Secp256k1ArithmeticTestVectors.sol";
+
 /**
  * @notice Secp256k1Arithmetic Unit Tests
  */
@@ -114,69 +117,95 @@ contract Secp256k1ArithmeticTest is Test {
 
     // -- isIdentity
 
-    function testFuzz_ProjectivePoint_isIdentity(ProjectivePoint memory jPoint)
+    function testFuzz_ProjectivePoint_isIdentity(ProjectivePoint memory point)
         public
     {
-        if (jPoint.x == 0 && jPoint.y == 1 && jPoint.z == 0) {
-            assertTrue(wrapper.isIdentity(jPoint));
+        if (point.x == 0 && point.y == 1 && point.z == 0) {
+            assertTrue(wrapper.isIdentity(point));
         } else {
-            assertFalse(wrapper.isIdentity(jPoint));
+            assertFalse(wrapper.isIdentity(point));
         }
     }
 
     // -- add
 
-    function test_ProjectivePoint_add() public {
-        // TODO: Use vectors from RustCrypto and/or Paul Miller's noble-curves.
+    function testVectors_ProjectivePoint_add() public {
+        ProjectivePoint memory g = Secp256k1Arithmetic.G().toProjectivePoint();
+        ProjectivePoint memory p = Secp256k1Arithmetic.projectiveIdentity();
 
-        ProjectivePoint memory a;
-        ProjectivePoint memory b;
-        Point memory sum;
+        Point[] memory vectors = Secp256k1ArithmeticTestVectors.addVectors();
 
-        // sum = [1]G + [2]G = [3]G
-        a = Secp256k1Arithmetic.G().toProjectivePoint();
-        b = Secp256k1.secretKeyFromUint(2).toPublicKey().toProjectivePoint();
-        sum = wrapper.add(a, b).intoPoint();
+        for (uint i; i < vectors.length; i++) {
+            p = wrapper.add(p, g);
 
-        Point memory want =
-            Secp256k1.secretKeyFromUint(3).toPublicKey().intoPoint();
-
-        assertEq(sum.x, want.x);
-        assertEq(sum.y, want.y);
+            Point memory got = p.toPoint();
+            assertEq(got.x, vectors[i].x);
+            assertEq(got.y, vectors[i].y);
+        }
     }
 
-    function testFuzz_ProjectivePoint_add_RevertsIf_Double(
-        ProjectivePoint memory jPoint
-    ) public {
-        vm.expectRevert();
-        wrapper.add(jPoint, jPoint);
-    }
+    function test_ProjectivePoint_add_Identity() public {
+        ProjectivePoint memory g = Secp256k1Arithmetic.G().toProjectivePoint();
+        ProjectivePoint memory id = Secp256k1Arithmetic.projectiveIdentity();
+        ProjectivePoint memory got;
 
-    // -- double
-
-    function test_ProjectivePoint_double() public {
-        ProjectivePoint memory p = Secp256k1Arithmetic.G().toProjectivePoint();
-
-        Point memory want =
-            Secp256k1.secretKeyFromUint(4).toPublicKey().intoPoint();
-        Point memory got = p.double().double().intoPoint();
-
-        assertEq(got.x, want.x);
-        assertEq(got.y, want.y);
+        // Test id + g.
+        got = wrapper.add(id, g);
+        assertEq(got.x, g.x);
+        assertEq(got.y, g.y);
+        assertEq(got.z, g.z);
+        // Test g + id.
+        got = wrapper.add(g, id);
+        assertEq(got.x, g.x);
+        assertEq(got.y, g.y);
+        assertEq(got.z, g.z);
     }
 
     // -- mul
 
-    function test_ProjectivePoint_mul() public {
-        ProjectivePoint memory p = Secp256k1Arithmetic.G().toProjectivePoint();
-        uint scalar = 10;
+    function testVectors_ProjectivePoint_mul() public {
+        ProjectivePoint memory g = Secp256k1Arithmetic.G().toProjectivePoint();
 
-        Point memory want =
-            Secp256k1.secretKeyFromUint(scalar).toPublicKey().intoPoint();
-        Point memory got = p.mul(scalar).intoPoint();
+        uint[] memory scalars;
+        Point[] memory products;
+        (scalars, products) = Secp256k1ArithmeticTestVectors.mulVectors();
+
+        for (uint i; i < scalars.length; i++) {
+            Point memory p = wrapper.mul(g, scalars[i]).intoPoint();
+
+            assertEq(p.x, products[i].x);
+            assertEq(p.y, products[i].y);
+        }
+    }
+
+    function testFuzz_ProjectivePoint_mul(SecretKey sk) public {
+        vm.assume(sk.isValid());
+
+        ProjectivePoint memory g = Secp256k1Arithmetic.G().toProjectivePoint();
+
+        Point memory got = wrapper.mul(g, sk.asUint()).intoPoint();
+        Point memory want = sk.toPublicKey().intoPoint();
 
         assertEq(got.x, want.x);
         assertEq(got.y, want.y);
+    }
+
+    function testFuzz_ProjectivePoint_mul_ReturnsIdentityIfScalarIsZero(
+        ProjectivePoint memory point
+    ) public {
+        ProjectivePoint memory g = Secp256k1Arithmetic.G().toProjectivePoint();
+
+        assertTrue(wrapper.mul(g, 0).isIdentity());
+    }
+
+    function testFuzz_ProjectivePoint_mul_ReturnsIdentityIfPointIsIdentity(
+        SecretKey sk
+    ) public {
+        vm.assume(sk.isValid());
+
+        ProjectivePoint memory id = Secp256k1Arithmetic.projectiveIdentity();
+
+        assertTrue(wrapper.mul(id, sk.asUint()).isIdentity());
     }
 
     //--------------------------------------------------------------------------
@@ -206,6 +235,8 @@ contract Secp256k1ArithmeticTest is Test {
     //----------------------------------
     // Projective Point
 
+    // -- intoPoint
+
     // TODO: Test no new memory allocation.
     // TODO: Not a real test. Use vectors from Paul Miller.
     function testFuzz_ProjectivePoint_intoPoint(SecretKey sk) public {
@@ -223,6 +254,26 @@ contract Secp256k1ArithmeticTest is Test {
             Secp256k1Arithmetic.projectiveIdentity();
 
         assertTrue(wrapper.intoPoint(identity).isIdentity());
+    }
+
+    // -- toPoint
+
+    // TODO: Not a real test. Use vectors from Paul Miller.
+    function test_ProjectivePoint_toPoint(SecretKey sk) public {
+        vm.assume(sk.isValid());
+
+        Point memory want = sk.toPublicKey().intoPoint();
+        Point memory got = wrapper.toPoint(want.toProjectivePoint());
+
+        assertEq(want.x, got.x);
+        assertEq(want.y, got.y);
+    }
+
+    function test_ProjectivePoint_toPoint_Identity() public {
+        ProjectivePoint memory identity =
+            Secp256k1Arithmetic.projectiveIdentity();
+
+        assertTrue(wrapper.toPoint(identity).isIdentity());
     }
 
     //--------------------------------------------------------------------------
@@ -370,12 +421,28 @@ contract Secp256k1ArithmeticWrapper {
         return Secp256k1Arithmetic.projectiveIdentity();
     }
 
-    function isIdentity(ProjectivePoint memory jPoint)
+    function isIdentity(ProjectivePoint memory point)
         public
         pure
         returns (bool)
     {
-        return jPoint.isIdentity();
+        return point.isIdentity();
+    }
+
+    function add(ProjectivePoint memory point, ProjectivePoint memory jOther)
+        public
+        pure
+        returns (ProjectivePoint memory)
+    {
+        return point.add(jOther);
+    }
+
+    function mul(ProjectivePoint memory point, uint scalar)
+        public
+        pure
+        returns (ProjectivePoint memory)
+    {
+        return point.mul(scalar);
     }
 
     //--------------------------------------------------------------------------
@@ -395,20 +462,20 @@ contract Secp256k1ArithmeticWrapper {
     //----------------------------------
     // Projective Point
 
-    function intoPoint(ProjectivePoint memory jPoint)
+    function intoPoint(ProjectivePoint memory point)
         public
         pure
         returns (Point memory)
     {
-        return jPoint.intoPoint();
+        return point.intoPoint();
     }
 
-    function add(ProjectivePoint memory jPoint, ProjectivePoint memory jOther)
+    function toPoint(ProjectivePoint memory point)
         public
         pure
-        returns (ProjectivePoint memory)
+        returns (Point memory)
     {
-        return jPoint.add(jOther);
+        return point.toPoint();
     }
 
     //--------------------------------------------------------------------------

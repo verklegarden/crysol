@@ -232,14 +232,14 @@ contract Secp256k1Test is Test {
     // -- toProjectivePoint
 
     function testFuzz_PublicKey_toProjectivePoint(PublicKey memory pk) public {
-        ProjectivePoint memory jPoint = wrapper.toProjectivePoint(pk);
+        ProjectivePoint memory point = wrapper.toProjectivePoint(pk);
 
         if (pk.intoPoint().isIdentity()) {
-            assertTrue(jPoint.isIdentity());
+            assertTrue(point.isIdentity());
         } else {
-            assertEq(jPoint.x, pk.x);
-            assertEq(jPoint.y, pk.y);
-            assertEq(jPoint.z, 1);
+            assertEq(point.x, pk.x);
+            assertEq(point.y, pk.y);
+            assertEq(point.z, 1);
         }
     }
 

@@ -14,7 +14,7 @@ pragma solidity ^0.8.16;
 /**
  * @notice Point is a secp256k1 point in affine coordinates
  *
- * @dev The point at infinity is represented via:
+ * @dev The identity, aka point at infinity, is represented via:
  *          x = y = type(uint).max
  */
 struct Point {
@@ -27,8 +27,8 @@ struct Point {
  *
  * @dev A projective point represents an affine point (x, y) as (X, Y, Z)
  *      satisfying the following equations:
- *          x = X / Z²
- *          y = Y / Z³
+ *          x = X / Z
+ *          y = Y / Z
  */
 struct ProjectivePoint {
     uint x;
@@ -45,6 +45,7 @@ struct ProjectivePoint {
  * @custom:references
  *      - [SEC-2 v2]: https://www.secg.org/sec2-v2.pdf
  *      - [Yellow Paper]: https://github.com/ethereum/yellowpaper
+ *      - [Renes-Costello-Batina 2015]: https://eprint.iacr.org/2015/1060.pdf
  *
  * @author crysol (https://github.com/pmerkleplant/crysol)
  * @author Inspired by Chronicle Protocol's Scribe (https://github.com/chronicleprotocol/scribe)
@@ -167,8 +168,6 @@ library Secp256k1Arithmetic {
 
     //--------------------------------------------------------------------------
     // Projective Point
-    //
-    // Coming soon...
 
     /// @dev Returns the additive identity as projective point.
     ///
@@ -181,201 +180,47 @@ library Secp256k1Arithmetic {
         return ProjectivePoint(0, 1, 0);
     }
 
-    /// @dev Returns whether projective point `jPoint` is the identity.
+    /// @dev Returns whether projective point `point` is the identity.
     ///
     /// @dev Note that the identity is also called point at infinity.
-    function isIdentity(ProjectivePoint memory jPoint)
+    function isIdentity(ProjectivePoint memory point)
         internal
         pure
         returns (bool)
     {
-        return (jPoint.x | jPoint.z == 0) && jPoint.y == 1;
+        return (point.x | point.z == 0) && point.y == 1;
     }
 
-    function add(ProjectivePoint memory jPoint, ProjectivePoint memory jOther)
-        internal
-        pure
-        returns (ProjectivePoint memory)
-    {
-        // Uses https://hyperelliptic.org/EFD/g1p/auto-shortw-jacobian-0.html#addition-add-2007-bl.
-        //
-        // TODO: Use x3, y3, z3!
-        // Addition formula:
-        //      x = r² - j - (2 * v)                          (mod P)
-        //      y = (r * (v - x)) - 2 * s1 * j                (mod P)
-        //      z = ((z1 + z2)² - (z1 * z1) - (z2 * z2)) * h  (mod P)
-        //
-        // where:
-        //      u1 = x1 * z2²       (mod P)
-        //      u2 = x2 * z1²       (mod P)
-        //      s1 = y1 * z2³       (mod P)
-        //      s2 = y2 * z1³       (mod P)
-        //      h  = u2 - u1        (mod P)
-        //      i  = (2 * h)²       (mod P) <- Just optimization
-        //      j  = h * i          (mod P)
-        //      r  = 2 * (s2 - s1)  (mod P)
-        //      v  = u1 * i         (mod P)
-        //
-        // and:
-        //      (x1, y1, z1) = jPoint
-        //      (x2, y2, z2) = jOther
-
-        // Return early if addition with additive identity.
-        if (jPoint.isIdentity()) {
-            return jOther;
-        }
-        if (jOther.isIdentity()) {
-            return jPoint;
-        }
-
-        // Cache variables on stack.
-        //uint x1 = jPoint.x; uint y1 = jPoint.y; uint z1 = jPoint.z;
-        //uint x2 = jOther.x; uint y2 = jOther.y; uint z2 = jOther.z;
-
-        // Results.
-        uint x3;
-        uint y3;
-        uint z3;
-
-        {
-            // Compute z1_2 = z1² and z2_2 = z2².
-            uint z1_2 = mulmod(jPoint.z, jPoint.z, P);
-            uint z2_2 = mulmod(jOther.z, jOther.z, P);
-
-            // Compute u1 = x1 * z2² and u2 = x2 * z1².
-            uint u1 = mulmod(jPoint.x, z2_2, P);
-            uint u2 = mulmod(jOther.x, z1_2, P);
-
-            // Compute s1 = y1 * z2³ and s2 = y2 * z1³.
-            uint s1 = mulmod(jPoint.y, mulmod(z2_2, jOther.z, P), P);
-            uint s2 = mulmod(jOther.y, mulmod(z1_2, jPoint.z, P), P);
-
-            // Compute h = u2 - u1
-            //           = u2 + (P - u1)
-            uint h = addmod(u2, P - u1, P);
-
-            // Compute i = (2 * h)²
-            uint i = mulmod(mulmod(2, h, P), mulmod(2, h, P), P);
-
-            // Compute j = (h * i)
-            uint j = mulmod(h, i, P);
-
-            // Compute r = 2 * (s2 - s1)
-            //           = 2 * (s2 + (P - s1))
-            uint r = mulmod(2, addmod(s2, P - s1, P), P);
-
-            // Compute v = u1 * i
-            uint v = mulmod(u1, i, P);
-
-            // Compute x3 = r² - j - (2 * v)
-            uint r_2 = mulmod(r, r, P);
-            x3 = addmod(r_2, P - j, P);
-            x3 = addmod(x3, P - mulmod(2, v, P), P);
-
-            // Compute y3 = (r * (v - x)) - 2 * s1 * j
-            //              ^ left        | ^ right
-            uint left = mulmod(r, addmod(v, P - x3, P), P);
-            uint right = mulmod(2, mulmod(s1, j, P), P);
-            y3 = addmod(left, P - right, P);
-
-            // Compute z3 = ((z1 + z2)² - (z1 * z1) - (z2 * z2)) * h
-            //                  first     second      third
-            uint first = mulmod(
-                addmod(jPoint.z, jOther.z, P), addmod(jPoint.z, jOther.z, P), P
-            );
-            uint second = mulmod(jPoint.z, jPoint.z, P);
-            uint third = mulmod(jOther.z, jOther.z, P);
-
-            uint sum = addmod(first, P - second, P);
-            sum = addmod(sum, P - third, P);
-
-            z3 = mulmod(sum, h, P);
-        }
-
-        if (x3 | y3 | z3 == 0) {
-            revert(
-                "TODO: Implement full addition formula. Doubling not supported."
-            );
-        }
-
-        return ProjectivePoint(x3, y3, z3);
-    }
-
-    function double(ProjectivePoint memory jPoint)
-        internal
-        pure
-        returns (ProjectivePoint memory)
-    {
-        // Uses https://hyperelliptic.org/EFD/g1p/auto-shortw-jacobian-0.html#doubling-dbl-2009-l.
-
-        uint x1 = jPoint.x;
-        uint y1 = jPoint.y;
-        uint z1 = jPoint.z;
-
-        uint a = mulmod(x1, x1, P);
-        uint b = mulmod(y1, y1, P);
-        uint c = mulmod(b, b, P);
-
-        uint d;
-        {
-            uint mid = mulmod(addmod(x1, b, P), addmod(x1, b, P), P);
-            uint minus = addmod(mid, P - a, P);
-            minus = addmod(minus, P - c, P);
-            d = mulmod(2, minus, P);
-        }
-
-        uint e = mulmod(3, a, P);
-        uint f = mulmod(e, e, P);
-
-        uint x3 = addmod(f, P - mulmod(2, d, P), P);
-
-        uint y3;
-        {
-            uint left = mulmod(e, addmod(d, P - x3, P), P);
-            uint right = mulmod(8, c, P);
-            y3 = addmod(left, P - right, P);
-        }
-
-        uint z3 = mulmod(2, mulmod(y1, z1, P), P);
-
-        return ProjectivePoint(x3, y3, z3);
-    }
-
-    /*
-        TODO: This is the implementation we want!
-
-    /// @dev Returns the sum of projective points `jPoint` and `jOther` as 
+    /// @dev Returns the sum of projective points `point` and `other` as
     ///      projective point.
     ///
-    /// @dev Uses the complete addition formula from Renes-Costello-Batina 2015.
-    ///      See https://eprint.iacr.org/2015/1060.pdf Alg 7.
-    function add(ProjectivePoint memory jPoint, ProjectivePoint memory jOther)
+    /// @dev Uses Alg 7 from [Renes-Costello-Batina 2015] based on a complete
+    ///      addition formula for Weierstrass curves with a = 0.
+    function add(ProjectivePoint memory point, ProjectivePoint memory other)
         internal
         pure
         returns (ProjectivePoint memory)
     {
-        // TODO: This implementation can be optimized.
-        //       See for example https://github.com/RustCrypto/elliptic-curves/blob/master/k256/src/arithmetic/projective.rs#L96.
-
-        // TODO: Could be removed. Should be?
-        if (jPoint.isIdentity()) {
-            return jOther;
+        // Return early if addition with identity.
+        if (point.isIdentity()) {
+            return other;
         }
-        if (jOther.isIdentity()) {
-            return jPoint;
+        if (other.isIdentity()) {
+            return point;
         }
 
         // forgefmt: disable-start
 
-        // Inputs: P = (x1, y1, z1), Q = (x2, y2, z2)
-        uint x1 = jPoint.x; uint x2 = jOther.x;
-        uint y1 = jPoint.y; uint y2 = jOther.y;
-        uint z1 = jPoint.z; uint z2 = jOther.z;
+        // Inputs:
+        // - P = (x1, y1, z1)
+        uint x1 = point.x; uint y1 = point.y; uint z1 = point.z;
+        // - Q = (x2, y2, z2)
+        uint x2 = other.x; uint y2 = other.y; uint z2 = other.z;
 
-        // Output: (x3, y3, z3) = P + Q
-        uint x3;
-        uint y3;
-        uint z3;
+
+        // Output:
+        // - (x3, y3, z3) = P + Q
+        uint x3; uint y3; uint z3;
 
         // Constants used:
         // - B3 = mulmod(B, 3, P)
@@ -385,36 +230,36 @@ library Secp256k1Arithmetic {
 
         // Alg:
         // Note that x - y = x + (P - y) (mod P)
-        t0 = mulmod(x1, x2, P); // Step 1
+        t0 = mulmod(x1, x2, P);// Step 1
         t1 = mulmod(y1, y2, P);
         t2 = mulmod(z1, z2, P);
         t3 = addmod(x1, y1, P);
-        t4 = addmod(x2, y2, P); // Step 5
+        t4 = addmod(x2, y2, P);// Step 5
         t3 = mulmod(t3, t4, P);
         t4 = addmod(t0, t1, P);
         unchecked { t3 = addmod(t3, P - t4, P); }
         t4 = addmod(y1, z1, P);
-        x3 = addmod(y2, z2, P); // Step 10
+        x3 = addmod(y2, z2, P);// Step 10
         t4 = mulmod(t4, x3, P);
         x3 = addmod(t1, t2, P);
         unchecked { t4 = addmod(t4, P - x3, P); }
         x3 = addmod(x1, z1, P);
-        y3 = addmod(x2, z2, P); // Step 15
+        y3 = addmod(x2, z2, P);// Step 15
         x3 = mulmod(x3, y3, P);
         y3 = addmod(t0, t2, P);
         unchecked { y3 = addmod(x3, P - y3, P); }
         x3 = addmod(t0, t0, P);
-        t0 = addmod(x3, t0, P); // Step 20
+        t0 = addmod(x3, t0, P);// Step 20
         t2 = mulmod(B3, t2, P);
         z3 = addmod(t1, t2, P);
         unchecked { t1 = addmod(t1, P - t2, P); }
         y3 = mulmod(B3, y3, P);
-        x3 = mulmod(t4, y3, P); // Step 25
+        x3 = mulmod(t4, y3, P);// Step 25
         t2 = mulmod(t3, t1, P);
         unchecked { x3 = addmod(t2, P - x3, P); }
         y3 = mulmod(y3, t0, P);
         t1 = mulmod(t1, z3, P);
-        y3 = addmod(t1, y3, P); // Step 30
+        y3 = addmod(t1, y3, P);// Step 30
         t0 = mulmod(t0, t3, P);
         z3 = mulmod(z3, t4, P);
         z3 = addmod(z3, t0, P);
@@ -422,19 +267,19 @@ library Secp256k1Arithmetic {
 
         return ProjectivePoint(x3, y3, z3);
     }
-    */
 
-    function mul(ProjectivePoint memory jPoint, uint scalar)
+    /// @dev Returns the product of projective point `point` and scalar `scalar`
+    ///      as projective point.
+    function mul(ProjectivePoint memory point, uint scalar)
         internal
         pure
         returns (ProjectivePoint memory)
     {
         if (scalar == 0) {
-            // TODO: [0]P defines as zero point?
-            return zeroPoint().toProjectivePoint();
+            return projectiveIdentity();
         }
 
-        ProjectivePoint memory copy = jPoint;
+        ProjectivePoint memory copy = point;
         ProjectivePoint memory result = Secp256k1Arithmetic.projectiveIdentity();
 
         while (scalar != 0) {
@@ -442,7 +287,7 @@ library Secp256k1Arithmetic {
                 result = result.add(copy);
             }
             scalar >>= 1;
-            copy = copy.double();
+            copy = copy.add(copy);
         }
 
         return result;
@@ -450,6 +295,8 @@ library Secp256k1Arithmetic {
 
     //--------------------------------------------------------------------------
     // (De)Serialization
+    //
+    // TODO: This is not serialization but normal type conversions...
 
     //----------------------------------
     // Point
@@ -470,43 +317,63 @@ library Secp256k1Arithmetic {
     //----------------------------------
     // Projective Point
 
-    /// @dev Mutates projective point `jPoint` to affine point.
-    function intoPoint(ProjectivePoint memory jPoint)
+    /// @dev Mutates projective point `point` to affine point.
+    function intoPoint(ProjectivePoint memory point)
         internal
         pure
         returns (Point memory)
     {
-        if (jPoint.isIdentity()) {
+        Point memory p;
+
+        if (point.isIdentity()) {
+            assembly ("memory-safe") {
+                p := point
+            }
+            p.x = type(uint).max;
+            p.y = type(uint).max;
+            return p;
+        }
+
+        // Compute z⁻¹, i.e. the modular inverse of point.z.
+        uint zInv = modularInverseOf(point.z);
+
+        // Compute affine coordinates being x * z⁻¹ and y * z⁻¹, respectively.
+        uint x = mulmod(point.x, zInv, P);
+        uint y = mulmod(point.y, zInv, P);
+
+        // Store x and y in point.
+        assembly ("memory-safe") {
+            mstore(point, x)
+            mstore(add(point, 0x20), y)
+        }
+
+        // Return as Point(point.x, point.y).
+        // Note that from this moment, point.z is dirty memory!
+        assembly ("memory-safe") {
+            p := point
+        }
+        return p;
+    }
+
+    /// @dev Returns projective point `point` as affine point.
+    function toPoint(ProjectivePoint memory point)
+        internal
+        pure
+        returns (Point memory)
+    {
+        if (point.isIdentity()) {
             return identity();
         }
 
-        // Compute z⁻¹, i.e. the modular inverse of jPoint.z.
-        uint zInv = modularInverseOf(jPoint.z);
+        // Compute z⁻¹, i.e. the modular inverse of point.z.
+        uint zInv = modularInverseOf(point.z);
 
-        // Compute (z⁻¹)² (mod p)
-        uint zInv_2 = mulmod(zInv, zInv, P);
+        // Compute affine coordinates being x * z⁻¹ and y * z⁻¹, respectively.
+        uint x = mulmod(point.x, zInv, P);
+        uint y = mulmod(point.y, zInv, P);
 
-        // Compute jPoint.x * (z⁻¹)² (mod p), i.e. the x coordinate of given
-        // projective point in affine representation.
-        uint x = mulmod(jPoint.x, zInv_2, P);
-
-        // Compute jPoint.y * (z⁻¹)³ (mod p), i.e. the y coordinate of given
-        // projective point in affine representation.
-        uint y = mulmod(jPoint.y, mulmod(zInv, zInv_2, P), P);
-
-        // Store x and y in jPoint.
-        assembly ("memory-safe") {
-            mstore(jPoint, x)
-            mstore(add(jPoint, 0x20), y)
-        }
-
-        // Return as Point(jPoint.x, jPoint.y).
-        // Note that from this moment, jPoint.z is dirty memory!
-        Point memory point;
-        assembly ("memory-safe") {
-            point := jPoint
-        }
-        return point;
+        // Return newly allocated point.
+        return Point(x, y);
     }
 
     //--------------------------------------------------------------------------
