@@ -194,7 +194,7 @@ library StealthAddressesSecp256k1 {
         SecretKey spendSk,
         SecretKey viewSk,
         StealthAddress memory stealth
-    ) internal pure returns (SecretKey) {
+    ) internal view returns (SecretKey) {
         // Compute shared secret key from view secret key and ephemeral public
         // key.
         SecretKey sharedSk = _deriveSharedSecret(viewSk, stealth.ephPk);
@@ -254,7 +254,7 @@ library StealthAddressesSecp256k1 {
 
     function _deriveSharedSecret(SecretKey sk, PublicKey memory pk)
         private
-        pure
+        view
         returns (SecretKey)
     {
         // Compute shared public key.
