@@ -39,8 +39,10 @@ src
 │   └─ utils
 │       └─ Nonce - "Provides deterministic nonce derivation"
 └─ stealth-addresses
-    ├─ ERC5564Announcer - "Minimal ERC-5564 stealth address announcement contract and interface"
-│   └─ StealthAddressesSecp256k1 - "ERC-5564 conforming stealth addresses for the secp256k1 curve"
+    ├─ StealthAddressesSecp256k1 - "ERC-5564 conforming stealth addresses for the secp256k1 curve"
+    └─ interfaces
+        ├─ IERC5564Announcer - "ERC-5564 stealth address announcement interface"
+        └─ IERC5564Registry - "ERC-5564 stealth meta address registry interface"
 ```
 
 ## Contributing
@@ -80,7 +82,6 @@ $ forge fmt [--check]
 | `signatures/ECDSA`                            | ✅              | ✅                        | ❌                             |
 | `signatures/Schnorr`                          | ✅              | ✅                        | ❌                             |
 | `signatures/utils/Nonce`                      | ✅              | ❌                        | ❌                             |
-| `stealth-addresses/ERC5564Announcer`          | ❌              | ❌                        | ❌                             |
 | `stealth-addresses/StealthAddressesSecp256k1` | ❌              | ❌                        | ❌                             |
 
 ✅ Test Type Implemented &emsp; ❌ Test Type Not Implemented &emsp; 🚧 Test Type Partially Implemented &emsp; ❔ Test Type Not Applicable

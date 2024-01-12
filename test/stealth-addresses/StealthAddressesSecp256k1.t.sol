@@ -4,18 +4,18 @@ pragma solidity ^0.8.16;
 import {Test} from "forge-std/Test.sol";
 import {console2 as console} from "forge-std/console2.sol";
 
-import {
-    StealthAddressesSecp256k1,
-    StealthMetaAddress,
-    StealthAddress
-} from "src/stealth-addresses/StealthAddressesSecp256k1.sol";
-
 import {Secp256k1, SecretKey, PublicKey} from "src/curves/Secp256k1.sol";
 import {
     Secp256k1Arithmetic,
     Point,
     ProjectivePoint
 } from "src/curves/Secp256k1Arithmetic.sol";
+
+import {
+    StealthAddressesSecp256k1,
+    StealthMetaAddress,
+    StealthAddress
+} from "src/stealth-addresses/StealthAddressesSecp256k1.sol";
 
 /**
  * @notice StealthAddressesSecp256k1 Unit Tests

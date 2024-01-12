@@ -55,6 +55,7 @@ struct StealthMetaAddress {
     PublicKey viewPk;
 }
 
+// TODO: Provide toString() function for StealthAddress
 /**
  * @notice StealthAddress
  */
@@ -193,7 +194,7 @@ library StealthAddressesSecp256k1 {
         SecretKey spendSk,
         SecretKey viewSk,
         StealthAddress memory stealth
-    ) internal returns (SecretKey) {
+    ) internal pure returns (SecretKey) {
         // Compute shared secret key from view secret key and ephemeral public
         // key.
         SecretKey sharedSk = _deriveSharedSecret(viewSk, stealth.ephPk);
@@ -221,6 +222,7 @@ library StealthAddressesSecp256k1 {
     /// @custom:vm vm.toString(bytes)(string)
     function toString(StealthMetaAddress memory sma, string memory chain)
         internal
+        view
         vmed
         returns (string memory)
     {
