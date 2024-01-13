@@ -339,16 +339,25 @@ contract Secp256k1Test is Test {
         );
     }
 
-    function testFuzz_publicKeyFromEncoded_RevertsIf_LengthNot65Bytes(
+    function test_publicKeyFromEncoded_Identity() public {
+        bytes memory blob = hex"00";
+        PublicKey memory pk;
+
+        pk = wrapper.publicKeyFromEncoded(blob);
+        assertTrue(pk.intoPoint().isIdentity());
+    }
+
+    function testFuzz_publicKeyFromEncoded_RevertsIf_LengthNot65BytesAndNotIdentity(
         bytes memory blob
     ) public {
         vm.assume(blob.length != 65);
+        vm.assume(blob.length != 1 && bytes1(blob) != bytes1(0x00));
 
         vm.expectRevert("LengthInvalid()");
         wrapper.publicKeyFromEncoded(blob);
     }
 
-    function testFuzz_publicKeyFromEncoded_RevertsIf_PrefixNot04(
+    function testFuzz_publicKeyFromEncoded_RevertsIf_PrefixNot04AndNotIdentity(
         bytes1 prefix,
         PublicKey memory pk
     ) public {
@@ -383,6 +392,60 @@ contract Secp256k1Test is Test {
             blob,
             hex"0411111111111111111111111111111111111111111111111111111111111111112222222222222222222222222222222222222222222222222222222222222222"
         );
+    }
+
+    function test_PublicKey_toEncoded_Identity() public {
+        PublicKey memory pk = Secp256k1Arithmetic.Identity().intoPublicKey();
+        bytes memory blob = wrapper.toEncoded(pk);
+
+        assertEq(blob, hex"00");
+    }
+
+    // -- PublicKey <-> CompressedEncoded
+
+    function test_PublicKey_publicKeyFromCompressedEncoded() public {
+        bytes memory blob;
+
+        // TODO: Test publicKeyFromCompressedEncoded() once implemented.
+        vm.expectRevert("NotImplemented()");
+        wrapper.publicKeyFromCompressedEncoded(blob);
+    }
+
+    function test_PublicKey_toCompressedEncoded_IfyParityEven() public {
+        PublicKey memory pk = PublicKey({
+            x: uint(
+                0x1111111111111111111111111111111111111111111111111111111111111111
+                ),
+            y: uint(2)
+        });
+        bytes memory blob = wrapper.toCompressedEncoded(pk);
+
+        assertEq(
+            blob,
+            hex"021111111111111111111111111111111111111111111111111111111111111111"
+        );
+    }
+
+    function test_PublicKey_toCompressedEncoded_IfyParityOdd() public {
+        PublicKey memory pk = PublicKey({
+            x: uint(
+                0x1111111111111111111111111111111111111111111111111111111111111111
+                ),
+            y: uint(3)
+        });
+        bytes memory blob = wrapper.toCompressedEncoded(pk);
+
+        assertEq(
+            blob,
+            hex"031111111111111111111111111111111111111111111111111111111111111111"
+        );
+    }
+
+    function test_PublicKey_toCompressedEncoded_Identity() public {
+        PublicKey memory pk = Secp256k1Arithmetic.Identity().intoPublicKey();
+        bytes memory blob = wrapper.toCompressedEncoded(pk);
+
+        assertEq(blob, hex"00");
     }
 }
 
@@ -526,5 +589,21 @@ contract Secp256k1Wrapper {
         returns (bytes memory)
     {
         return pk.toEncoded();
+    }
+
+    function publicKeyFromCompressedEncoded(bytes memory blob)
+        public
+        pure
+        returns (PublicKey memory)
+    {
+        return Secp256k1.publicKeyFromCompressedEncoded(blob);
+    }
+
+    function toCompressedEncoded(PublicKey memory pk)
+        public
+        pure
+        returns (bytes memory)
+    {
+        return pk.toCompressedEncoded();
     }
 }

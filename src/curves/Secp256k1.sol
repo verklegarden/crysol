@@ -217,6 +217,9 @@ library Secp256k1 {
     /// @dev Note that a public key is valid if its either on the curve or the
     ///      identity (aka point at infinity) point.
     function isValid(PublicKey memory pk) internal pure returns (bool) {
+        // TODO: Should identity be a valid public key?
+        //       Point memory p = pk.intoPoint();
+        //       return p.isOnCurve() && !p.isIdentity();
         return pk.intoPoint().isOnCurve();
     }
 
@@ -437,6 +440,8 @@ library Secp256k1 {
         return abi.encodePacked(bytes1(0x04), pk.x, pk.y);
     }
 
+    /// @dev Not yet implemented!
+    ///
     /// @dev Decodes public key from [SEC-1 v2] compressed encoded bytes `blob`.
     ///
     /// @dev Reverts if:
@@ -444,10 +449,11 @@ library Secp256k1 {
     ///      ∧ Length not 33 bytes
     ///        ∨ Prefix byte not one in [0x02, 0x03]
     ///
-    /// @dev Expects compressed 33 bytes encoding:
+    /// @dev Expects compressed 33 bytes encoding if public key is not identity:
     ///         [0x02 or 0x03 prefix][32 bytes x coordinate]
     ///
-    ///      Note that the identity is encoded via 0x00.
+    ///      Expects single zero byte encoding if public is identity:
+    ///         [0x00]
     ///
     ///      See [SEC-1 v2] section 2.3.3 "Elliptic-Curve-Point-to-Octet-String".
     function publicKeyFromCompressedEncoded(bytes memory blob)
@@ -461,10 +467,11 @@ library Secp256k1 {
 
     /// @dev Encodes public key `pk` as [SEC-1 v2] compressed encoded bytes.
     ///
-    /// @dev Provides compressed 33 bytes encoding:
+    /// @dev Provides compressed 33 bytes encoding if public key is not identity:
     ///         [0x02 or 0x03 prefix][32 bytes x coordinate]
     ///
-    ///      Note that the identity is encoded via 0x00.
+    ///      Provides single zero byte encoding if public key is identity:
+    ///         [0x00]
     ///
     ///      See [SEC-1 v2] section 2.3.3 "Elliptic-Curve-Point-to-Octet-String".
     function toCompressedEncoded(PublicKey memory pk)
@@ -472,6 +479,11 @@ library Secp256k1 {
         pure
         returns (bytes memory blob)
     {
+        // Note to catch special encoding for identity.
+        if (pk.intoPoint().isIdentity()) {
+            return bytes(hex"00");
+        }
+
         bytes1 prefix = pk.yParity() == 0 ? bytes1(0x02) : bytes1(0x03);
 
         return abi.encodePacked(prefix, pk.x);
