@@ -20,8 +20,11 @@ jobs:
         with:
           version: "nightly"
 
-      - name: "Check formatting"
+      - name: "Check crysol formatting"
         run: "forge fmt --check"
+
+      - name: "Check examples formatting"
+        run: "forge fmt ./examples --check"
 
   tests-unit:
     runs-on: "ubuntu-latest"
