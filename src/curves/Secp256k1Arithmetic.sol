@@ -46,6 +46,7 @@ struct ProjectivePoint {
  *      - [SEC-2 v2]: https://www.secg.org/sec2-v2.pdf
  *      - [Yellow Paper]: https://github.com/ethereum/yellowpaper
  *      - [Renes-Costello-Batina 2015]: https://eprint.iacr.org/2015/1060.pdf
+ *      - [Dubois 2023]: https://eprint.iacr.org/2023/939.pdf
  *
  * @author crysol (https://github.com/pmerkleplant/crysol)
  * @author Inspired by Chronicle Protocol's Scribe (https://github.com/chronicleprotocol/scribe)
@@ -57,7 +58,11 @@ library Secp256k1Arithmetic {
     //--------------------------------------------------------------------------
     // Optimization Constants
 
+    /// @dev Uses during projective point addition.
     uint private constant B3 = mulmod(B, 3, P);
+
+    /// @dev Used during modular inverse computation.
+    uint private constant NEG_2 = addmod(0, P - 2, P);
 
     //--------------------------------------------------------------------------
     // Secp256k1 Constants
@@ -386,14 +391,12 @@ library Secp256k1Arithmetic {
 
     /// @dev Returns the modular inverse of `x` for modulo `P`.
     ///
-    ///      The modular inverse of `x` is x⁻¹ such that x * x⁻¹ ≡ 1 (mod p).
+    ///      The modular inverse of `x` is x⁻¹ such that x * x⁻¹ ≡ 1 (mod P).
     ///
     /// @dev Reverts if:
     ///        x not in [1, P)
     ///
-    /// @dev Uses the Extended Euclidean Algorithm.
-    ///
-    /// @custom:invariant Terminates in finite time.
+    /// @dev Uses modular exponentiation based on Fermat's little theorem.
     function modularInverseOf(uint x) internal view returns (uint) {
         // TODO: Define appropriate errors.
         if (x == 0) {
@@ -403,11 +406,32 @@ library Secp256k1Arithmetic {
             revert("TODO(modularInverse: x >= P)");
         }
 
-        // precompile calls do not fail so skip catching and checking the value
-        (, bytes memory res) =
-            address(5).staticcall(abi.encode(32, 32, 32, x, P_MINUS_2, P));
-        uint t = abi.decode(res, (uint));
-        return t;
+        // Note that while modular inversion is usually performed using the
+        // extended Euclidean algorithm this function uses modular
+        // exponentiation based on Fermat's little theorem from which follows:
+        //  ∀ p: ∀ x ∊ [1, p): p.isPrime() → xᵖ⁻² ≡ x⁻¹ (mod p)
+        //
+        // Note that modular exponentiation can be efficiently computed via the
+        // `modexp` precompile. Due to the precompile's price structure the
+        // expected gas usage is lower than using the extended Euclidean
+        // algorithm.
+        //
+        // For further details, see [Dubois 2023].
+
+        // Payload to compute x^{NEG_2} (mod P).
+        // Note that the size of each argument is 32 bytes.
+        bytes memory payload = abi.encode(32, 32, 32, x, NEG_2, P);
+
+        // The `modexp` precompile is at address 0x05.
+        address modexp = address(5);
+
+        (bool ok, bytes memory result) = modexp.staticcall(payload);
+        assert(ok); // Precompile calls do not fail.
+
+        // Note that abi.decode() reverts if result is empty.
+        // Result is empty iff the modexp computation failed due to insufficient
+        // gas.
+        return abi.decode(result, (uint));
     }
 
     /// @dev Returns whether `xInv` is the modular inverse of `x`.
