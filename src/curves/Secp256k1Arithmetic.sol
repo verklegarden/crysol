@@ -70,6 +70,8 @@ library Secp256k1Arithmetic {
     uint internal constant B = 7;
     uint internal constant P =
         0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFEFFFFFC2F;
+    uint internal constant P_MINUS_2 =
+        0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFEFFFFFC2D;
 
     /// @dev The generator G as Point.
     ///
@@ -323,7 +325,7 @@ library Secp256k1Arithmetic {
     /// @dev Mutates projective point `point` to affine point.
     function intoPoint(ProjectivePoint memory point)
         internal
-        pure
+        view
         returns (Point memory)
     {
         Point memory p;
@@ -361,7 +363,7 @@ library Secp256k1Arithmetic {
     /// @dev Returns projective point `point` as affine point.
     function toPoint(ProjectivePoint memory point)
         internal
-        pure
+        view
         returns (Point memory)
     {
         if (point.isIdentity()) {
@@ -392,12 +394,7 @@ library Secp256k1Arithmetic {
     /// @dev Uses the Extended Euclidean Algorithm.
     ///
     /// @custom:invariant Terminates in finite time.
-    function modularInverseOf(uint x) internal pure returns (uint) {
-        // TODO: Refactor to use Fermats Little Theorem.
-        //       While generally less performant, it is cheaper on EVM due to
-        //       the modexp precompile pricing.
-        //       See "Speeding up Elliptic Curve Computations for Ethereum Account Abstraction" page 4.
-
+    function modularInverseOf(uint x) internal view returns (uint) {
         // TODO: Define appropriate errors.
         if (x == 0) {
             revert("Modular inverse of zero does not exist");
@@ -406,47 +403,10 @@ library Secp256k1Arithmetic {
             revert("TODO(modularInverse: x >= P)");
         }
 
-        uint t;
-        uint q;
-        uint newT = 1;
-        uint r = P;
-
-        assembly ("memory-safe") {
-            // Implemented in assembly to circumvent division-by-zero
-            // and over-/underflow protection.
-            //
-            // Functionally equivalent Solidity code:
-            //      while (x != 0) {
-            //          q = r / x;
-            //          (t, newT) = (newT, addmod(t, (P - mulmod(q, newT, P)), P));
-            //          (r, x) = (x, r - (q * x));
-            //      }
-            //
-            // For the division r / x, x is guaranteed to not be zero via the
-            // loop condition.
-            //
-            // The subtraction of form P - mulmod(_, _, P) is guaranteed to not
-            // underflow due to the subtrahend being a (mod P) result,
-            // i.e. the subtrahend being guaranteed to be less than P.
-            //
-            // The subterm q * x is guaranteed to not overflow because
-            // q * x ≤ r due to q = ⎣r / x⎦.
-            //
-            // The term r - (q * x) is guaranteed to not underflow because
-            // q * x ≤ r and therefore r - (q * x) ≥ 0.
-            for {} x {} {
-                q := div(r, x)
-
-                let tmp := t
-                t := newT
-                newT := addmod(tmp, sub(P, mulmod(q, newT, P)), P)
-
-                tmp := r
-                r := x
-                x := sub(tmp, mul(q, x))
-            }
-        }
-
+        // precompile calls do not fail so skip catching and checking the value
+        (, bytes memory res) =
+            address(5).staticcall(abi.encode(32, 32, 32, x, P_MINUS_2, P));
+        uint t = abi.decode(res, (uint));
         return t;
     }
 

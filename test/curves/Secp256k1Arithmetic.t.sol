@@ -461,7 +461,7 @@ contract Secp256k1ArithmeticWrapper {
 
     function intoPoint(ProjectivePoint memory point)
         public
-        pure
+        view
         returns (Point memory)
     {
         return point.intoPoint();
@@ -469,7 +469,7 @@ contract Secp256k1ArithmeticWrapper {
 
     function toPoint(ProjectivePoint memory point)
         public
-        pure
+        view
         returns (Point memory)
     {
         return point.toPoint();
@@ -478,7 +478,7 @@ contract Secp256k1ArithmeticWrapper {
     //--------------------------------------------------------------------------
     // Utils
 
-    function modularInverseOf(uint x) public pure returns (uint) {
+    function modularInverseOf(uint x) public view returns (uint) {
         return Secp256k1Arithmetic.modularInverseOf(x);
     }
 
