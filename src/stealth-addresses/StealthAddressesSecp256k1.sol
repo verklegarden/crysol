@@ -42,7 +42,7 @@ import {
  *          SecretKey spendSk = Secp256k1.newSecretKey();
  *          SecretKey viewSk = Secp256k1.newSecretKey();
  *
- *          // Stealth meta address is their set of public keys.
+ *          // Stealth meta address is the tuple of public keys.
  *          StealthMetaAddress memory sma = StealthMetaAddress({
  *              spendPk: spendSk.toPublicKey(),
  *              viewPk: viewSk.toPublicKey()
@@ -55,7 +55,6 @@ struct StealthMetaAddress {
     PublicKey viewPk;
 }
 
-// TODO: Provide toString() function for StealthAddress
 /**
  * @notice StealthAddress
  */
@@ -105,7 +104,8 @@ library StealthAddressesSecp256k1 {
     //--------------------------------------------------------------------------
     // Sender
 
-    ///
+    /// @dev Returns a randomly generated stealth address derived from stealth
+    ///      meta address `stealthMeta`.
     ///
     /// @custom:vm Secp256k1::newSecretKey()
     function generateStealthAddress(StealthMetaAddress memory stealthMeta)
@@ -119,9 +119,15 @@ library StealthAddressesSecp256k1 {
         return generateStealthAddressGivenEphKey(stealthMeta, ephSk);
     }
 
+    /// @dev Returns a stealth address derived via ephemeral secret key `ephSk`
+    ///      from stealth meta address `stealthMeta`.
+    ///
+    /// @dev Note that the ephemeral secret key MUST be kept private to not leak
+    ///      the stealth address' owner!
+    ///
     /// @custom:vm Secp256k1::SecretKey.toPublicKey()
     function generateStealthAddressGivenEphKey(
-        StealthMetaAddress memory sma,
+        StealthMetaAddress memory stealthMeta,
         SecretKey ephSk
     ) internal vmed returns (StealthAddress memory) {
         if (!ephSk.isValid()) {
@@ -130,9 +136,9 @@ library StealthAddressesSecp256k1 {
 
         PublicKey memory ephPk = ephSk.toPublicKey();
 
-        // Compute shared secret key from ephemeral secret key and sma's view
-        // public key.
-        SecretKey sharedSk = _deriveSharedSecret(ephSk, sma.viewPk);
+        // Compute shared secret key from ephemeral secret key and stealthMeta's
+        // view public key.
+        SecretKey sharedSk = _deriveSharedSecret(ephSk, stealthMeta.viewPk);
 
         // Extract view tag from shared secret key.
         uint8 viewTag = _extractViewTag(sharedSk);
@@ -142,7 +148,8 @@ library StealthAddressesSecp256k1 {
 
         // Compute stealth address' public key.
         // forgefmt: disable-next-item
-        PublicKey memory stealthPk = sma.spendPk.toProjectivePoint()
+        PublicKey memory stealthPk = stealthMeta.spendPk
+                                                .toProjectivePoint()
                                                 .add(sharedPk.toProjectivePoint())
                                                 .intoPoint()
                                                 .intoPublicKey();
@@ -158,6 +165,12 @@ library StealthAddressesSecp256k1 {
     //--------------------------------------------------------------------------
     // Receiver
 
+    /// @dev Returns whether stealth address `stealth` belongs to the view secret
+    ///      key `viewSk` and spend public key `spendPk`.
+    ///
+    /// @dev Note that `stealth`'s view tag MUST be correct in order for the check
+    ///      to succeed.
+    ///
     /// @custom:vm Secp256k1::PublicKey.toPublicKey()
     function checkStealthAddress(
         SecretKey viewSk,
@@ -190,6 +203,12 @@ library StealthAddressesSecp256k1 {
         return stealthPk.toAddress() == stealth.addr;
     }
 
+    /// @dev Computes the secret key for stealth address `stealth` from the
+    ///      spend and view secret keys.
+    ///
+    /// @dev Note that the stealth address MUST belong to the spend and view
+    ///      secret keys!
+    ///      For more info, see `checkStealthAddress(SecretKey,PublicKey,StealthAddress)`.
     function computeStealthSecretKey(
         SecretKey spendSk,
         SecretKey viewSk,
@@ -210,8 +229,8 @@ library StealthAddressesSecp256k1 {
     //--------------------------------------------------------------------------
     // Utils
 
-    /// @dev Returns the string representation of stealth meta address `sma` for
-    ///      chain `chain`.
+    /// @dev Returns the string representation of stealth meta address
+    ///      `stealthMeta` for chain `chain`.
     ///
     /// @dev Note that `chain` should be the chain's short name as defined via
     ///      https://github.com/ethereum-lists/chains.
@@ -267,17 +286,17 @@ library StealthAddressesSecp256k1 {
         // Derive secret key from hashed public key.
         bytes32 digest = sharedPk.toHash();
 
-        // TODO: Bound to field?
+        // Note to bound digest to secp256k1's order in order to use it as
+        // secret key.
         uint scalar = uint(digest) % Secp256k1.Q;
-
-        if (uint(digest) == 0) {
-            revert("ShouldBeImpossible()");
-        }
+        assert(digest != 0); // Has negligible probability.
 
         return Secp256k1.secretKeyFromUint(scalar);
     }
 
-    function _extractViewTag(SecretKey sk) private pure returns (uint8) {
-        return uint8(sk.asUint() >> 248);
+    function _extractViewTag(SecretKey sharedSk) private pure returns (uint8) {
+        // Note that the view tag is defined as the highest-order byte of the
+        // shared secret key.
+        return uint8(sharedSk.asUint() >> 248);
     }
 }
