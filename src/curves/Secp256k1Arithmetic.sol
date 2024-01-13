@@ -97,7 +97,7 @@ library Secp256k1Arithmetic {
     ///
     /// @dev Note that the zero point is invalid and this function only provided
     ///      for convenience.
-    function zeroPoint() internal pure returns (Point memory) {
+    function ZeroPoint() internal pure returns (Point memory) {
         return Point(0, 0);
     }
 
@@ -106,15 +106,13 @@ library Secp256k1Arithmetic {
         return (point.x | point.y) == 0;
     }
 
-    // TODO: identity() -> Identity() ?
-    //          also projectiveIdentity() -> ProjectiveIdentity
     /// @dev Returns the additive identity.
     ///
     /// @dev Note that the identity is represented via:
     ///         point.x = point.y = type(uint).max
     ///
     /// @dev Note that the identity is also called point at infinity.
-    function identity() internal pure returns (Point memory) {
+    function Identity() internal pure returns (Point memory) {
         return Point(type(uint).max, type(uint).max);
     }
 
@@ -174,7 +172,7 @@ library Secp256k1Arithmetic {
     /// @dev Returns the additive identity as projective point.
     ///
     /// @dev Note that the identity is also called point at infinity.
-    function projectiveIdentity()
+    function ProjectiveIdentity()
         internal
         pure
         returns (ProjectivePoint memory)
@@ -281,11 +279,11 @@ library Secp256k1Arithmetic {
         }
 
         if (scalar == 0) {
-            return projectiveIdentity();
+            return ProjectiveIdentity();
         }
 
         ProjectivePoint memory copy = point;
-        ProjectivePoint memory result = Secp256k1Arithmetic.projectiveIdentity();
+        ProjectivePoint memory result = Secp256k1Arithmetic.ProjectiveIdentity();
 
         while (scalar != 0) {
             if (scalar & 1 == 1) {
@@ -313,7 +311,7 @@ library Secp256k1Arithmetic {
         returns (ProjectivePoint memory)
     {
         if (point.isIdentity()) {
-            return projectiveIdentity();
+            return ProjectiveIdentity();
         }
 
         return ProjectivePoint(point.x, point.y, 1);
@@ -367,7 +365,7 @@ library Secp256k1Arithmetic {
         returns (Point memory)
     {
         if (point.isIdentity()) {
-            return identity();
+            return Identity();
         }
 
         // Compute z⁻¹, i.e. the modular inverse of point.z.

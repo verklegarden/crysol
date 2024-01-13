@@ -168,7 +168,7 @@ contract Secp256k1Test is Test {
     }
 
     function test_PublicKey_isValid_If_Identity() public {
-        PublicKey memory pk = Secp256k1Arithmetic.identity().intoPublicKey();
+        PublicKey memory pk = Secp256k1Arithmetic.Identity().intoPublicKey();
 
         assertTrue(pk.isValid());
     }

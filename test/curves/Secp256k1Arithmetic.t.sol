@@ -33,10 +33,10 @@ contract Secp256k1ArithmeticTest is Test {
     //--------------------------------------------------------------------------
     // Test: Point
 
-    // -- zeroPoint
+    // -- ZeroPoint
 
-    function test_zeroPoint() public {
-        assertTrue(wrapper.zeroPoint().isZeroPoint());
+    function test_ZeroPoint() public {
+        assertTrue(wrapper.ZeroPoint().isZeroPoint());
     }
 
     // -- isZeroPoint
@@ -49,10 +49,10 @@ contract Secp256k1ArithmeticTest is Test {
         }
     }
 
-    // -- identity
+    // -- Identity
 
-    function test_identity() public {
-        assertTrue(wrapper.identity().isIdentity());
+    function test_Identity() public {
+        assertTrue(wrapper.Identity().isIdentity());
     }
 
     // -- isIdentity
@@ -76,7 +76,7 @@ contract Secp256k1ArithmeticTest is Test {
     }
 
     function test_Point_isOnCurve_Identity() public {
-        assertTrue(wrapper.isOnCurve(Secp256k1Arithmetic.identity()));
+        assertTrue(wrapper.isOnCurve(Secp256k1Arithmetic.Identity()));
     }
 
     function testFuzz_Point_isOnCurve_FailsIf_NotOnCurve(
@@ -109,10 +109,10 @@ contract Secp256k1ArithmeticTest is Test {
     //--------------------------------------------------------------------------
     // Test: Projective Point
 
-    // -- projectiveIdentity
+    // -- ProjectiveIdentity
 
-    function test_projectiveIdentity() public {
-        assertTrue(wrapper.projectiveIdentity().isIdentity());
+    function test_ProjectiveIdentity() public {
+        assertTrue(wrapper.ProjectiveIdentity().isIdentity());
     }
 
     // -- isIdentity
@@ -131,7 +131,7 @@ contract Secp256k1ArithmeticTest is Test {
 
     function testVectors_ProjectivePoint_add() public {
         ProjectivePoint memory g = Secp256k1Arithmetic.G().toProjectivePoint();
-        ProjectivePoint memory p = Secp256k1Arithmetic.projectiveIdentity();
+        ProjectivePoint memory p = Secp256k1Arithmetic.ProjectiveIdentity();
 
         Point[] memory vectors = Secp256k1ArithmeticTestVectors.addVectors();
 
@@ -144,7 +144,7 @@ contract Secp256k1ArithmeticTest is Test {
 
     function test_ProjectivePoint_add_Identity() public {
         ProjectivePoint memory g = Secp256k1Arithmetic.G().toProjectivePoint();
-        ProjectivePoint memory id = Secp256k1Arithmetic.projectiveIdentity();
+        ProjectivePoint memory id = Secp256k1Arithmetic.ProjectiveIdentity();
         Point memory got;
 
         // Test id + g.
@@ -193,7 +193,7 @@ contract Secp256k1ArithmeticTest is Test {
     ) public {
         vm.assume(sk.isValid());
 
-        ProjectivePoint memory id = Secp256k1Arithmetic.projectiveIdentity();
+        ProjectivePoint memory id = Secp256k1Arithmetic.ProjectiveIdentity();
 
         assertTrue(wrapper.mul(id, sk.asUint()).isIdentity());
     }
@@ -226,7 +226,7 @@ contract Secp256k1ArithmeticTest is Test {
     }
 
     function test_Point_toProjectivePoint_Identity() public {
-        Point memory identity = Secp256k1Arithmetic.identity();
+        Point memory identity = Secp256k1Arithmetic.Identity();
 
         assertTrue(wrapper.toProjectivePoint(identity).isIdentity());
     }
@@ -249,7 +249,7 @@ contract Secp256k1ArithmeticTest is Test {
 
     function test_ProjectivePoint_intoPoint_Identity() public {
         ProjectivePoint memory identity =
-            Secp256k1Arithmetic.projectiveIdentity();
+            Secp256k1Arithmetic.ProjectiveIdentity();
 
         assertTrue(wrapper.intoPoint(identity).isIdentity());
     }
@@ -268,7 +268,7 @@ contract Secp256k1ArithmeticTest is Test {
 
     function test_ProjectivePoint_toPoint_Identity() public {
         ProjectivePoint memory identity =
-            Secp256k1Arithmetic.projectiveIdentity();
+            Secp256k1Arithmetic.ProjectiveIdentity();
 
         assertTrue(wrapper.toPoint(identity).isIdentity());
     }
@@ -383,16 +383,16 @@ contract Secp256k1ArithmeticWrapper {
     //--------------------------------------------------------------------------
     // Point
 
-    function zeroPoint() public pure returns (Point memory) {
-        return Secp256k1Arithmetic.zeroPoint();
+    function ZeroPoint() public pure returns (Point memory) {
+        return Secp256k1Arithmetic.ZeroPoint();
     }
 
     function isZeroPoint(Point memory point) public pure returns (bool) {
         return point.isZeroPoint();
     }
 
-    function identity() public pure returns (Point memory) {
-        return Secp256k1Arithmetic.identity();
+    function Identity() public pure returns (Point memory) {
+        return Secp256k1Arithmetic.Identity();
     }
 
     function isIdentity(Point memory point) public pure returns (bool) {
@@ -410,12 +410,12 @@ contract Secp256k1ArithmeticWrapper {
     //--------------------------------------------------------------------------
     // Projective Point
 
-    function projectiveIdentity()
+    function ProjectiveIdentity()
         public
         pure
         returns (ProjectivePoint memory)
     {
-        return Secp256k1Arithmetic.projectiveIdentity();
+        return Secp256k1Arithmetic.ProjectiveIdentity();
     }
 
     function isIdentity(ProjectivePoint memory point)
