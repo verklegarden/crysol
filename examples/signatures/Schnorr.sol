@@ -16,7 +16,7 @@ contract SchnorrExample is Script {
     using Schnorr for PublicKey;
     using Schnorr for Signature;
 
-    function signAndVerify() public {
+    function run() public {
         bytes memory message = bytes("crysol <3");
 
         // Create a cryptographically secure secret key.

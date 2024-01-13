@@ -17,7 +17,7 @@ contract ECDSAExample is Script {
     using ECDSA for PublicKey;
     using ECDSA for Signature;
 
-    function signAndVerify() public {
+    function run() public {
         bytes memory message = bytes("crysol <3");
 
         // Create new cryptographically sound secret key.

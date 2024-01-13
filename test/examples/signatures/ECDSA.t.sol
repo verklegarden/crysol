@@ -17,7 +17,7 @@ contract ECDSAExamplesTest is Test {
         example = new ECDSAExample();
     }
 
-    function test_signAndVerify() public {
-        example.signAndVerify();
+    function test_run() public {
+        example.run();
     }
 }

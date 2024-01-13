@@ -17,7 +17,7 @@ contract SchnorrExamplesTest is Test {
         example = new SchnorrExample();
     }
 
-    function test_signAndVerify() public {
-        example.signAndVerify();
+    function test_run() public {
+        example.run();
     }
 }
