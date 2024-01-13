@@ -129,6 +129,8 @@ library StealthAddressesSecp256k1 {
     ///        Ephemeral secret key invalid
     ///
     /// @custom:vm Secp256k1::SecretKey.toPublicKey()
+    /// @custom:invariant A public key's keccak256 image is never zero:
+    ///     ∀ pk ∊ PublicKey: keccak256(pk) != 0
     function generateStealthAddressGivenEphKey(
         StealthMetaAddress memory stealthMeta,
         SecretKey ephSk
@@ -175,6 +177,8 @@ library StealthAddressesSecp256k1 {
     ///      to succeed.
     ///
     /// @custom:vm Secp256k1::PublicKey.toPublicKey()
+    /// @custom:invariant A public key's keccak256 image is never zero:
+    ///     ∀ pk ∊ PublicKey: keccak256(pk) != 0
     function checkStealthAddress(
         SecretKey viewSk,
         PublicKey memory spendPk,
@@ -211,7 +215,9 @@ library StealthAddressesSecp256k1 {
     ///
     /// @dev Note that the stealth address MUST belong to the spend and view
     ///      secret keys!
-    ///      For more info, see `checkStealthAddress(SecretKey,PublicKey,StealthAddress)`.
+    ///
+    /// @custom:invariant A public key's keccak256 image is never zero:
+    ///     ∀ pk ∊ PublicKey: keccak256(pk) != 0
     function computeStealthSecretKey(
         SecretKey spendSk,
         SecretKey viewSk,
@@ -274,6 +280,11 @@ library StealthAddressesSecp256k1 {
     //--------------------------------------------------------------------------
     // Private Helpers
 
+    /// @dev Returns a shared secret derived from secret key `sk` and public key
+    ///      `pk`.
+    ///
+    /// @custom:invariant A public key's keccak256 image is never zero:
+    ///     ∀ pk ∊ PublicKey: keccak256(pk) != 0
     function _deriveSharedSecret(SecretKey sk, PublicKey memory pk)
         private
         pure
@@ -297,9 +308,10 @@ library StealthAddressesSecp256k1 {
         return Secp256k1.secretKeyFromUint(scalar);
     }
 
+    /// @dev Returns the view tag of shared secret key `sharedSk`.
+    ///
+    /// @dev Note that the view tag is defined as the highest-order byte.
     function _extractViewTag(SecretKey sharedSk) private pure returns (uint8) {
-        // Note that the view tag is defined as the highest-order byte of the
-        // shared secret key.
         return uint8(sharedSk.asUint() >> 248);
     }
 }

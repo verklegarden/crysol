@@ -24,8 +24,6 @@ import {Secp256k1, SecretKey} from "../../curves/Secp256k1.sol";
  *
  * @notice Provides deterministic nonce derivation
  *
- * @dev ...
- *
  * @author crysol (https://github.com/pmerkleplant/crysol)
  */
 library Nonce {
@@ -38,7 +36,7 @@ library Nonce {
     ///
     /// @dev Note that a nonce is of type uint and not bounded to any field!
     ///
-    /// @custom:invariant Keccak256 image is never zero
+    /// @custom:invariant Keccak256 image is never zero:
     ///     ∀ (sk, msg) ∊ (SecretKey, bytes): keccak256(sk ‖ keccak256(message)) != 0
     function deriveNonce(SecretKey sk, bytes memory message)
         internal
@@ -55,7 +53,7 @@ library Nonce {
     ///
     /// @dev Note that a nonce is of type uint and not bounded to any field!
     ///
-    /// @custom:invariant Keccak256 image is never zero
+    /// @custom:invariant Keccak256 image is never zero:
     ///     ∀ (sk, digest) ∊ (SecretKey, bytes32): keccak256(sk ‖ digest) != 0
     function deriveNonce(SecretKey sk, bytes32 digest)
         internal
