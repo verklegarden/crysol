@@ -125,6 +125,9 @@ library StealthAddressesSecp256k1 {
     /// @dev Note that the ephemeral secret key MUST be kept private to not leak
     ///      the stealth address' owner!
     ///
+    /// @dev Reverts if:
+    ///        Ephemeral secret key invalid
+    ///
     /// @custom:vm Secp256k1::SecretKey.toPublicKey()
     function generateStealthAddressGivenEphKey(
         StealthMetaAddress memory stealthMeta,

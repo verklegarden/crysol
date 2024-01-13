@@ -68,9 +68,9 @@ library Schnorr {
     ///      hash digest `digest`.
     ///
     /// @dev Reverts if:
-    ///      - Public key invalid
-    ///      - Schnorr signature malleable
-    ///      - Schnorr signature trivial
+    ///        Public key invalid
+    ///      ∨ Schnorr signature malleable
+    ///      ∨ Schnorr signature trivial
     function verify(
         PublicKey memory pk,
         bytes memory message,
@@ -85,9 +85,9 @@ library Schnorr {
     ///      hash digest `digest`.
     ///
     /// @dev Reverts if:
-    ///      - Public key invalid
-    ///      - Schnorr signature trivial
-    ///      - Schnorr signature malleable
+    ///        Public key invalid
+    ///      ∨ Schnorr signature trivial
+    ///      ∨ Schnorr signature malleable
     function verify(PublicKey memory pk, bytes32 digest, Signature memory sig)
         internal
         pure
@@ -172,7 +172,7 @@ library Schnorr {
     ///      message `message`.
     ///
     /// @dev Reverts if:
-    ///      - Secret key invalid
+    ///        Secret key invalid
     ///
     /// @custom:vm sign(SecretKey, bytes32)
     function sign(SecretKey sk, bytes memory message)
@@ -189,7 +189,7 @@ library Schnorr {
     ///      hash digest `digest`.
     ///
     /// @dev Reverts if:
-    ///      - Secret key invalid
+    ///        Secret key invalid
     ///
     /// @custom:vm curves/Secp256k1::toPublicKey(SecretKey)(PublicKey)
     function sign(SecretKey sk, bytes32 digest)
@@ -240,7 +240,7 @@ library Schnorr {
     /// @dev For more info regarding Ethereum Signed Messages, see {Message.sol}.
     ///
     /// @dev Reverts if:
-    ///      - Secret key invalid
+    ///        Secret key invalid
     ///
     /// @custom:vm sign(SecretKey, bytes32)
     function signEthereumSignedMessageHash(SecretKey sk, bytes memory message)
@@ -259,7 +259,7 @@ library Schnorr {
     /// @dev For more info regarding Ethereum Signed Messages, see {Message.sol}.
     ///
     /// @dev Reverts if:
-    ///      - Secret key invalid
+    ///        Secret key invalid
     ///
     /// @custom:vm sign(SecretKey, bytes32)
     function signEthereumSignedMessageHash(SecretKey sk, bytes32 digest)

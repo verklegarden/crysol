@@ -387,7 +387,7 @@ library Secp256k1Arithmetic {
     ///      The modular inverse of `x` is x⁻¹ such that x * x⁻¹ ≡ 1 (mod p).
     ///
     /// @dev Reverts if:
-    ///      - x not in [1, P)
+    ///        x not in [1, P)
     ///
     /// @dev Uses the Extended Euclidean Algorithm.
     ///
@@ -455,8 +455,8 @@ library Secp256k1Arithmetic {
     /// @dev Note that there is no modular inverse for zero.
     ///
     /// @dev Reverts if:
-    ///      - x not in [0, P)
-    ///      - xInv not in [0, P)
+    ///        x not in [0, P)
+    ///      ∨ xInv not in [0, P)
     function areModularInverse(uint x, uint xInv)
         internal
         pure

@@ -149,7 +149,7 @@ library Secp256k1 {
     /// @dev Returns the public key of secret key `sk`.
     ///
     /// @dev Reverts if:
-    ///      - Secret key invalid
+    ///        Secret key invalid
     ///
     /// @custom:vm vm.createWallet(uint)
     function toPublicKey(SecretKey sk)
@@ -169,7 +169,7 @@ library Secp256k1 {
     /// @dev Returns uint `scalar` as secret key.
     ///
     /// @dev Reverts if:
-    ///      - Scalar not in [1, Q)
+    ///        Scalar not in [1, Q)
     function secretKeyFromUint(uint scalar) internal pure returns (SecretKey) {
         if (scalar == 0 || scalar >= Q) {
             revert("ScalarInvalid()");
@@ -283,7 +283,7 @@ library Secp256k1 {
     /// @dev Returns bytes `blob` as secret key.
     ///
     /// @dev Reverts if:
-    ///      - Length not 32 bytes
+    ///        Length not 32 bytes
     function secretKeyFromBytes(bytes memory blob)
         internal
         pure
@@ -315,7 +315,7 @@ library Secp256k1 {
     /// @dev Decodes public key from ABI-encoded bytes `blob`.
     ///
     /// @dev Reverts if:
-    ///      - Length not 64 bytes
+    ///        Length not 64 bytes
     ///
     /// @dev Expects 64 bytes encoding:
     ///         [32 bytes x coordinate][32 bytes y coordinate]
@@ -361,13 +361,15 @@ library Secp256k1 {
     ///
     /// @dev Reverts if:
     ///        Blob not 0x00
-    ///      ∧   Length not 65 bytes        TODO: ?
+    ///      ∧ Length not 65 bytes
     ///        ∨ Prefix byte not 0x04
     ///
-    /// @dev Expects uncompressed 65 bytes encoding:
+    /// @dev Expects uncompressed 65 bytes encoding if public key is not
+    ///      identity:
     ///         [0x04 prefix][32 bytes x coordinate][32 bytes y coordinate]
     ///
-    ///      Note that the identity is encoded via 0x00.
+    ///      Expects single zero byte encoding if public key is identity:
+    ///         [0x00]
     ///
     ///      See [SEC-1 v2] section 2.3.3 "Elliptic-Curve-Point-to-Octet-String".
     function publicKeyFromEncoded(bytes memory blob)
@@ -375,10 +377,10 @@ library Secp256k1 {
         pure
         returns (PublicKey memory)
     {
-        // TODO: publicKeyFromEncoded identity case.
-        //if (blob.length == 1 && bytes1(blob) == bytes1(0x00)) {
-        //    return Secp256k1Arithmetic.identity().intoPublicKey();
-        //}
+        // Note to catch special encoding for identity.
+        if (blob.length == 1 && bytes1(blob) == bytes1(0x00)) {
+            return Secp256k1Arithmetic.Identity().intoPublicKey();
+        }
 
         // Revert if length not 65.
         if (blob.length != 65) {
@@ -414,10 +416,12 @@ library Secp256k1 {
 
     /// @dev Encodes public key `pk` as [SEC-1 v2] encoded bytes.
     ///
-    /// @dev Provides uncompressed 65 bytes encoding:
+    /// @dev Provides uncompressed 65 bytes encoding if public key is not
+    ///      identity:
     ///         [0x04 prefix][32 bytes x coordinate][32 bytes y coordinate]
     ///
-    ///      Note that the identity is encoded via 0x00. TODO
+    ///      Provides single zero byte encoding if public key is identity:
+    ///         [0x00]
     ///
     ///      See [SEC-1 v2] section 2.3.3 "Elliptic-Curve-Point-to-Octet-String".
     function toEncoded(PublicKey memory pk)
@@ -425,10 +429,10 @@ library Secp256k1 {
         pure
         returns (bytes memory blob)
     {
-        // TODO: toEncoded identity case.
-        //if (pk.intoPoint().isIdentity()) {
-        //    return bytes(hex"00");
-        //}
+        // Note to catch special encoding for identity.
+        if (pk.intoPoint().isIdentity()) {
+            return bytes(hex"00");
+        }
 
         return abi.encodePacked(bytes1(0x04), pk.x, pk.y);
     }
@@ -437,7 +441,7 @@ library Secp256k1 {
     ///
     /// @dev Reverts if:
     ///        Blob not 0x00
-    ///      ∧   Length not 33 bytes        TODO: ?
+    ///      ∧ Length not 33 bytes
     ///        ∨ Prefix byte not one in [0x02, 0x03]
     ///
     /// @dev Expects compressed 33 bytes encoding:
@@ -451,45 +455,8 @@ library Secp256k1 {
         pure
         returns (PublicKey memory)
     {
-        revert("NotImplemented");
-
-        /*
-        // TODO: publicKeyFromCompressedEncoded identity case.
-        if (blob.length == 1 && bytes1(blob) == bytes1(0x00)) {
-            return Secp256k1Arithmetic.identity().intoPublicKey();
-        }
-
-        // Revert if length not 33.
-        if (blob.length != 33) {
-            revert("LengthInvalid()");
-        }
-
-        // Read prefix byte.
-        bytes32 prefix;
-        assembly ("memory-safe") {
-            prefix := byte(0, mload(add(blob, 0x20)))
-        }
-
-        // Revert if prefix not 0x02 or 0x03.
-        if (uint(prefix) != 0x02 && uint(prefix) != 0x03) {
-            revert("PrefixInvalid()");
-        }
-
-        // Read x coordinates.
-        uint x;
-        assembly ("memory-safe") {
-            x := mload(add(blob, 0x21))
-        }
-
-        // TODO: Compute y coordinate from x coordinate and yParity.
-
-        // Make public key.
-        PublicKey memory pk; // = PublicKey(x, y);
-
-        // Note that public key's validity is not verified.
-        // This responsibility is delegated to the caller.
-        return pk;
-        */
+        // TODO: Implement Secp256k1Arithmetic::publicKeyFromCompressedEncoded.
+        revert("NotImplemented()");
     }
 
     /// @dev Encodes public key `pk` as [SEC-1 v2] compressed encoded bytes.

@@ -92,8 +92,8 @@ library ECDSA {
     ///      message `message`.
     ///
     /// @dev Reverts if:
-    ///      - Public key invalid
-    ///      - Signature malleable
+    ///        Public key invalid
+    ///      ∨ Signature malleable
     ///
     /// @custom:invariant No valid public key's address is zero.
     ///     ∀ pk ∊ PublicKey: pk.isValid() → pk.toAddress() != address(0)
@@ -115,8 +115,8 @@ library ECDSA {
     ///      hash digest `digest`.
     ///
     /// @dev Reverts if:
-    ///      - Public key invalid
-    ///      - Signature malleable
+    ///        Public key invalid
+    ///      ∨ Signature malleable
     ///
     /// @custom:invariant No valid public key's address is zero.
     ///     ∀ pk ∊ PublicKey: pk.isValid() → pk.toAddress() != address(0)
@@ -136,8 +136,8 @@ library ECDSA {
     ///      message `message`.
     ///
     /// @dev Reverts if:
-    ///      - Signer zero address
-    ///      - Signature malleable
+    ///        Signer zero address
+    ///      ∨ Signature malleable
     function verify(address signer, bytes memory message, Signature memory sig)
         internal
         pure
@@ -152,8 +152,8 @@ library ECDSA {
     ///      hash digest `digest`.
     ///
     /// @dev Reverts if:
-    ///      - Signer zero address
-    ///      - Signature malleable
+    ///        Signer zero address
+    ///      ∨ Signature malleable
     function verify(address signer, bytes32 digest, Signature memory sig)
         internal
         pure
@@ -180,7 +180,7 @@ library ECDSA {
     ///      message `message`.
     ///
     /// @dev Reverts if:
-    ///      - Secret key invalid
+    ///        Secret key invalid
     ///
     /// @custom:vm vm.sign(uint,bytes32)
     /// @custom:invariant Created signature is non-malleable.
@@ -199,7 +199,7 @@ library ECDSA {
     ///      digest `digest`.
     ///
     /// @dev Reverts if:
-    ///      - Secret key invalid
+    ///        Secret key invalid
     ///
     /// @custom:vm vm.sign(uint,bytes32)
     /// @custom:invariant Created signature is non-malleable.
@@ -230,7 +230,7 @@ library ECDSA {
     /// @dev For more info regarding Ethereum Signed Messages, see {Message.sol}.
     ///
     /// @dev Reverts if:
-    ///      - Secret key invalid
+    ///        Secret key invalid
     ///
     /// @custom:vm vm.sign(uint,bytes32)
     /// @custom:invariant Created signature is non-malleable.
@@ -251,7 +251,7 @@ library ECDSA {
     /// @dev For more info regarding Ethereum Signed Messages, see {Message.sol}.
     ///
     /// @dev Reverts if:
-    ///      - Secret key invalid
+    ///        Secret key invalid
     ///
     /// @custom:vm vm.sign(uint,bytes32)
     /// @custom:invariant Created signature is non-malleable.
@@ -300,7 +300,7 @@ library ECDSA {
     /// @dev Decodes ECDSA signature from ABI-encoded bytes `blob`.
     ///
     /// @dev Reverts if:
-    ///      - Length not 65 bytes
+    ///        Length not 65 bytes
     ///
     /// @dev Expects 65 bytes encoding:
     ///         [256-bit r value][256-bit s value][8-bit v value]
@@ -341,7 +341,7 @@ library ECDSA {
     ///      `blob`.
     ///
     /// @dev Reverts if:
-    ///      - Length not 64 bytes
+    ///        Length not 64 bytes
     ///
     /// @dev Expects compact 64 bytes encoding:
     ///         [256-bit r value][1-bit yParity value][255-bit s value]
