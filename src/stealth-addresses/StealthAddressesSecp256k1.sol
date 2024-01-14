@@ -74,6 +74,7 @@ struct StealthAddress {
  *
  * @custom:references
  *      - [ERC-5564]: https://eips.ethereum.org/EIPS/eip-5564
+ *      - [ERC-5564 Scheme Ids]: https://eips.ethereum.org/assets/eip-5564/scheme_ids
  *
  * @author crysol (https://github.com/pmerkleplant/crysol)
  */
@@ -98,8 +99,8 @@ library StealthAddressesSecp256k1 {
     //--------------------------------------------------------------------------
     // Constants
 
-    // TODO: Scheme id docs.
-    uint internal constant SCHEME_ID = 1;
+    /// @dev Identifies the stealth address scheme, see [ERC-5564 Scheme Ids].
+    uint internal constant SCHEME_ID = 0;
 
     //--------------------------------------------------------------------------
     // Sender

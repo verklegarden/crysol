@@ -58,7 +58,7 @@ library Secp256k1Arithmetic {
     //--------------------------------------------------------------------------
     // Optimization Constants
 
-    /// @dev Uses during projective point addition.
+    /// @dev Used during projective point addition.
     uint private constant B3 = mulmod(B, 3, P);
 
     /// @dev Used during modular inverse computation.
@@ -75,8 +75,6 @@ library Secp256k1Arithmetic {
     uint internal constant B = 7;
     uint internal constant P =
         0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFEFFFFFC2F;
-    uint internal constant P_MINUS_2 =
-        0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFEFFFFFC2D;
 
     /// @dev The generator G as Point.
     ///
