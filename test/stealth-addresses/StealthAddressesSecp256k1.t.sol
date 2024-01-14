@@ -40,7 +40,7 @@ contract StealthAddressesSecp256k1Test is Test {
     //--------------------------------------------------------------------------
     // Sender
 
-    function test_generateStealthAddressGivenEpkKey() public {
+    function test_generateStealthAddress_GivenEph() public {
         // Taken from: https://github.com/nerolation/executable-stealth-address-specs/blob/main/test.ipynb
 
         // Stealth meta address and respective key pairs.
@@ -57,7 +57,7 @@ contract StealthAddressesSecp256k1Test is Test {
 
         // Generate stealth address from stealth meta address.
         StealthAddress memory stealth;
-        stealth = wrapper.generateStealthAddressGivenEphKey(
+        stealth = wrapper.generateStealthAddress(
             stealthMeta,
             Secp256k1.secretKeyFromUint(
                 31582853143040820948875942041653389873450407831047855470517498178324574486065
@@ -206,11 +206,11 @@ contract StealthAddressesSecp256k1Wrapper {
         return stealthMeta.generateStealthAddress();
     }
 
-    function generateStealthAddressGivenEphKey(
+    function generateStealthAddress(
         StealthMetaAddress memory stealthMeta,
         SecretKey ephSk
     ) public returns (StealthAddress memory) {
-        return stealthMeta.generateStealthAddressGivenEphKey(ephSk);
+        return stealthMeta.generateStealthAddress(ephSk);
     }
 
     //--------------------------------------------------------------------------

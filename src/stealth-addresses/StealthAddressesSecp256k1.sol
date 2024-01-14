@@ -114,7 +114,7 @@ library StealthAddressesSecp256k1 {
         // Create ephemeral secret key.
         SecretKey ephSk = Secp256k1.newSecretKey();
 
-        return generateStealthAddressGivenEphKey(stealthMeta, ephSk);
+        return generateStealthAddress(stealthMeta, ephSk);
     }
 
     /// @dev Returns a stealth address derived via ephemeral secret key `ephSk`
@@ -129,7 +129,7 @@ library StealthAddressesSecp256k1 {
     /// @custom:vm Secp256k1::SecretKey.toPublicKey()
     /// @custom:invariant A public key's keccak256 image is never zero:
     ///     ∀ pk ∊ PublicKey: keccak256(pk) != 0
-    function generateStealthAddressGivenEphKey(
+    function generateStealthAddress(
         StealthMetaAddress memory stealthMeta,
         SecretKey ephSk
     ) internal vmed returns (StealthAddress memory) {
