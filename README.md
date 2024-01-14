@@ -47,7 +47,7 @@ $ forge install pmerkleplant/crysol
 
 ## Examples
 
-Several examples are provided in [`exampes/`](./examples), such as:
+Several examples are provided in [`examples/`](./examples), such as:
 - secure key pair and Ethereum address creation
 - secp256k1 point arithmetic
 - Schnorr and ECDSA signature creation and verification
