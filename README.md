@@ -10,19 +10,11 @@
 
 > [!WARNING]
 >
-> This project is in a very early stage and important tests are still missing.
+> This project is in early stage, expect breaking changes.
 >
-> Expect breaking changes!
+> Use at own risk!
 
 `crysol` is a collection of pure Solidity libraries providing elliptic curve cryptography for on- and offchain operations.
-
-## Installation
-
-Install with [Foundry](https://getfoundry.sh/):
-
-```bash
-$ forge install pmerkleplant/crysol
-```
 
 ## Libraries
 
@@ -44,6 +36,22 @@ src
         ├─ IERC5564Announcer - "ERC-5564 stealth address announcement interface"
         └─ IERC5564Registry - "ERC-5564 stealth meta address registry interface"
 ```
+
+## Installation
+
+Install with [Foundry](https://getfoundry.sh/):
+
+```bash
+$ forge install pmerkleplant/crysol
+```
+
+## Examples
+
+Several examples are provided in [`exampes/`](./examples), such as:
+- secure key pair and Ethereum address creation
+- secp256k1 point arithmetic
+- Schnorr and ECDSA signature creation and verification
+- private ETH transfer via stealth addresses
 
 ## Contributing
 
@@ -73,18 +81,18 @@ $ forge fmt [--check]
 
 ## Tests
 
-| **Library**                                   | **Unit Tests** | **Property-Based Tests** | **Specification-Based Tests** |
-| --------------------------------------------- | -------------- | ------------------------ | ----------------------------- |
-| `Random`                                      | ✅              | ❔                        | ❔                             |
-| `Message`                                     | ✅              | ❔                        | ❔                             |
-| `curves/Secp256k1`                            | ✅              | 🚧                        | ❌                             |
-| `curves/Secp256k1Arithmetic`                  | ✅              | 🚧                        | ❌                             |
-| `signatures/ECDSA`                            | ✅              | ✅                        | ❌                             |
-| `signatures/Schnorr`                          | ✅              | ✅                        | ❌                             |
-| `signatures/utils/Nonce`                      | ✅              | ❌                        | ❌                             |
-| `stealth-addresses/StealthAddressesSecp256k1` | ❌              | ❌                        | ❌                             |
+| **Library**                                   | **Unit Tests** | **Property-Based Tests** |
+| --------------------------------------------- | -------------- | ------------------------ |
+| `Random`                                      | ✅              | ❔                      |
+| `Message`                                     | ✅              | ❔                      |
+| `curves/Secp256k1`                            | ✅              | 🚧                      |
+| `curves/Secp256k1Arithmetic`                  | ✅              | 🚧                      |
+| `signatures/ECDSA`                            | ✅              | ✅                      |
+| `signatures/Schnorr`                          | ✅              | ✅                      |
+| `signatures/utils/Nonce`                      | ✅              | ❌                      |
+| `stealth-addresses/StealthAddressesSecp256k1` | ❌              | ❌                      |
 
-✅ Test Type Implemented &emsp; ❌ Test Type Not Implemented &emsp; 🚧 Test Type Partially Implemented &emsp; ❔ Test Type Not Applicable
+✅ Implemented &emsp; ❌ Not Implemented &emsp; 🚧 In Progress &emsp; ❔ Not Applicable
 
 ## Safety
 

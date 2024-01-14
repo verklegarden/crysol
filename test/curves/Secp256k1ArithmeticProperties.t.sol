@@ -102,4 +102,33 @@ contract Secp256k1ArithmeticPropertiesTest is Test {
 
         assertTrue(start.eq(end));
     }
+
+    //--------------------------------------------------------------------------
+    // Test: Utils
+
+    function testProperty_ModularInversion_ComputationIsConstant(uint x, uint y)
+        public
+    {
+        vm.assume(x != 0);
+        vm.assume(x < Secp256k1Arithmetic.P);
+        vm.assume(y != 0);
+        vm.assume(y < Secp256k1Arithmetic.P);
+
+        uint first;
+        uint second;
+        uint before;
+
+        // First
+        before = gasleft();
+        Secp256k1Arithmetic.modularInverseOf(x);
+        first = before - gasleft();
+
+        // Second
+        before = gasleft();
+        Secp256k1Arithmetic.modularInverseOf(y);
+        second = before - gasleft();
+
+        // Note to just expect approxiated equality.
+        assertApproxEqAbs(first, second, 100);
+    }
 }
