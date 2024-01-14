@@ -304,7 +304,7 @@ library StealthAddressesSecp256k1 {
         // Note to bound digest to secp256k1's order in order to use it as
         // secret key.
         uint scalar = uint(digest) % Secp256k1.Q;
-        assert(digest != 0); // Has negligible probability.
+        assert(scalar != 0); // Has negligible probability.
 
         return Secp256k1.secretKeyFromUint(scalar);
     }
