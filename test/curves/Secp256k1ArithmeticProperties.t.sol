@@ -94,32 +94,11 @@ contract Secp256k1ArithmeticPropertiesTest is Test {
     //--------------------------------------------------------------------------
     // Test: (De)Serialization
 
-    //----------------------------------
-    // Secret Key
-
-    function testProperty_SecretKey_Bytes_SerializationLoop(SecretKey start)
+    function testProperty_Point_Encoded_SerializationLoop(Point memory start)
         public
     {
-        SecretKey end = Secp256k1.secretKeyFromBytes(start.toBytes());
-
-        assertEq(start.asUint(), end.asUint());
-    }
-
-    //----------------------------------
-    // Public Key
-
-    function testProperty_PublicKey_Bytes_SerializationLoop(
-        PublicKey memory start
-    ) public {
-        PublicKey memory end = Secp256k1.publicKeyFromBytes(start.toBytes());
-
-        assertTrue(start.eq(end));
-    }
-
-    function testProperty_PublicKey_Encoded_SerializationLoop(
-        PublicKey memory start
-    ) public {
-        PublicKey memory end = Secp256k1.publicKeyFromEncoded(start.toEncoded());
+        Point memory end =
+            Secp256k1Arithmetic.pointFromEncoded(start.toEncoded());
 
         assertTrue(start.eq(end));
     }

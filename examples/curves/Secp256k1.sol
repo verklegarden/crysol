@@ -25,8 +25,8 @@ contract Secp256k1Example is Script {
         assert(pk.isValid());
 
         // Arithmetic types.
-        // into***() -> no memory allocation
-        // to***() -> new memory allocation
+        // into___() -> overwrites memory, no allocation
+        // to___()   -> allocates new memory, may has expansion cost
         Point memory point = pk.intoPoint();
         ProjectivePoint memory jPoint = pk.toProjectivePoint();
 
@@ -38,8 +38,5 @@ contract Secp256k1Example is Script {
         // ABI serialization.
         sk = Secp256k1.secretKeyFromBytes(sk.toBytes());
         pk = Secp256k1.publicKeyFromBytes(pk.toBytes());
-
-        // SEC1 serialization.
-        pk = Secp256k1.publicKeyFromEncoded(pk.toEncoded());
     }
 }

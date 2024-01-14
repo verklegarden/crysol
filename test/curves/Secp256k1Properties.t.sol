@@ -43,12 +43,4 @@ contract Secp256k1PropertiesTest is Test {
 
         assertTrue(start.eq(end));
     }
-
-    function testProperty_PublicKey_Encoded_SerializationLoop(
-        PublicKey memory start
-    ) public {
-        PublicKey memory end = Secp256k1.publicKeyFromEncoded(start.toEncoded());
-
-        assertTrue(start.eq(end));
-    }
 }

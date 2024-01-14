@@ -24,10 +24,27 @@ contract Secp256k1ArithmeticTest is Test {
     using Secp256k1 for SecretKey;
     using Secp256k1 for PublicKey;
 
+    // Uncompressed Generator G.
+    // Copied from [SEC-2 v2].
+    bytes constant GENERATOR_ENCODED =
+        hex"0479BE667EF9DCBBAC55A06295CE870B07029BFCDB2DCE28D959F2815B16F81798483ADA7726A3C4655DA4FBFC0E1108A8FD17B448A68554199C47D08FFB10D4B8";
+
     Secp256k1ArithmeticWrapper wrapper;
 
     function setUp() public {
         wrapper = new Secp256k1ArithmeticWrapper();
+    }
+
+    //--------------------------------------------------------------------------
+    // Test: Constants
+
+    function test_G() public {
+        Point memory got = wrapper.G();
+        Point memory want =
+            Secp256k1Arithmetic.pointFromEncoded(GENERATOR_ENCODED);
+
+        assertEq(got.x, want.x);
+        assertEq(got.y, want.y);
     }
 
     //--------------------------------------------------------------------------
@@ -209,7 +226,7 @@ contract Secp256k1ArithmeticTest is Test {
     }
 
     //--------------------------------------------------------------------------
-    // (De)Serialization
+    // Type Conversions
 
     //----------------------------------
     // Point
@@ -274,9 +291,152 @@ contract Secp256k1ArithmeticTest is Test {
     }
 
     //--------------------------------------------------------------------------
+    // (De)Serialization
+
+    // -- Point <-> Encoded
+
+    function test_pointFromEncoded() public {
+        bytes memory blob;
+        Point memory point;
+
+        // Generator.
+        blob = GENERATOR_ENCODED;
+        point = wrapper.pointFromEncoded(blob);
+        assertTrue(point.eq(Secp256k1Arithmetic.G()));
+
+        // Some other point.
+        blob =
+            hex"0411111111111111111111111111111111111111111111111111111111111111112222222222222222222222222222222222222222222222222222222222222222";
+        point = wrapper.pointFromEncoded(blob);
+        assertTrue(
+            point.eq(
+                Point({
+                    x: uint(
+                        0x1111111111111111111111111111111111111111111111111111111111111111
+                        ),
+                    y: uint(
+                        0x2222222222222222222222222222222222222222222222222222222222222222
+                        )
+                })
+            )
+        );
+    }
+
+    function test_pointFromEncoded_Identity() public {
+        bytes memory blob = hex"00";
+        Point memory point;
+
+        point = wrapper.pointFromEncoded(blob);
+        assertTrue(point.isIdentity());
+    }
+
+    function testFuzz_pointFromEncoded_RevertsIf_LengthNot65BytesAndNotIdentity(
+        bytes memory blob
+    ) public {
+        vm.assume(blob.length != 65);
+        vm.assume(blob.length != 1 && bytes1(blob) != bytes1(0x00));
+
+        vm.expectRevert("LengthInvalid()");
+        wrapper.pointFromEncoded(blob);
+    }
+
+    function testFuzz_pointFromEncoded_RevertsIf_PrefixNot04AndNotIdentity(
+        bytes1 prefix,
+        Point memory point
+    ) public {
+        vm.assume(prefix != bytes1(0x04));
+
+        bytes memory blob = abi.encodePacked(prefix, point.x, point.y);
+
+        vm.expectRevert("PrefixInvalid()");
+        wrapper.pointFromEncoded(blob);
+    }
+
+    function test_Point_toEncoded() public {
+        Point memory point;
+        bytes memory blob;
+
+        // Generator.
+        point = Secp256k1Arithmetic.G();
+        blob = wrapper.toEncoded(point);
+        assertEq(blob, GENERATOR_ENCODED);
+
+        // Some other point.
+        point = Point({
+            x: uint(
+                0x1111111111111111111111111111111111111111111111111111111111111111
+                ),
+            y: uint(
+                0x2222222222222222222222222222222222222222222222222222222222222222
+                )
+        });
+        blob = wrapper.toEncoded(point);
+        assertEq(
+            blob,
+            hex"0411111111111111111111111111111111111111111111111111111111111111112222222222222222222222222222222222222222222222222222222222222222"
+        );
+    }
+
+    function test_Point_toEncoded_Identity() public {
+        Point memory point = Secp256k1Arithmetic.Identity();
+        bytes memory blob = wrapper.toEncoded(point);
+
+        assertEq(blob, hex"00");
+    }
+
+    // -- Point <-> CompressedEncoded
+
+    function test_Point_pointFromCompressedEncoded() public {
+        bytes memory blob;
+
+        // TODO: Test pointFromCompressedEncoded() once implemented.
+        vm.expectRevert("NotImplemented()");
+        wrapper.pointFromCompressedEncoded(blob);
+    }
+
+    function test_Point_toCompressedEncoded_IfyParityEven() public {
+        Point memory point = Point({
+            x: uint(
+                0x1111111111111111111111111111111111111111111111111111111111111111
+                ),
+            y: uint(2)
+        });
+        bytes memory blob = wrapper.toCompressedEncoded(point);
+
+        assertEq(
+            blob,
+            hex"021111111111111111111111111111111111111111111111111111111111111111"
+        );
+    }
+
+    function test_Point_toCompressedEncoded_IfyParityOdd() public {
+        Point memory point = Point({
+            x: uint(
+                0x1111111111111111111111111111111111111111111111111111111111111111
+                ),
+            y: uint(3)
+        });
+        bytes memory blob = wrapper.toCompressedEncoded(point);
+
+        assertEq(
+            blob,
+            hex"031111111111111111111111111111111111111111111111111111111111111111"
+        );
+    }
+
+    function test_Point_toCompressedEncoded_Identity() public {
+        Point memory point = Secp256k1Arithmetic.Identity();
+        bytes memory blob = wrapper.toCompressedEncoded(point);
+
+        assertEq(blob, hex"00");
+    }
+
+    //--------------------------------------------------------------------------
     // Test: Utils
 
     // -- modularInverseOf
+    //
+    // TODO: Make proper benchmarks against euclidean.
 
     function testFuzz_modularInverseOf(uint x) public {
         vm.assume(x != 0);
@@ -443,7 +603,7 @@ contract Secp256k1ArithmeticWrapper {
     }
 
     //--------------------------------------------------------------------------
-    // (De)Serialization
+    // Type Conversions
 
     //----------------------------------
     // Point
@@ -473,6 +633,37 @@ contract Secp256k1ArithmeticWrapper {
         returns (Point memory)
     {
         return point.toPoint();
+    }
+
+    //--------------------------------------------------------------------------
+    // (De)Serialization
+
+    function pointFromEncoded(bytes memory blob)
+        public
+        pure
+        returns (Point memory)
+    {
+        return Secp256k1Arithmetic.pointFromEncoded(blob);
+    }
+
+    function toEncoded(Point memory point) public pure returns (bytes memory) {
+        return point.toEncoded();
+    }
+
+    function pointFromCompressedEncoded(bytes memory blob)
+        public
+        pure
+        returns (Point memory)
+    {
+        return Secp256k1Arithmetic.pointFromCompressedEncoded(blob);
+    }
+
+    function toCompressedEncoded(Point memory point)
+        public
+        pure
+        returns (bytes memory)
+    {
+        return point.toCompressedEncoded();
     }
 
     //--------------------------------------------------------------------------

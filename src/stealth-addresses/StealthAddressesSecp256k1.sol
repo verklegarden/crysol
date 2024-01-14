@@ -69,9 +69,6 @@ struct StealthAddress {
  *
  * @notice [ERC-5564] conforming stealth addresses for the secp256k1 curve
  *
- *
- *
- *
  * @custom:references
  *      - [ERC-5564]: https://eips.ethereum.org/EIPS/eip-5564
  *      - [ERC-5564 Scheme Ids]: https://eips.ethereum.org/assets/eip-5564/scheme_ids
@@ -263,13 +260,13 @@ library StealthAddressesSecp256k1 {
 
         string memory buffer;
 
-        buffer = vm.toString(sma.spendPk.toCompressedEncoded());
+        buffer = vm.toString(sma.spendPk.intoPoint().toCompressedEncoded());
         spendPk = new bytes(bytes(buffer).length - 2);
         for (uint i = 2; i < bytes(buffer).length; i++) {
             spendPk[i - 2] = bytes(buffer)[i];
         }
 
-        buffer = vm.toString(sma.viewPk.toCompressedEncoded());
+        buffer = vm.toString(sma.viewPk.intoPoint().toCompressedEncoded());
         viewPk = new bytes(bytes(buffer).length - 2);
         for (uint i = 2; i < bytes(buffer).length; i++) {
             viewPk[i - 2] = bytes(buffer)[i];

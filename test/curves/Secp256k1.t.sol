@@ -38,11 +38,11 @@ contract Secp256k1Test is Test {
 
     function test_G() public {
         PublicKey memory got = wrapper.G();
-        PublicKey memory want =
-            Secp256k1.publicKeyFromEncoded(GENERATOR_ENCODED);
+        PublicKey memory want = Secp256k1Arithmetic.pointFromEncoded(
+            GENERATOR_ENCODED
+        ).intoPublicKey();
 
-        assertEq(got.x, want.x);
-        assertEq(got.y, want.y);
+        assertTrue(got.eq(want));
     }
 
     //--------------------------------------------------------------------------
@@ -309,144 +309,6 @@ contract Secp256k1Test is Test {
         PublicKey memory pk2 = Secp256k1.publicKeyFromBytes(blob);
         assertTrue(pk1.eq(pk2));
     }
-
-    // -- PublicKey <-> Encoded
-
-    function test_publicKeyFromEncoded() public {
-        bytes memory blob;
-        PublicKey memory pk;
-
-        // Generator.
-        blob = GENERATOR_ENCODED;
-        pk = wrapper.publicKeyFromEncoded(blob);
-        assertTrue(pk.eq(Secp256k1.G()));
-
-        // Some other point.
-        blob =
-            hex"0411111111111111111111111111111111111111111111111111111111111111112222222222222222222222222222222222222222222222222222222222222222";
-        pk = wrapper.publicKeyFromEncoded(blob);
-        assertTrue(
-            pk.eq(
-                PublicKey({
-                    x: uint(
-                        0x1111111111111111111111111111111111111111111111111111111111111111
-                        ),
-                    y: uint(
-                        0x2222222222222222222222222222222222222222222222222222222222222222
-                        )
-                })
-            )
-        );
-    }
-
-    function test_publicKeyFromEncoded_Identity() public {
-        bytes memory blob = hex"00";
-        PublicKey memory pk;
-
-        pk = wrapper.publicKeyFromEncoded(blob);
-        assertTrue(pk.intoPoint().isIdentity());
-    }
-
-    function testFuzz_publicKeyFromEncoded_RevertsIf_LengthNot65BytesAndNotIdentity(
-        bytes memory blob
-    ) public {
-        vm.assume(blob.length != 65);
-        vm.assume(blob.length != 1 && bytes1(blob) != bytes1(0x00));
-
-        vm.expectRevert("LengthInvalid()");
-        wrapper.publicKeyFromEncoded(blob);
-    }
-
-    function testFuzz_publicKeyFromEncoded_RevertsIf_PrefixNot04AndNotIdentity(
-        bytes1 prefix,
-        PublicKey memory pk
-    ) public {
-        vm.assume(prefix != bytes1(0x04));
-
-        bytes memory blob = abi.encodePacked(prefix, pk.x, pk.y);
-
-        vm.expectRevert("PrefixInvalid()");
-        wrapper.publicKeyFromEncoded(blob);
-    }
-
-    function test_PublicKey_toEncoded() public {
-        PublicKey memory pk;
-        bytes memory blob;
-
-        // Generator.
-        pk = Secp256k1.G();
-        blob = wrapper.toEncoded(pk);
-        assertEq(blob, GENERATOR_ENCODED);
-
-        // Some other point.
-        pk = PublicKey({
-            x: uint(
-                0x1111111111111111111111111111111111111111111111111111111111111111
-                ),
-            y: uint(
-                0x2222222222222222222222222222222222222222222222222222222222222222
-                )
-        });
-        blob = wrapper.toEncoded(pk);
-        assertEq(
-            blob,
-            hex"0411111111111111111111111111111111111111111111111111111111111111112222222222222222222222222222222222222222222222222222222222222222"
-        );
-    }
-
-    function test_PublicKey_toEncoded_Identity() public {
-        PublicKey memory pk = Secp256k1Arithmetic.Identity().intoPublicKey();
-        bytes memory blob = wrapper.toEncoded(pk);
-
-        assertEq(blob, hex"00");
-    }
-
-    // -- PublicKey <-> CompressedEncoded
-
-    function test_PublicKey_publicKeyFromCompressedEncoded() public {
-        bytes memory blob;
-
-        // TODO: Test publicKeyFromCompressedEncoded() once implemented.
-        vm.expectRevert("NotImplemented()");
-        wrapper.publicKeyFromCompressedEncoded(blob);
-    }
-
-    function test_PublicKey_toCompressedEncoded_IfyParityEven() public {
-        PublicKey memory pk = PublicKey({
-            x: uint(
-                0x1111111111111111111111111111111111111111111111111111111111111111
-                ),
-            y: uint(2)
-        });
-        bytes memory blob = wrapper.toCompressedEncoded(pk);
-
-        assertEq(
-            blob,
-            hex"021111111111111111111111111111111111111111111111111111111111111111"
-        );
-    }
-
-    function test_PublicKey_toCompressedEncoded_IfyParityOdd() public {
-        PublicKey memory pk = PublicKey({
-            x: uint(
-                0x1111111111111111111111111111111111111111111111111111111111111111
-                ),
-            y: uint(3)
-        });
-        bytes memory blob = wrapper.toCompressedEncoded(pk);
-
-        assertEq(
-            blob,
-            hex"031111111111111111111111111111111111111111111111111111111111111111"
-        );
-    }
-
-    function test_PublicKey_toCompressedEncoded_Identity() public {
-        PublicKey memory pk = Secp256k1Arithmetic.Identity().intoPublicKey();
-        bytes memory blob = wrapper.toCompressedEncoded(pk);
-
-        assertEq(blob, hex"00");
-    }
 }
 
 /**
@@ -573,37 +435,5 @@ contract Secp256k1Wrapper {
 
     function toBytes(PublicKey memory pk) public pure returns (bytes memory) {
         return pk.toBytes();
-    }
-
-    function publicKeyFromEncoded(bytes memory blob)
-        public
-        pure
-        returns (PublicKey memory)
-    {
-        return Secp256k1.publicKeyFromEncoded(blob);
-    }
-
-    function toEncoded(PublicKey memory pk)
-        public
-        pure
-        returns (bytes memory)
-    {
-        return pk.toEncoded();
-    }
-
-    function publicKeyFromCompressedEncoded(bytes memory blob)
-        public
-        pure
-        returns (PublicKey memory)
-    {
-        return Secp256k1.publicKeyFromCompressedEncoded(blob);
-    }
-
-    function toCompressedEncoded(PublicKey memory pk)
-        public
-        pure
-        returns (bytes memory)
-    {
-        return pk.toCompressedEncoded();
     }
 }

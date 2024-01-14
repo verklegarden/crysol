@@ -302,9 +302,7 @@ library Secp256k1Arithmetic {
     }
 
     //--------------------------------------------------------------------------
-    // (De)Serialization
-    //
-    // TODO: This is not serialization but normal type conversions...
+    // Type Conversions
 
     //----------------------------------
     // Point
@@ -382,6 +380,132 @@ library Secp256k1Arithmetic {
 
         // Return newly allocated point.
         return Point(x, y);
+    }
+
+    //--------------------------------------------------------------------------
+    // (De)Serialization
+
+    /// @dev Decodes point from [SEC-1 v2] encoded bytes `blob`.
+    ///
+    /// @dev Reverts if:
+    ///        Blob not 0x00
+    ///      ∧ Length not 65 bytes
+    ///        ∨ Prefix byte not 0x04
+    ///
+    /// @dev Expects uncompressed 65 bytes encoding if point is not identity:
+    ///         [0x04 prefix][32 bytes x coordinate][32 bytes y coordinate]
+    ///
+    ///      Expects single zero byte encoding if point is identity:
+    ///         [0x00]
+    ///
+    ///      See [SEC-1 v2] section 2.3.3 "Elliptic-Curve-Point-to-Octet-String".
+    function pointFromEncoded(bytes memory blob)
+        internal
+        pure
+        returns (Point memory)
+    {
+        // Note to catch special encoding for identity.
+        if (blob.length == 1 && bytes1(blob) == bytes1(0x00)) {
+            return Identity();
+        }
+
+        // Revert if length not 65.
+        if (blob.length != 65) {
+            revert("LengthInvalid()");
+        }
+
+        // Read prefix byte.
+        bytes32 prefix;
+        assembly ("memory-safe") {
+            prefix := byte(0, mload(add(blob, 0x20)))
+        }
+
+        // Revert if prefix not 0x04.
+        if (uint(prefix) != 0x04) {
+            revert("PrefixInvalid()");
+        }
+
+        // Read x and y coordinates.
+        uint x;
+        uint y;
+        assembly ("memory-safe") {
+            x := mload(add(blob, 0x21))
+            y := mload(add(blob, 0x41))
+        }
+
+        // Return as new point.
+        return Point(x, y);
+    }
+
+    /// @dev Encodes point `point` as [SEC-1 v2] encoded bytes.
+    ///
+    /// @dev Provides uncompressed 65 bytes encoding if point is not identity:
+    ///         [0x04 prefix][32 bytes x coordinate][32 bytes y coordinate]
+    ///
+    ///      Provides single zero byte encoding if point is identity:
+    ///         [0x00]
+    ///
+    ///      See [SEC-1 v2] section 2.3.3 "Elliptic-Curve-Point-to-Octet-String".
+    function toEncoded(Point memory point)
+        internal
+        pure
+        returns (bytes memory blob)
+    {
+        // Note to catch special encoding for identity.
+        if (point.isIdentity()) {
+            return bytes(hex"00");
+        }
+
+        return abi.encodePacked(bytes1(0x04), point.x, point.y);
+    }
+
+    /// @dev Not yet implemented!
+    ///
+    /// @dev Decodes point from [SEC-1 v2] compressed encoded bytes `blob`.
+    ///
+    /// @dev Reverts if:
+    ///        Blob not 0x00
+    ///      ∧ Length not 33 bytes
+    ///        ∨ Prefix byte not one in [0x02, 0x03]
+    ///
+    /// @dev Expects compressed 33 bytes encoding if point is not identity:
+    ///         [0x02 or 0x03 prefix][32 bytes x coordinate]
+    ///
+    ///      Expects single zero byte encoding if point is identity:
+    ///         [0x00]
+    ///
+    ///      See [SEC-1 v2] section 2.3.3 "Elliptic-Curve-Point-to-Octet-String".
+    function pointFromCompressedEncoded(bytes memory blob)
+        internal
+        pure
+        returns (Point memory)
+    {
+        // TODO: Implement Secp256k1Arithmetic::pointFromCompressedEncoded.
+        revert("NotImplemented()");
+    }
+
+    /// @dev Encodes point `point` as [SEC-1 v2] compressed encoded bytes.
+    ///
+    /// @dev Provides compressed 33 bytes encoding if point is not identity:
+    ///         [0x02 or 0x03 prefix][32 bytes x coordinate]
+    ///
+    ///      Provides single zero byte encoding if point is identity:
+    ///         [0x00]
+    ///
+    ///      See [SEC-1 v2] section 2.3.3 "Elliptic-Curve-Point-to-Octet-String".
+    function toCompressedEncoded(Point memory point)
+        internal
+        pure
+        returns (bytes memory blob)
+    {
+        // Note to catch special encoding for identity.
+        if (point.isIdentity()) {
+            return bytes(hex"00");
+        }
+
+        bytes1 prefix = point.yParity() == 0 ? bytes1(0x02) : bytes1(0x03);
+
+        return abi.encodePacked(prefix, point.x);
     }
 
     //--------------------------------------------------------------------------
