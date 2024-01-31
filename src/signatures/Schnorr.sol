@@ -294,10 +294,10 @@ library Schnorr {
         returns (string memory)
     {
         // forgefmt: disable-start
-        string memory str = "Schnorr::Signature {\n";
-        str = string.concat(str, "    signature: ", vm.toString(sig.signature), ",\n");
-        str = string.concat(str, "    commitment: ", vm.toString(sig.commitment), "\n");
-        str = string.concat(str, "  }");
+        string memory str = "Schnorr::Signature({";
+        str = string.concat(str, " signature: ", vm.toString(sig.signature), ",");
+        str = string.concat(str, " commitment: ", vm.toString(sig.commitment));
+        str = string.concat(str, " })");
         return str;
         // forgefmt: disable-end
     }

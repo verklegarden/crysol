@@ -286,11 +286,11 @@ library ECDSA {
         vmed
         returns (string memory)
     {
-        string memory str = "ECDSA::Signature {\n";
-        str = string.concat(str, "    v: ", vm.toString(sig.v), ",\n");
-        str = string.concat(str, "    r: ", vm.toString(sig.r), ",\n");
-        str = string.concat(str, "    s: ", vm.toString(sig.s), "\n");
-        str = string.concat(str, "  }");
+        string memory str = "ECDSA::Signature({";
+        str = string.concat(str, " v: ", vm.toString(sig.v), ",");
+        str = string.concat(str, " r: ", vm.toString(sig.r), ",");
+        str = string.concat(str, " s: ", vm.toString(sig.s));
+        str = string.concat(str, " })");
         return str;
     }
 

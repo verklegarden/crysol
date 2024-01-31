@@ -242,13 +242,8 @@ contract ECDSATest is Test {
         });
 
         string memory got = wrapper.toString(sig);
-        string memory want = string.concat(
-            "ECDSA::Signature {\n",
-            "    v: 27,\n",
-            "    r: 0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff,\n",
-            "    s: 0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff\n",
-            "  }"
-        );
+        string memory want =
+            "ECDSA::Signature({ v: 27, r: 0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff, s: 0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff })";
 
         assertEq(got, want);
     }

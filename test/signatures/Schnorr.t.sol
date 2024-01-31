@@ -209,12 +209,8 @@ contract SchnorrTest is Test {
         });
 
         string memory got = wrapper.toString(sig);
-        string memory want = string.concat(
-            "Schnorr::Signature {\n",
-            "    signature: 0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff,\n",
-            "    commitment: 0x0000000000000000000000000000000000000000\n",
-            "  }"
-        );
+        string memory want =
+            "Schnorr::Signature({ signature: 0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff, commitment: 0x0000000000000000000000000000000000000000 })";
 
         assertEq(got, want);
     }
