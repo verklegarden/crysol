@@ -193,7 +193,7 @@ library Secp256k1Arithmetic {
         pure
         returns (bool)
     {
-        return (point.x | point.z == 0) && point.y == 1;
+        return (point.x | point.z == 0);
     }
 
     /// @dev Returns the sum of projective points `point` and `other` as
@@ -481,6 +481,8 @@ library Secp256k1Arithmetic {
         returns (Point memory)
     {
         // TODO: Implement Secp256k1Arithmetic::pointFromCompressedEncoded.
+        //
+        // See for example https://github.com/moonchute/stealth-address-aa-plugin/blob/main/src/EllipticCurve.sol#L78.
         revert("NotImplemented()");
     }
 
@@ -520,18 +522,17 @@ library Secp256k1Arithmetic {
     ///
     /// @dev Uses modular exponentiation based on Fermat's little theorem.
     function modularInverseOf(uint x) internal view returns (uint) {
-        // TODO: Define appropriate errors.
         if (x == 0) {
-            revert("Modular inverse of zero does not exist");
+            revert("ModularInverseOfZeroDoesNotExist()");
         }
         if (x >= P) {
-            revert("TODO(modularInverse: x >= P)");
+            revert("ModularInverseOfXGreaterThanP()");
         }
 
         // Note that while modular inversion is usually performed using the
         // extended Euclidean algorithm this function uses modular
         // exponentiation based on Fermat's little theorem from which follows:
-        //  ∀ p: ∀ x ∊ [1, p): p.isPrime() → xᵖ⁻² ≡ x⁻¹ (mod p)
+        //  ∀ p ∊ Uint: ∀ x ∊ [1, p): p.isPrime() → xᵖ⁻² ≡ x⁻¹ (mod p)
         //
         // Note that modular exponentiation can be efficiently computed via the
         // `modexp` precompile. Due to the precompile's price structure the
@@ -569,10 +570,10 @@ library Secp256k1Arithmetic {
         returns (bool)
     {
         if (x == 0 || xInv == 0) {
-            revert("Modular inverse of zero does not exist");
+            revert("ModularInverseOfZeroDoesNotExist()");
         }
         if (x >= P || xInv >= P) {
-            revert("TODO(modularInverse: x >= P)");
+            revert("ModularInverseOfXGreaterThanP()");
         }
 
         return mulmod(x, xInv, P) == 1;

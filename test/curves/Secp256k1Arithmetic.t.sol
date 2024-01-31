@@ -137,7 +137,7 @@ contract Secp256k1ArithmeticTest is Test {
     function testFuzz_ProjectivePoint_isIdentity(ProjectivePoint memory point)
         public
     {
-        if (point.x == 0 && point.y == 1 && point.z == 0) {
+        if (point.x == 0 && point.z == 0) {
             assertTrue(wrapper.isIdentity(point));
         } else {
             assertFalse(wrapper.isIdentity(point));
@@ -170,6 +170,20 @@ contract Secp256k1ArithmeticTest is Test {
         // Test g + id.
         got = wrapper.add(g, id).intoPoint();
         assertTrue(got.eq(Secp256k1Arithmetic.G()));
+    }
+
+    function test_ProjectivePoint_add_UpToIdentity() public {
+        // Note that 1 + Q-1 = Q and [Q]G = Identity().
+        SecretKey sk1 = Secp256k1.secretKeyFromUint(1);
+        SecretKey sk2 = Secp256k1.secretKeyFromUint(Secp256k1.Q - 1);
+
+        ProjectivePoint memory p1 = sk1.toPublicKey().toProjectivePoint();
+        ProjectivePoint memory p2 = sk2.toPublicKey().toProjectivePoint();
+
+        ProjectivePoint memory sum = wrapper.add(p1, p2);
+
+        assertTrue(sum.isIdentity());
+        assertTrue(sum.intoPoint().isIdentity());
     }
 
     // -- mul

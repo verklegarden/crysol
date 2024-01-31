@@ -128,7 +128,7 @@ contract Secp256k1ArithmeticPropertiesTest is Test {
         Secp256k1Arithmetic.modularInverseOf(y);
         second = before - gasleft();
 
-        // Note to just expect approxiated equality.
+        // Note to expect small cost differences.
         assertApproxEqAbs(first, second, 100);
     }
 }
