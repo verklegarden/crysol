@@ -61,7 +61,7 @@ library Secp256k1Arithmetic {
     /// @dev Used during projective point addition.
     uint private constant B3 = mulmod(B, 3, P);
 
-    /// @dev Used during modular inverse computation.
+    /// @dev Used during modular inversion.
     uint private constant NEG_2 = addmod(0, P - 2, P);
 
     //--------------------------------------------------------------------------

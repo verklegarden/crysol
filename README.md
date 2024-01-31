@@ -109,5 +109,5 @@ Please always include your own thorough tests when using `crysol` to make sure i
 [tests-shield-url]: https://github.com/pmerkleplant/crysol/actions/workflows/unit-tests.yml
 [license-shield]: https://img.shields.io/badge/License-MIT-yellow.svg
 [license-shield-url]: https://opensource.org/licenses/MIT
-[solidity-shield]: https://img.shields.io/badge/solidity-%3E=0.8.16%20%3C=0.8.23-aa6746
+[solidity-shield]: https://img.shields.io/badge/solidity-%3E=0.8.16%20%3C=0.8.24-aa6746
 [solidity-shield-url]: https://github.com/pmerkleplant/crysol/actions/workflows/solc-version-tests.yml

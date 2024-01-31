@@ -6,7 +6,7 @@ ffi = true
 
 # Compilation
 evm_version = "shanghai"
-solc_version = "0.8.23"
+solc_version = "0.8.24"
 via_ir = false
 optimizer = false
 optimizer_runs = 100_000
