@@ -20,7 +20,7 @@ import {Secp256k1Arithmetic} from "src/curves/Secp256k1Arithmetic.sol";
  *
  * @notice Library providing unsafe ECDSA functionality
  *
- * @dev             .oO WARNING Oo.
+ * @author crysol (https://github.com/pmerkleplant/crysol)
  */
 library ECDSAUnsafe {
     using ECDSA for Signature;

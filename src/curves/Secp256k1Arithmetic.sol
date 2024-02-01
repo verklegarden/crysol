@@ -278,7 +278,6 @@ library Secp256k1Arithmetic {
         pure
         returns (ProjectivePoint memory)
     {
-        // TODO: Should introduce Felt type?
         if (scalar >= Q) {
             revert("ScalarMustBeFelt()");
         }
