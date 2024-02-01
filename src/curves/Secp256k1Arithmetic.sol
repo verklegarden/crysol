@@ -468,8 +468,6 @@ library Secp256k1Arithmetic {
         return abi.encodePacked(bytes1(0x04), point.x, point.y);
     }
 
-    /// @dev Not yet implemented!
-    ///
     /// @dev Decodes point from [SEC-1 v2] compressed encoded bytes `blob`.
     ///
     /// @dev Reverts if:
