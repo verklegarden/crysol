@@ -29,6 +29,11 @@ contract Secp256k1ArithmeticTest is Test {
     bytes constant GENERATOR_ENCODED =
         hex"0479BE667EF9DCBBAC55A06295CE870B07029BFCDB2DCE28D959F2815B16F81798483ADA7726A3C4655DA4FBFC0E1108A8FD17B448A68554199C47D08FFB10D4B8";
 
+    // Compressed Generator G.
+    // Copied from [SEC-2 v2].
+    bytes constant GENERATOR_COMPRESSED_ENCODED =
+        hex"0279BE667EF9DCBBAC55A06295CE870B07029BFCDB2DCE28D959F2815B16F81798";
+
     Secp256k1ArithmeticWrapper wrapper;
 
     function setUp() public {
@@ -402,9 +407,62 @@ contract Secp256k1ArithmeticTest is Test {
 
     function test_Point_pointFromCompressedEncoded() public {
         bytes memory blob;
+        Point memory point;
 
-        // TODO: Test pointFromCompressedEncoded() once implemented.
-        vm.expectRevert("NotImplemented()");
+        // Generator.
+        blob = GENERATOR_COMPRESSED_ENCODED;
+        point = wrapper.pointFromCompressedEncoded(blob);
+        assertTrue(point.eq(Secp256k1Arithmetic.G()));
+    }
+
+    function test_Point_pointFromCompressedEncoded_IfyParityEven() public {
+        SecretKey sk = Secp256k1.secretKeyFromUint(2);
+        Point memory point = sk.toPublicKey().intoPoint();
+        assert(point.yParity() == 0);
+
+        Point memory got =
+            wrapper.pointFromCompressedEncoded(point.toCompressedEncoded());
+        assertTrue(point.eq(got));
+    }
+
+    function test_Point_pointFromCompressedEncoded_IfyParityOdd() public {
+        SecretKey sk = Secp256k1.secretKeyFromUint(6);
+        Point memory point = sk.toPublicKey().intoPoint();
+        assert(point.yParity() == 1);
+
+        Point memory got =
+            wrapper.pointFromCompressedEncoded(point.toCompressedEncoded());
+        assertTrue(point.eq(got));
+    }
+
+    function test_Point_pointFromCompressedEncoded_Identity() public {
+        Point memory id = Secp256k1Arithmetic.Identity();
+
+        Point memory got =
+            wrapper.pointFromCompressedEncoded(id.toCompressedEncoded());
+        assertTrue(got.isIdentity());
+    }
+
+    function test_Point_pointFromCompressedEncoded_RevertsIf_LengthInvalid(
+        bytes memory blob
+    ) public {
+        vm.assume(blob.length != 1 || bytes1(blob) != bytes1(0x00));
+        vm.assume(blob.length != 33);
+
+        vm.expectRevert("LengthInvalid()");
+        wrapper.pointFromCompressedEncoded(blob);
+    }
+
+    function testFuzz_Point_pointFromCompressedEncoded_RevertsIf_PrefixInvalid(
+        bytes1 prefix,
+        uint x
+    ) public {
+        vm.assume(prefix != 0x02);
+        vm.assume(prefix != 0x03);
+
+        bytes memory blob = abi.encodePacked(prefix, x);
+
+        vm.expectRevert("PrefixInvalid()");
         wrapper.pointFromCompressedEncoded(blob);
     }
 
@@ -463,8 +521,7 @@ contract Secp256k1ArithmeticTest is Test {
     }
 
     function test_modularInverseOf_RevertsIf_XIsZero() public {
-        // TODO: Test for proper error message.
-        vm.expectRevert();
+        vm.expectRevert("ModularInverseOfZeroDoesNotExist()");
         wrapper.modularInverseOf(0);
     }
 
@@ -473,8 +530,7 @@ contract Secp256k1ArithmeticTest is Test {
     {
         vm.assume(x >= Secp256k1Arithmetic.P);
 
-        // TODO: Test for proper error message.
-        vm.expectRevert();
+        vm.expectRevert("ModularInverseOfXGreaterThanP()");
         wrapper.modularInverseOf(x);
     }
 
@@ -666,7 +722,7 @@ contract Secp256k1ArithmeticWrapper {
 
     function pointFromCompressedEncoded(bytes memory blob)
         public
-        pure
+        view
         returns (Point memory)
     {
         return Secp256k1Arithmetic.pointFromCompressedEncoded(blob);

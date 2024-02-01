@@ -43,6 +43,7 @@ struct ProjectivePoint {
  *         elliptic curve
  *
  * @custom:references
+ *      - [SEC-1 v2]: https://www.secg.org/sec1-v2.pdf
  *      - [SEC-2 v2]: https://www.secg.org/sec2-v2.pdf
  *      - [Yellow Paper]: https://github.com/ethereum/yellowpaper
  *      - [Renes-Costello-Batina 2015]: https://eprint.iacr.org/2015/1060.pdf
@@ -63,6 +64,12 @@ library Secp256k1Arithmetic {
 
     /// @dev Used during modular inversion.
     uint private constant NEG_2 = addmod(0, P - 2, P);
+
+    /// @dev Used during compressed point decoding.
+    ///
+    /// @dev Note that the square root of an secp256k1 field element x can be
+    ///      computed via x^{SQUARE_ROOT_EXPONENT} (mod p).
+    uint private constant SQUARE_ROOT_EXPONENT = (P + 1) / 4;
 
     //--------------------------------------------------------------------------
     // Secp256k1 Constants
@@ -414,13 +421,13 @@ library Secp256k1Arithmetic {
         }
 
         // Read prefix byte.
-        bytes32 prefix;
+        uint prefix;
         assembly ("memory-safe") {
             prefix := byte(0, mload(add(blob, 0x20)))
         }
 
         // Revert if prefix not 0x04.
-        if (uint(prefix) != 0x04) {
+        if (prefix != 0x04) {
             revert("PrefixInvalid()");
         }
 
@@ -433,6 +440,9 @@ library Secp256k1Arithmetic {
         }
 
         // Return as new point.
+        //
+        // Note that point's validity is not verified.
+        // This responsibility is delegated to the caller.
         return Point(x, y);
     }
 
@@ -476,13 +486,57 @@ library Secp256k1Arithmetic {
     ///      See [SEC-1 v2] section 2.3.3 "Elliptic-Curve-Point-to-Octet-String".
     function pointFromCompressedEncoded(bytes memory blob)
         internal
-        pure
+        view
         returns (Point memory)
     {
-        // TODO: Implement Secp256k1Arithmetic::pointFromCompressedEncoded.
+        // Note to catch special encoding for identity.
+        if (blob.length == 1 && bytes1(blob) == bytes1(0x00)) {
+            return Identity();
+        }
+
+        // Revert if length not 33.
+        if (blob.length != 33) {
+            revert("LengthInvalid()");
+        }
+
+        // Read prefix byte.
+        uint prefix;
+        assembly ("memory-safe") {
+            prefix := byte(0, mload(add(blob, 0x20)))
+        }
+
+        // Revert if prefix not 0x02 or 0x03.
+        if (prefix != 0x02 && prefix != 0x03) {
+            revert("PrefixInvalid()");
+        }
+
+        // Read x coordinate.
+        uint x;
+        assembly ("memory-safe") {
+            x := mload(add(blob, 0x21))
+        }
+
+        // Compute α = x³ + ax + b (mod p).
+        // Note that adding a * x can be waived as ∀x: a * x = 0.
+        uint alpha = addmod(mulmod(x, mulmod(x, x, P), P), B, P);
+
+        // Compute β = √α              (mod p)
+        //           = α^{(p + 1) / 4} (mod p)
+        uint beta = modexp(alpha, SQUARE_ROOT_EXPONENT);
+
+        // Compute y coordinate.
         //
-        // See for example https://github.com/moonchute/stealth-address-aa-plugin/blob/main/src/EllipticCurve.sol#L78.
-        revert("NotImplemented()");
+        // Note that y = β if β ≡ prefix (mod 2) else p - β.
+        uint y;
+        unchecked {
+            y = beta & 1 == prefix & 1 ? beta : P - beta;
+        }
+
+        // Return as new point.
+        //
+        // Note that point's validity is not verified.
+        // This responsibility is delegated to the caller.
+        return Point(x, y);
     }
 
     /// @dev Encodes point `point` as [SEC-1 v2] compressed encoded bytes.
@@ -539,21 +593,7 @@ library Secp256k1Arithmetic {
         // algorithm.
         //
         // For further details, see [Dubois 2023].
-
-        // Payload to compute x^{NEG_2} (mod P).
-        // Note that the size of each argument is 32 bytes.
-        bytes memory payload = abi.encode(32, 32, 32, x, NEG_2, P);
-
-        // The `modexp` precompile is at address 0x05.
-        address modexp = address(5);
-
-        (bool ok, bytes memory result) = modexp.staticcall(payload);
-        assert(ok); // Precompile calls do not fail.
-
-        // Note that abi.decode() reverts if result is empty.
-        // Result is empty iff the modexp computation failed due to insufficient
-        // gas.
-        return abi.decode(result, (uint));
+        return modexp(x, NEG_2);
     }
 
     /// @dev Returns whether `xInv` is the modular inverse of `x`.
@@ -576,5 +616,26 @@ library Secp256k1Arithmetic {
         }
 
         return mulmod(x, xInv, P) == 1;
+    }
+
+    //--------------------------------------------------------------------------
+    // Private Helpers
+
+    /// @dev Computes base^{exponent} (mod P) using the modexp precompile.
+    function modexp(uint base, uint exponent) private view returns (uint) {
+        // Payload to compute base^{exponent} (mod P).
+        // Note that the size of each argument is 32 bytes.
+        bytes memory payload = abi.encode(32, 32, 32, base, exponent, P);
+
+        // The `modexp` precompile is at address 0x05.
+        address target = address(5);
+
+        (bool ok, bytes memory result) = target.staticcall(payload);
+        assert(ok); // Precompile calls do not fail.
+
+        // Note that abi.decode() reverts if result is empty.
+        // Result is empty iff the modexp computation failed due to insufficient
+        // gas.
+        return abi.decode(result, (uint));
     }
 }

@@ -103,6 +103,20 @@ contract Secp256k1ArithmeticPropertiesTest is Test {
         assertTrue(start.eq(end));
     }
 
+    function testProperty_Point_CompressedEncoded_SerializationLoop(
+        SecretKey sk
+    ) public {
+        vm.assume(sk.isValid());
+
+        Point memory start = sk.toPublicKey().intoPoint();
+
+        Point memory end = Secp256k1Arithmetic.pointFromCompressedEncoded(
+            start.toCompressedEncoded()
+        );
+
+        assertTrue(start.eq(end));
+    }
+
     //--------------------------------------------------------------------------
     // Test: Utils
 
