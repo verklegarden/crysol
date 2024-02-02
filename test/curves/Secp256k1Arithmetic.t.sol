@@ -502,96 +502,6 @@ contract Secp256k1ArithmeticTest is Test {
 
         assertEq(blob, hex"00");
     }
-
-    //--------------------------------------------------------------------------
-    // Test: Utils
-
-    // -- modularInverseOf
-    //
-    // TODO: Make proper benchmarks against euclidean.
-
-    function testFuzz_modularInverseOf(uint x) public {
-        vm.assume(x != 0);
-        vm.assume(x < Secp256k1Arithmetic.P);
-
-        uint xInv = Secp256k1Arithmetic.modularInverseOf(x);
-
-        // Verify x * xInv ≡ 1 (mod P).
-        assertEq(mulmod(x, xInv, Secp256k1Arithmetic.P), 1);
-    }
-
-    function test_modularInverseOf_RevertsIf_XIsZero() public {
-        vm.expectRevert("ModularInverseOfZeroDoesNotExist()");
-        wrapper.modularInverseOf(0);
-    }
-
-    function testFuzz_modularInverseOf_RevertsIf_XEqualToOrBiggerThanP(uint x)
-        public
-    {
-        vm.assume(x >= Secp256k1Arithmetic.P);
-
-        vm.expectRevert("ModularInverseOfXGreaterThanP()");
-        wrapper.modularInverseOf(x);
-    }
-
-    // -- areModularInverse
-
-    function testFuzz_areModularInverse(uint x) public {
-        vm.assume(x != 0);
-        vm.assume(x < Secp256k1Arithmetic.P);
-
-        assertTrue(
-            wrapper.areModularInverse(
-                x, Secp256k1Arithmetic.modularInverseOf(x)
-            )
-        );
-    }
-
-    function testFuzz_areModularInverse_FailsIf_NotModularInverse(
-        uint x,
-        uint xInv
-    ) public {
-        vm.assume(x != 0);
-        vm.assume(x < Secp256k1Arithmetic.P);
-        vm.assume(xInv != 0);
-        vm.assume(xInv < Secp256k1Arithmetic.P);
-
-        vm.assume(mulmod(x, xInv, Secp256k1Arithmetic.P) != 1);
-
-        assertFalse(wrapper.areModularInverse(x, xInv));
-    }
-
-    function test_areModularInverse_RevertsIf_XIsZero() public {
-        // TODO: Test for proper error message.
-        vm.expectRevert();
-        wrapper.areModularInverse(0, 1);
-    }
-
-    function test_areModularInverse_RevertsIf_XInvIsZero() public {
-        // TODO: Test for proper error message.
-        vm.expectRevert();
-        wrapper.areModularInverse(1, 0);
-    }
-
-    function testFuzz_areModularInverse_RevertsIf_XEqualToOrBiggerThanP(uint x)
-        public
-    {
-        vm.assume(x >= Secp256k1Arithmetic.P);
-
-        // TODO: Test for proper error message.
-        vm.expectRevert();
-        wrapper.areModularInverse(x, 1);
-    }
-
-    function testFuzz_areModularInverse_RevertsIf_XInvEqualToOrBiggerThanP(
-        uint xInv
-    ) public {
-        vm.assume(xInv >= Secp256k1Arithmetic.P);
-
-        // TODO: Test for proper error message.
-        vm.expectRevert();
-        wrapper.areModularInverse(1, xInv);
-    }
 }
 
 /**
@@ -734,16 +644,5 @@ contract Secp256k1ArithmeticWrapper {
         returns (bytes memory)
     {
         return point.toCompressedEncoded();
-    }
-
-    //--------------------------------------------------------------------------
-    // Utils
-
-    function modularInverseOf(uint x) public view returns (uint) {
-        return Secp256k1Arithmetic.modularInverseOf(x);
-    }
-
-    function areModularInverse(uint x, uint xInv) public pure returns (bool) {
-        return Secp256k1Arithmetic.areModularInverse(x, xInv);
     }
 }

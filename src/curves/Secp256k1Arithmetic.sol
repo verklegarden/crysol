@@ -347,7 +347,7 @@ library Secp256k1Arithmetic {
         }
 
         // Compute z⁻¹, i.e. the modular inverse of point.z.
-        uint zInv = modularInverseOf(point.z);
+        uint zInv = modinv(point.z);
 
         // Compute affine coordinates being x * z⁻¹ and y * z⁻¹, respectively.
         uint x = mulmod(point.x, zInv, P);
@@ -378,7 +378,7 @@ library Secp256k1Arithmetic {
         }
 
         // Compute z⁻¹, i.e. the modular inverse of point.z.
-        uint zInv = modularInverseOf(point.z);
+        uint zInv = modinv(point.z);
 
         // Compute affine coordinates being x * z⁻¹ and y * z⁻¹, respectively.
         uint x = mulmod(point.x, zInv, P);
@@ -562,7 +562,7 @@ library Secp256k1Arithmetic {
     }
 
     //--------------------------------------------------------------------------
-    // Utils
+    // Private Helpers
 
     /// @dev Returns the modular inverse of `x` for modulo `P`.
     ///
@@ -572,7 +572,7 @@ library Secp256k1Arithmetic {
     ///        x not in [1, P)
     ///
     /// @dev Uses modular exponentiation based on Fermat's little theorem.
-    function modularInverseOf(uint x) internal view returns (uint) {
+    function modinv(uint x) internal view returns (uint) {
         if (x == 0) {
             revert("ModularInverseOfZeroDoesNotExist()");
         }
@@ -593,31 +593,6 @@ library Secp256k1Arithmetic {
         // For further details, see [Dubois 2023].
         return modexp(x, NEG_2);
     }
-
-    /// @dev Returns whether `xInv` is the modular inverse of `x`.
-    ///
-    /// @dev Note that there is no modular inverse for zero.
-    ///
-    /// @dev Reverts if:
-    ///        x not in [0, P)
-    ///      ∨ xInv not in [0, P)
-    function areModularInverse(uint x, uint xInv)
-        internal
-        pure
-        returns (bool)
-    {
-        if (x == 0 || xInv == 0) {
-            revert("ModularInverseOfZeroDoesNotExist()");
-        }
-        if (x >= P || xInv >= P) {
-            revert("ModularInverseOfXGreaterThanP()");
-        }
-
-        return mulmod(x, xInv, P) == 1;
-    }
-
-    //--------------------------------------------------------------------------
-    // Private Helpers
 
     /// @dev Computes base^{exponent} (mod P) using the modexp precompile.
     function modexp(uint base, uint exponent) private view returns (uint) {
