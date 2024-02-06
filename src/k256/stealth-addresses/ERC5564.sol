@@ -13,13 +13,14 @@ pragma solidity ^0.8.16;
 
 import {Vm} from "forge-std/Vm.sol";
 
-import {Secp256k1, SecretKey, PublicKey} from "../curves/Secp256k1.sol";
+import {K256, SecretKey, PublicKey} from "../K256.sol";
 import {
-    Secp256k1Arithmetic,
+    K256Arithmetic,
     Point,
     ProjectivePoint
-} from "../curves/Secp256k1Arithmetic.sol";
+} from "../K256Arithmetic.sol";
 
+// TODO: docs StealthMetaAddress
 /**
  * @notice StealthMetaAddress encapsulates a receiver's spending and viewing
  *         public keys from which a [StealthAddress] can be computed
@@ -55,6 +56,7 @@ struct StealthMetaAddress {
     PublicKey viewPk;
 }
 
+// TODO: docs struct StealthAddress
 /**
  * @notice StealthAddress
  */
@@ -75,13 +77,13 @@ struct StealthAddress {
  *
  * @author crysol (https://github.com/pmerkleplant/crysol)
  */
-library StealthAddressesSecp256k1 {
-    using Secp256k1 for SecretKey;
-    using Secp256k1 for PublicKey;
-    using Secp256k1 for Point;
+library ERC5564 {
+    using K256 for SecretKey;
+    using K256 for PublicKey;
+    using K256 for Point;
 
-    using Secp256k1Arithmetic for Point;
-    using Secp256k1Arithmetic for ProjectivePoint;
+    using K256Arithmetic for Point;
+    using K256Arithmetic for ProjectivePoint;
 
     // ~~~~~~~ Prelude ~~~~~~~
     // forgefmt: disable-start
@@ -112,7 +114,7 @@ library StealthAddressesSecp256k1 {
         returns (StealthAddress memory)
     {
         // Create ephemeral secret key.
-        SecretKey ephSk = Secp256k1.newSecretKey();
+        SecretKey ephSk = K256.newSecretKey();
 
         return generateStealthAddress(stealthMeta, ephSk);
     }
@@ -226,8 +228,8 @@ library StealthAddressesSecp256k1 {
         SecretKey sharedSk = _deriveSharedSecret(viewSk, stealth.ephPk);
 
         // Compute stealth secret key.
-        SecretKey stealthSk = Secp256k1.secretKeyFromUint(
-            addmod(spendSk.asUint(), sharedSk.asUint(), Secp256k1.Q)
+        SecretKey stealthSk = K256.secretKeyFromUint(
+            addmod(spendSk.asUint(), sharedSk.asUint(), K256.Q)
         );
 
         return stealthSk;
@@ -300,10 +302,10 @@ library StealthAddressesSecp256k1 {
 
         // Note to bound digest to secp256k1's order in order to use it as
         // secret key.
-        uint scalar = uint(digest) % Secp256k1.Q;
+        uint scalar = uint(digest) % K256.Q;
         assert(scalar != 0); // Has negligible probability.
 
-        return Secp256k1.secretKeyFromUint(scalar);
+        return K256.secretKeyFromUint(scalar);
     }
 
     /// @dev Returns the view tag of shared secret key `sharedSk`.

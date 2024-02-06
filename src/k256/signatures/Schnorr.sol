@@ -13,11 +13,10 @@ pragma solidity ^0.8.16;
 
 import {Vm} from "forge-std/Vm.sol";
 
-import {Message} from "../Message.sol";
+import {Message} from "../../common/Message.sol";
+import {Nonce} from "../../common/Nonce.sol";
 
-import {Secp256k1, SecretKey, PublicKey} from "../curves/Secp256k1.sol";
-
-import {Nonce} from "./utils/Nonce.sol";
+import {K256, SecretKey, PublicKey} from "../K256.sol";
 
 /**
  * @notice Signature is a Schnorr signature
@@ -41,8 +40,8 @@ struct Signature {
  * @author Inspired by Chronicle Protocol's Scribe (https://github.com/chronicleprotocol/scribe)
  */
 library Schnorr {
-    using Secp256k1 for SecretKey;
-    using Secp256k1 for PublicKey;
+    using K256 for SecretKey;
+    using K256 for PublicKey;
 
     using Nonce for SecretKey;
 
@@ -112,7 +111,7 @@ library Schnorr {
                     pk.x, uint8(pk.yParity()), digest, sig.commitment
                 )
             )
-        ) % Secp256k1.Q;
+        ) % K256.Q;
 
         // Compute ecrecover_msgHash = -sig * Pkₓ      (mod Q)
         //                           = Q - (sig * Pkₓ) (mod Q)
@@ -123,7 +122,7 @@ library Schnorr {
         bytes32 ecrecover_msgHash;
         unchecked {
             ecrecover_msgHash = bytes32(
-                Secp256k1.Q - mulmod(uint(sig.signature), pk.x, Secp256k1.Q)
+                K256.Q - mulmod(uint(sig.signature), pk.x, K256.Q)
             );
         }
 
@@ -147,7 +146,7 @@ library Schnorr {
         bytes32 ecrecover_s;
         unchecked {
             ecrecover_s =
-                bytes32(Secp256k1.Q - mulmod(challenge, pk.x, Secp256k1.Q));
+                bytes32(K256.Q - mulmod(challenge, pk.x, K256.Q));
         }
 
         // Compute ([sig]G - [e]Pk)ₑ via ecrecover.
@@ -201,12 +200,12 @@ library Schnorr {
         PublicKey memory pk = sk.toPublicKey();
 
         // Derive deterministic nonce ∊ [1, Q).
-        uint nonce = sk.deriveNonce(digest) % Secp256k1.Q;
+        uint nonce = Nonce.deriveNonceFrom(sk.asUint(), digest) % K256.Q;
         assert(nonce != 0); // TODO: Revisit once nonce derived via RFC 6979.
 
         // Compute nonce's public key.
         PublicKey memory noncePk =
-            Secp256k1.secretKeyFromUint(nonce).toPublicKey();
+            K256.secretKeyFromUint(nonce).toPublicKey();
 
         // Derive commitment from nonce's public key.
         address commitment = noncePk.toAddress();
@@ -219,15 +218,15 @@ library Schnorr {
                         pk.x, uint8(pk.yParity()), digest, commitment
                     )
                 )
-            ) % Secp256k1.Q
+            ) % K256.Q
         );
 
         // Compute signature = k + (e * sk) (mod Q)
         bytes32 signature = bytes32(
             addmod(
                 nonce,
-                mulmod(uint(challenge), sk.asUint(), Secp256k1.Q),
-                Secp256k1.Q
+                mulmod(uint(challenge), sk.asUint(), K256.Q),
+                K256.Q
             )
         );
 
@@ -281,7 +280,7 @@ library Schnorr {
     ///      correctly. A signature is only malleable if `sig.signature` is not
     ///      an secp256k1 field element.
     function isMalleable(Signature memory sig) internal pure returns (bool) {
-        return uint(sig.signature) >= Secp256k1.Q;
+        return uint(sig.signature) >= K256.Q;
     }
 
     /// @dev Returns a string representation of signature `sig`.

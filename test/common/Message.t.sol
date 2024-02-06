@@ -4,7 +4,7 @@ pragma solidity ^0.8.16;
 import {Test} from "forge-std/Test.sol";
 import {console2 as console} from "forge-std/console2.sol";
 
-import {Message} from "src/Message.sol";
+import {Message} from "src/common/Message.sol";
 
 /**
  * @notice Message Unit Tests

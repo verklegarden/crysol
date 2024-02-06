@@ -4,23 +4,23 @@ pragma solidity ^0.8.16;
 import {Test} from "forge-std/Test.sol";
 import {console2 as console} from "forge-std/console2.sol";
 
-import {Secp256k1, SecretKey, PublicKey} from "src/curves/Secp256k1.sol";
+import {K256, SecretKey, PublicKey} from "src/k256/K256.sol";
 import {
-    Secp256k1Arithmetic,
+    K256Arithmetic,
     Point,
     ProjectivePoint
-} from "src/curves/Secp256k1Arithmetic.sol";
+} from "src/k256/K256Arithmetic.sol";
 
 /**
- * @notice Secp256k1Arithmetic Property Tests
+ * @notice K256Arithmetic Property Tests
  */
-contract Secp256k1ArithmeticPropertiesTest is Test {
-    using Secp256k1 for SecretKey;
-    using Secp256k1 for PublicKey;
-    using Secp256k1 for Point;
+contract K256ArithmeticPropertiesTest is Test {
+    using K256 for SecretKey;
+    using K256 for PublicKey;
+    using K256 for Point;
 
-    using Secp256k1Arithmetic for Point;
-    using Secp256k1Arithmetic for ProjectivePoint;
+    using K256Arithmetic for Point;
+    using K256Arithmetic for ProjectivePoint;
 
     //--------------------------------------------------------------------------
     // Test: Projective Point
@@ -66,7 +66,7 @@ contract Secp256k1ArithmeticPropertiesTest is Test {
         vm.assume(sk.isValid());
 
         // TODO: Make Felt type to circumvent manual bounding?
-        vm.assume(scalar < Secp256k1Arithmetic.Q);
+        vm.assume(scalar < K256Arithmetic.Q);
 
         ProjectivePoint memory p = sk.toPublicKey().toProjectivePoint();
 
@@ -82,7 +82,7 @@ contract Secp256k1ArithmeticPropertiesTest is Test {
         vm.assume(sk.isValid());
 
         // TODO: Make Felt type to circumvent manual bounding?
-        vm.assume(scalar < Secp256k1Arithmetic.Q);
+        vm.assume(scalar < K256Arithmetic.Q);
 
         ProjectivePoint memory p = sk.toPublicKey().toProjectivePoint();
 
@@ -98,7 +98,7 @@ contract Secp256k1ArithmeticPropertiesTest is Test {
         public
     {
         Point memory end =
-            Secp256k1Arithmetic.pointFromEncoded(start.toEncoded());
+            K256Arithmetic.pointFromEncoded(start.toEncoded());
 
         assertTrue(start.eq(end));
     }
@@ -110,7 +110,7 @@ contract Secp256k1ArithmeticPropertiesTest is Test {
 
         Point memory start = sk.toPublicKey().intoPoint();
 
-        Point memory end = Secp256k1Arithmetic.pointFromCompressedEncoded(
+        Point memory end = K256Arithmetic.pointFromCompressedEncoded(
             start.toCompressedEncoded()
         );
 

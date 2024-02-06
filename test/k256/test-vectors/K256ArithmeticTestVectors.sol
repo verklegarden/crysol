@@ -1,9 +1,9 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.16;
 
-import {Point} from "src/curves/Secp256k1Arithmetic.sol";
+import {Point} from "src/k256/K256Arithmetic.sol";
 
-library Secp256k1ArithmeticTestVectors {
+library K256ArithmeticTestVectors {
     /// @dev Returns a list of points being the result of repeated additions
     ///      of the generator.
     ///

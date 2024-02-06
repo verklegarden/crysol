@@ -13,9 +13,9 @@ pragma solidity ^0.8.16;
 
 import {Vm} from "forge-std/Vm.sol";
 
-import {Message} from "../Message.sol";
+import {Message} from "../../common/Message.sol";
 
-import {Secp256k1, SecretKey, PublicKey} from "../curves/Secp256k1.sol";
+import {K256, SecretKey, PublicKey} from "../K256.sol";
 
 /**
  * @notice Signature is an ECDSA signature
@@ -60,8 +60,8 @@ struct Signature {
  * @author crysol (https://github.com/pmerkleplant/crysol)
  */
 library ECDSA {
-    using Secp256k1 for SecretKey;
-    using Secp256k1 for PublicKey;
+    using K256 for SecretKey;
+    using K256 for PublicKey;
 
     using ECDSA for address;
     using ECDSA for Signature;

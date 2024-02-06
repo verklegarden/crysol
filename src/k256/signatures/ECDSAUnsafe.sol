@@ -11,9 +11,10 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.16;
 
-import {ECDSA, Signature} from "src/signatures/ECDSA.sol";
-import {Secp256k1} from "src/curves/Secp256k1.sol";
-import {Secp256k1Arithmetic} from "src/curves/Secp256k1Arithmetic.sol";
+import {ECDSA, Signature} from "./ECDSA.sol";
+
+import {K256} from "../K256.sol";
+import {K256Arithmetic} from "../K256Arithmetic.sol";
 
 /**
  * @title ECDSAUnsafe
@@ -35,8 +36,8 @@ library ECDSAUnsafe {
             return sig;
         }
 
-        // Flip sig.s to Secp256k1.Q - sig.s.
-        sig.s = bytes32(Secp256k1.Q - uint(sig.s));
+        // Flip sig.s to K256.Q - sig.s.
+        sig.s = bytes32(K256.Q - uint(sig.s));
 
         // Flip v.
         sig.v = sig.v == 27 ? 28 : 27;
@@ -54,8 +55,8 @@ library ECDSAUnsafe {
             return sig;
         }
 
-        // Flip sig.s to Secp256k1.Q - sig.s.
-        sig.s = bytes32(Secp256k1.Q - uint(sig.s));
+        // Flip sig.s to K256.Q - sig.s.
+        sig.s = bytes32(K256.Q - uint(sig.s));
 
         // Flip v.
         sig.v = sig.v == 27 ? 28 : 27;

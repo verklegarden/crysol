@@ -228,7 +228,7 @@ contract StealthAddressesSecp256k1Wrapper {
         SecretKey spendSk,
         SecretKey viewSk,
         StealthAddress memory stealth
-    ) public returns (SecretKey) {
+    ) public view returns (SecretKey) {
         return spendSk.computeStealthSecretKey(viewSk, stealth);
     }
 
@@ -238,7 +238,7 @@ contract StealthAddressesSecp256k1Wrapper {
     function toString(
         StealthMetaAddress memory stealthMeta,
         string memory chain
-    ) public returns (string memory) {
+    ) public view returns (string memory) {
         return stealthMeta.toString(chain);
     }
 }

@@ -4,17 +4,12 @@ pragma solidity ^0.8.16;
 import {Test} from "forge-std/Test.sol";
 import {console2 as console} from "forge-std/console2.sol";
 
-import {Nonce} from "src/signatures/utils/Nonce.sol";
-
-import {Secp256k1, SecretKey} from "src/curves/Secp256k1.sol";
+import {Nonce} from "src/common/Nonce.sol";
 
 /**
  * @notice Nonce Unit Tests
  */
 contract NonceTest is Test {
-    using Nonce for SecretKey;
-    using Secp256k1 for SecretKey;
-
     NonceWrapper wrapper;
 
     function setUp() public {
@@ -22,20 +17,18 @@ contract NonceTest is Test {
     }
 
     function testFuzz_deriveNonce_IsDeterministic(
-        SecretKey sk,
+        uint sk,
         bytes memory message
     ) public {
-        vm.assume(sk.isValid());
-
         uint nonce1;
         uint nonce2;
 
-        // Using deriveNonce from message.
+        // Using deriveNonceFrom message.
         nonce1 = wrapper.deriveNonce(sk, message);
         nonce2 = wrapper.deriveNonce(sk, message);
         assertEq(nonce1, nonce2);
 
-        // Using deriveNonce from digest.
+        // Using deriveNonceFrom digest.
         bytes32 digest = keccak256(message);
         nonce1 = wrapper.deriveNonce(sk, digest);
         nonce2 = wrapper.deriveNonce(sk, digest);
@@ -49,21 +42,19 @@ contract NonceTest is Test {
  * @dev For more info, see https://github.com/foundry-rs/foundry/pull/3128#issuecomment-1241245086.
  */
 contract NonceWrapper {
-    using Nonce for SecretKey;
-
-    function deriveNonce(SecretKey sk, bytes memory message)
+    function deriveNonce(uint sk, bytes memory message)
         public
         pure
         returns (uint)
     {
-        return sk.deriveNonce(message);
+        return Nonce.deriveNonceFrom(sk, message);
     }
 
-    function deriveNonce(SecretKey sk, bytes32 digest)
+    function deriveNonce(uint sk, bytes32 digest)
         public
         pure
         returns (uint)
     {
-        return sk.deriveNonce(digest);
+        return Nonce.deriveNonceFrom(sk, digest);
     }
 }

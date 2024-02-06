@@ -44,12 +44,12 @@ pragma solidity ^0.8.16;
  *
  * @custom:references
  *      - [ERC-5564]: https://eips.ethereum.org/EIPS/eip-5564
- *      - [ERC-5564 Scheme Registry]: https://eips.ethereum.org/EIPS/eip-6538
+ *      - [ERC-5564 Scheme Registry]: https://eips.ethereum.org/assets/eip-5564/scheme_ids
  */
 interface IERC5564Announcer {
     /// @notice Emitted to announce a tx to a stealth address.
     ///
-    /// @param schemeId Scheme id based on [ERC-5564 Scheme Registry] registry.
+    /// @param schemeId The scheme id based on [ERC-5564 Scheme Registry] registry.
     /// @param stealthAddress The stealth address.
     /// @param caller The address announcing the tx.
     /// @param ephemeralPubKey The ephemeral public key created during the

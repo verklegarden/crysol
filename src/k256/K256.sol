@@ -13,13 +13,13 @@ pragma solidity ^0.8.16;
 
 import {Vm} from "forge-std/Vm.sol";
 
+import {Random} from "../common/Random.sol";
+
 import {
-    Secp256k1Arithmetic,
+    K256Arithmetic,
     Point,
     ProjectivePoint
-} from "./Secp256k1Arithmetic.sol";
-
-import {Random} from "../Random.sol";
+} from "./K256Arithmetic.sol";
 
 /**
  * @notice SecretKey is an secp256k1 secret key
@@ -83,12 +83,12 @@ struct PublicKey {
  * @author crysol (https://github.com/pmerkleplant/crysol)
  * @author Inspired by Chronicle Protocol's Scribe (https://github.com/chronicleprotocol/scribe)
  */
-library Secp256k1 {
-    using Secp256k1 for SecretKey;
-    using Secp256k1 for PublicKey;
-    using Secp256k1 for Point;
+library K256 {
+    using K256 for SecretKey;
+    using K256 for PublicKey;
+    using K256 for Point;
 
-    using Secp256k1Arithmetic for Point;
+    using K256Arithmetic for Point;
 
     // ~~~~~~~ Prelude ~~~~~~~
     // forgefmt: disable-start
@@ -109,17 +109,17 @@ library Secp256k1 {
     //--------------------------------------------------------------------------
     // Secp256k1 Constants
     //
-    // Reimported from Secp256k1Arithmetic.
+    // Reimported from K256Arithmetic.
 
     /// @dev The generator G as PublicKey.
     function G() internal pure returns (PublicKey memory) {
-        Point memory g = Secp256k1Arithmetic.G();
+        Point memory g = K256Arithmetic.G();
 
         return PublicKey(g.x, g.y);
     }
 
     /// @dev The order of the group generated via generator G.
-    uint internal constant Q = Secp256k1Arithmetic.Q;
+    uint internal constant Q = K256Arithmetic.Q;
 
     //--------------------------------------------------------------------------
     // Secret Key
@@ -138,8 +138,8 @@ library Secp256k1 {
 
     /// @dev Returns whether secret key `sk` is valid.
     ///
-    /// @dev Note that a secret key MUST be a secp256k1 field element in order
-    ///      to be valid, ie sk ∊ [1, Q).
+    /// @dev Note that a secret key MUST be a field element in order to be valid,
+    ///      ie sk ∊ [1, Q).
     function isValid(SecretKey sk) internal pure returns (bool) {
         uint scalar = sk.asUint();
 

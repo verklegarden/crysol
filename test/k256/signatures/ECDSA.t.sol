@@ -4,19 +4,19 @@ pragma solidity ^0.8.16;
 import {Test} from "forge-std/Test.sol";
 import {console2 as console} from "forge-std/console2.sol";
 
-import {ECDSA, Signature} from "src/signatures/ECDSA.sol";
-import {ECDSAUnsafe} from "unsafe/ECDSAUnsafe.sol";
+import {ECDSA, Signature} from "src/k256/signatures/ECDSA.sol";
+import {ECDSAUnsafe} from "src/k256/signatures/ECDSAUnsafe.sol";
 
-import {Secp256k1, SecretKey, PublicKey} from "src/curves/Secp256k1.sol";
+import {K256, SecretKey, PublicKey} from "src/k256/K256.sol";
 
-import {Message} from "src/Message.sol";
+import {Message} from "src/common/Message.sol";
 
 /**
- * @notice ECDSA Unit Tests
+ * @notice K256 ECDSA Unit Tests
  */
 contract ECDSATest is Test {
-    using Secp256k1 for SecretKey;
-    using Secp256k1 for PublicKey;
+    using K256 for SecretKey;
+    using K256 for PublicKey;
 
     using ECDSA for address;
     using ECDSA for SecretKey;
@@ -219,7 +219,7 @@ contract ECDSATest is Test {
     // -- Signature::isMalleable
 
     function testFuzz_Signature_isMalleable(Signature memory sig) public {
-        vm.assume(uint(sig.s) > Secp256k1.Q / 2);
+        vm.assume(uint(sig.s) > K256.Q / 2);
 
         assertTrue(wrapper.isMalleable(sig));
     }
@@ -227,7 +227,7 @@ contract ECDSATest is Test {
     function testFuzz_Signature_isMalleable_FailsIf_SignatureNotMalleable(
         Signature memory sig
     ) public {
-        vm.assume(uint(sig.s) <= Secp256k1.Q / 2);
+        vm.assume(uint(sig.s) <= K256.Q / 2);
 
         assertFalse(wrapper.isMalleable(sig));
     }

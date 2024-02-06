@@ -11,8 +11,6 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.16;
 
-import {Secp256k1, SecretKey} from "../../curves/Secp256k1.sol";
-
 // TODO: Derive deterministic nonces via RFC-6979.
 //
 //       For Rust implementation (used by foundry), see:
@@ -27,10 +25,6 @@ import {Secp256k1, SecretKey} from "../../curves/Secp256k1.sol";
  * @author crysol (https://github.com/pmerkleplant/crysol)
  */
 library Nonce {
-    using Secp256k1 for SecretKey;
-
-    using Nonce for SecretKey;
-
     /// @dev Derives a deterministic non-zero nonce from secret key `sk` and
     ///      message `message`.
     ///
@@ -38,14 +32,14 @@ library Nonce {
     ///
     /// @custom:invariant Keccak256 image is never zero:
     ///     ∀ (sk, msg) ∊ (SecretKey, bytes): keccak256(sk ‖ keccak256(message)) != 0
-    function deriveNonce(SecretKey sk, bytes memory message)
+    function deriveNonceFrom(uint sk, bytes memory message)
         internal
         pure
         returns (uint)
     {
         bytes32 digest = keccak256(message);
 
-        return sk.deriveNonce(digest);
+        return deriveNonceFrom(sk, digest);
     }
 
     /// @dev Derives a deterministic non-zero nonce from secret key `sk` and
@@ -55,11 +49,11 @@ library Nonce {
     ///
     /// @custom:invariant Keccak256 image is never zero:
     ///     ∀ (sk, digest) ∊ (SecretKey, bytes32): keccak256(sk ‖ digest) != 0
-    function deriveNonce(SecretKey sk, bytes32 digest)
+    function deriveNonceFrom(uint sk, bytes32 digest)
         internal
         pure
         returns (uint)
     {
-        return uint(keccak256(abi.encodePacked(sk.asUint(), digest)));
+        return uint(keccak256(abi.encodePacked(sk, digest)));
     }
 }

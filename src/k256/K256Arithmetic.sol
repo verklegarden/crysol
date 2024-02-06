@@ -37,7 +37,7 @@ struct ProjectivePoint {
 }
 
 /**
- * @title Secp256k1Arithmetic
+ * @title K256Arithmetic
  *
  * @notice Provides common arithmetic-related functionality for the secp256k1
  *         elliptic curve
@@ -52,9 +52,9 @@ struct ProjectivePoint {
  * @author crysol (https://github.com/pmerkleplant/crysol)
  * @author Inspired by Chronicle Protocol's Scribe (https://github.com/chronicleprotocol/scribe)
  */
-library Secp256k1Arithmetic {
-    using Secp256k1Arithmetic for Point;
-    using Secp256k1Arithmetic for ProjectivePoint;
+library K256Arithmetic {
+    using K256Arithmetic for Point;
+    using K256Arithmetic for ProjectivePoint;
 
     //--------------------------------------------------------------------------
     // Optimization Constants
@@ -294,7 +294,7 @@ library Secp256k1Arithmetic {
         }
 
         ProjectivePoint memory copy = point;
-        ProjectivePoint memory result = Secp256k1Arithmetic.ProjectiveIdentity();
+        ProjectivePoint memory result = ProjectiveIdentity();
 
         while (scalar != 0) {
             if (scalar & 1 == 1) {

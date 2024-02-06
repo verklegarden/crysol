@@ -4,33 +4,33 @@ pragma solidity ^0.8.16;
 import {Test} from "forge-std/Test.sol";
 import {console2 as console} from "forge-std/console2.sol";
 
-import {Secp256k1, SecretKey, PublicKey} from "src/curves/Secp256k1.sol";
+import {K256, SecretKey, PublicKey} from "src/k256/K256.sol";
 import {
-    Secp256k1Arithmetic,
+    K256Arithmetic,
     Point,
     ProjectivePoint
-} from "src/curves/Secp256k1Arithmetic.sol";
+} from "src/k256/K256Arithmetic.sol";
 
 /**
- * @notice Secp256k1 Unit Tests
+ * @notice K256 Unit Tests
  */
-contract Secp256k1Test is Test {
-    using Secp256k1 for SecretKey;
-    using Secp256k1 for PublicKey;
-    using Secp256k1 for Point;
+contract K256Test is Test {
+    using K256 for SecretKey;
+    using K256 for PublicKey;
+    using K256 for Point;
 
-    using Secp256k1Arithmetic for Point;
-    using Secp256k1Arithmetic for ProjectivePoint;
+    using K256Arithmetic for Point;
+    using K256Arithmetic for ProjectivePoint;
 
     // Uncompressed Generator G.
     // Copied from [SEC-2 v2].
     bytes constant GENERATOR_ENCODED =
         hex"0479BE667EF9DCBBAC55A06295CE870B07029BFCDB2DCE28D959F2815B16F81798483ADA7726A3C4655DA4FBFC0E1108A8FD17B448A68554199C47D08FFB10D4B8";
 
-    Secp256k1Wrapper wrapper;
+    K256Wrapper wrapper;
 
     function setUp() public {
-        wrapper = new Secp256k1Wrapper();
+        wrapper = new K256Wrapper();
     }
 
     //--------------------------------------------------------------------------
@@ -38,7 +38,7 @@ contract Secp256k1Test is Test {
 
     function test_G() public {
         PublicKey memory got = wrapper.G();
-        PublicKey memory want = Secp256k1Arithmetic.pointFromEncoded(
+        PublicKey memory want = K256Arithmetic.pointFromEncoded(
             GENERATOR_ENCODED
         ).intoPublicKey();
 
@@ -62,7 +62,7 @@ contract Secp256k1Test is Test {
     // -- isValid
 
     function testFuzz_SecretKey_isValid(uint seed) public {
-        uint scalar = _bound(seed, 1, Secp256k1.Q - 1);
+        uint scalar = _bound(seed, 1, K256.Q - 1);
 
         assertTrue(wrapper.isValid(SecretKey.wrap(scalar)));
     }
@@ -74,7 +74,7 @@ contract Secp256k1Test is Test {
     function testFuzz_SecretKey_isValid_FailsIf_SecretKeyGreaterOrEqualToQ(
         uint seed
     ) public {
-        uint scalar = _bound(seed, Secp256k1.Q, type(uint).max);
+        uint scalar = _bound(seed, K256.Q, type(uint).max);
 
         assertFalse(wrapper.isValid(SecretKey.wrap(scalar)));
     }
@@ -83,7 +83,7 @@ contract Secp256k1Test is Test {
 
     function testFuzz_SecretKey_toPublicKey(uint seed) public {
         SecretKey sk =
-            Secp256k1.secretKeyFromUint(_bound(seed, 1, Secp256k1.Q - 1));
+            K256.secretKeyFromUint(_bound(seed, 1, K256.Q - 1));
 
         address got = wrapper.toPublicKey(sk).toAddress();
         address want = vm.addr(sk.asUint());
@@ -94,7 +94,7 @@ contract Secp256k1Test is Test {
     function testFuzz_SecretKey_toPublicKey_RevertsIf_SecretKeyInvalid(
         uint seed
     ) public {
-        SecretKey sk = SecretKey.wrap(_bound(seed, Secp256k1.Q, type(uint).max));
+        SecretKey sk = SecretKey.wrap(_bound(seed, K256.Q, type(uint).max));
 
         vm.expectRevert("SecretKeyInvalid()");
         wrapper.toPublicKey(sk);
@@ -103,7 +103,7 @@ contract Secp256k1Test is Test {
     // -- secretKeyFromUint
 
     function testFuzz_secretKeyFromUint(uint seed) public {
-        uint scalar = _bound(seed, 1, Secp256k1.Q - 1);
+        uint scalar = _bound(seed, 1, K256.Q - 1);
 
         SecretKey sk = wrapper.secretKeyFromUint(scalar);
 
@@ -119,7 +119,7 @@ contract Secp256k1Test is Test {
     function test_secretKeyFromUint_RevertsIf_ScalarGreaterOrEqualToQ(uint seed)
         public
     {
-        uint scalar = _bound(seed, Secp256k1.Q, type(uint).max);
+        uint scalar = _bound(seed, K256.Q, type(uint).max);
 
         vm.expectRevert("ScalarInvalid()");
         wrapper.secretKeyFromUint(scalar);
@@ -138,9 +138,9 @@ contract Secp256k1Test is Test {
 
     function testFuzz_PublicKey_toAddress(uint seed) public {
         SecretKey sk =
-            Secp256k1.secretKeyFromUint(_bound(seed, 1, Secp256k1.Q - 1));
+            K256.secretKeyFromUint(_bound(seed, 1, K256.Q - 1));
 
-        address got = wrapper.toAddress(Secp256k1.toPublicKey(sk));
+        address got = wrapper.toAddress(K256.toPublicKey(sk));
         address want = vm.addr(sk.asUint());
 
         assertEq(got, want);
@@ -161,14 +161,14 @@ contract Secp256k1Test is Test {
         public
     {
         SecretKey sk =
-            Secp256k1.secretKeyFromUint(_bound(seed, 1, Secp256k1.Q - 1));
+            K256.secretKeyFromUint(_bound(seed, 1, K256.Q - 1));
 
         // Every public key created via valid secret key is valid.
         assertTrue(wrapper.isValid(sk.toPublicKey()));
     }
 
     function test_PublicKey_isValid_If_Identity() public {
-        PublicKey memory pk = Secp256k1Arithmetic.Identity().intoPublicKey();
+        PublicKey memory pk = K256Arithmetic.Identity().intoPublicKey();
 
         assertTrue(pk.isValid());
     }
@@ -273,7 +273,7 @@ contract Secp256k1Test is Test {
 
         bytes memory blob = wrapper.toBytes(sk);
 
-        assertEq(sk.asUint(), Secp256k1.secretKeyFromBytes(blob).asUint());
+        assertEq(sk.asUint(), K256.secretKeyFromBytes(blob).asUint());
     }
 
     //----------------------------------
@@ -306,7 +306,7 @@ contract Secp256k1Test is Test {
         bytes memory blob = wrapper.toBytes(pk1);
         assertEq(blob.length, 64);
 
-        PublicKey memory pk2 = Secp256k1.publicKeyFromBytes(blob);
+        PublicKey memory pk2 = K256.publicKeyFromBytes(blob);
         assertTrue(pk1.eq(pk2));
     }
 }
@@ -316,25 +316,25 @@ contract Secp256k1Test is Test {
  *
  * @dev For more info, see https://github.com/foundry-rs/foundry/pull/3128#issuecomment-1241245086.
  */
-contract Secp256k1Wrapper {
-    using Secp256k1 for SecretKey;
-    using Secp256k1 for PublicKey;
-    using Secp256k1 for Point;
+contract K256Wrapper {
+    using K256 for SecretKey;
+    using K256 for PublicKey;
+    using K256 for Point;
 
-    using Secp256k1Arithmetic for Point;
+    using K256Arithmetic for Point;
 
     //--------------------------------------------------------------------------
     // Constants
 
     function G() public pure returns (PublicKey memory) {
-        return Secp256k1.G();
+        return K256.G();
     }
 
     //--------------------------------------------------------------------------
     // Secret Key
 
     function newSecretKey() public returns (SecretKey) {
-        return Secp256k1.newSecretKey();
+        return K256.newSecretKey();
     }
 
     function isValid(SecretKey sk) public pure returns (bool) {
@@ -346,7 +346,7 @@ contract Secp256k1Wrapper {
     }
 
     function secretKeyFromUint(uint scalar) public pure returns (SecretKey) {
-        return Secp256k1.secretKeyFromUint(scalar);
+        return K256.secretKeyFromUint(scalar);
     }
 
     function asUint(SecretKey sk) public pure returns (uint) {
@@ -415,7 +415,7 @@ contract Secp256k1Wrapper {
         pure
         returns (SecretKey)
     {
-        return Secp256k1.secretKeyFromBytes(blob);
+        return K256.secretKeyFromBytes(blob);
     }
 
     function toBytes(SecretKey sk) public pure returns (bytes memory) {
@@ -430,7 +430,7 @@ contract Secp256k1Wrapper {
         pure
         returns (PublicKey memory)
     {
-        return Secp256k1.publicKeyFromBytes(blob);
+        return K256.publicKeyFromBytes(blob);
     }
 
     function toBytes(PublicKey memory pk) public pure returns (bytes memory) {

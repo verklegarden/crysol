@@ -4,19 +4,19 @@ pragma solidity ^0.8.16;
 import {Test} from "forge-std/Test.sol";
 import {console2 as console} from "forge-std/console2.sol";
 
-import {ECDSA, Signature} from "src/signatures/ECDSA.sol";
+import {ECDSA, Signature} from "src/k256/signatures/ECDSA.sol";
 
-import {Secp256k1, SecretKey, PublicKey} from "src/curves/Secp256k1.sol";
+import {K256, SecretKey, PublicKey} from "src/k256/K256.sol";
 
 /**
- * @notice ECDSA Property Tests
+ * @notice K256 ECDSA Property Tests
  */
 contract ECDSAPropertiesTest is Test {
     using ECDSA for SecretKey;
     using ECDSA for PublicKey;
     using ECDSA for Signature;
 
-    using Secp256k1 for SecretKey;
+    using K256 for SecretKey;
 
     //--------------------------------------------------------------------------
     // Properties: Signature
