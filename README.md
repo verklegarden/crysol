@@ -20,21 +20,21 @@
 
 ```ml
 src
-├─ Random - "Provides access to cryptographically secure randomness"
-├─ Message - "Functionality for constructing Ethereum Signed Message Hashes"
-├─ curves
-│   ├─ Secp256k1 - "Provides common cryptography-related functionality for the secp256k1 elliptic curve"
-│   └─ Secp256k1Arithmetic — "Provides common arithmetic-related functionality for the secp256k1 elliptic curve"
-├─ signatures
-│   ├─ ECDSA — "Provides ECDSA signature functionality"
-│   ├─ Schnorr — "Provides Schnorr signature functionality"
-│   └─ utils
-│       └─ Nonce - "Provides deterministic nonce derivation"
-└─ stealth-addresses
-    ├─ StealthAddressesSecp256k1 - "ERC-5564 conforming stealth addresses for the secp256k1 curve"
-    └─ interfaces
-        ├─ IERC5564Announcer - "ERC-5564 stealth address announcement interface"
-        └─ IERC5564Registry - "ERC-5564 stealth meta address registry interface"
+├─ common
+│   ├─ Random - "Access to cryptographically secure randomness"
+│   ├─ Message - "Functionality for constructing Ethereum Signed Message Hashes"
+│   └─ Nonce - "Deterministic nonce derivation"
+├─ k256
+│   ├─ K256 - "Common cryptography-related functionality for the k256 (secp256k1) elliptic curve"
+│   ├─ K256Arithmetic — "Common arithmetic-related functionality for the k256 (secp256k1) elliptic curve"
+│   ├─ signatures
+│   │   ├─ ECDSA — "ECDSA signature functionality for k256"
+│   │   └─ Schnorr — "Schnorr signature functionality for k256"
+│   └─ stealth-addresses
+│       └─ ERC5564 - "ERC-5564 conforming stealth addresses for k256"
+└─ interfaces
+    ├─ IERC5564Announcer - "ERC-5564 stealth address announcement interface"
+    └─ IERC5564Registry - "ERC-5564 stealth meta address registry interface"
 ```
 
 ## Installation
@@ -80,6 +80,8 @@ $ forge fmt [--check]
 ```
 
 ## Tests
+
+> Outdated!
 
 | **Library**                                   | **Unit Tests** | **Property-Based Tests** |
 | --------------------------------------------- | -------------- | ------------------------ |
