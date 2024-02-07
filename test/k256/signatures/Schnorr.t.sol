@@ -70,9 +70,7 @@ contract SchnorrTest is Test {
         vm.assume(!pk.isValid());
 
         vm.expectRevert("PublicKeyInvalid()");
-        wrapper.verify(
-            pk, message, K256.secretKeyFromUint(1).sign(message)
-        );
+        wrapper.verify(pk, message, K256.secretKeyFromUint(1).sign(message));
         vm.expectRevert("PublicKeyInvalid()");
         wrapper.verify(
             pk, keccak256(message), K256.secretKeyFromUint(1).sign(message)
