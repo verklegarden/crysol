@@ -6,9 +6,7 @@ import {console2 as console} from "forge-std/console2.sol";
 
 import {K256, SecretKey, PublicKey} from "src/k256/K256.sol";
 import {
-    K256Arithmetic,
-    Point,
-    ProjectivePoint
+    K256Arithmetic, Point, ProjectivePoint
 } from "src/k256/K256Arithmetic.sol";
 
 import {K256ArithmeticTestVectors} from
@@ -45,8 +43,7 @@ contract K256ArithmeticTest is Test {
 
     function test_G() public {
         Point memory got = wrapper.G();
-        Point memory want =
-            K256Arithmetic.pointFromEncoded(GENERATOR_ENCODED);
+        Point memory want = K256Arithmetic.pointFromEncoded(GENERATOR_ENCODED);
 
         assertEq(got.x, want.x);
         assertEq(got.y, want.y);
@@ -284,8 +281,7 @@ contract K256ArithmeticTest is Test {
     }
 
     function test_ProjectivePoint_intoPoint_Identity() public {
-        ProjectivePoint memory identity =
-            K256Arithmetic.ProjectiveIdentity();
+        ProjectivePoint memory identity = K256Arithmetic.ProjectiveIdentity();
 
         assertTrue(wrapper.intoPoint(identity).isIdentity());
     }
@@ -303,8 +299,7 @@ contract K256ArithmeticTest is Test {
     }
 
     function test_ProjectivePoint_toPoint_Identity() public {
-        ProjectivePoint memory identity =
-            K256Arithmetic.ProjectiveIdentity();
+        ProjectivePoint memory identity = K256Arithmetic.ProjectiveIdentity();
 
         assertTrue(wrapper.toPoint(identity).isIdentity());
     }

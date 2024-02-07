@@ -14,11 +14,7 @@ pragma solidity ^0.8.16;
 import {Vm} from "forge-std/Vm.sol";
 
 import {K256, SecretKey, PublicKey} from "../K256.sol";
-import {
-    K256Arithmetic,
-    Point,
-    ProjectivePoint
-} from "../K256Arithmetic.sol";
+import {K256Arithmetic, Point, ProjectivePoint} from "../K256Arithmetic.sol";
 
 // TODO: docs StealthMetaAddress
 /**

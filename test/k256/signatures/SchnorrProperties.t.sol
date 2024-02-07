@@ -4,19 +4,19 @@ pragma solidity ^0.8.16;
 import {Test} from "forge-std/Test.sol";
 import {console2 as console} from "forge-std/console2.sol";
 
-import {Schnorr, Signature} from "src/signatures/Schnorr.sol";
+import {Schnorr, Signature} from "src/k256/signatures/Schnorr.sol";
 
-import {Secp256k1, SecretKey, PublicKey} from "src/curves/Secp256k1.sol";
+import {K256, SecretKey, PublicKey} from "src/k256/K256.sol";
 
 /**
  * @notice Schnorr Property Tests
  */
 contract SchnorrPropertiesTest is Test {
+    using K256 for SecretKey;
+
     using Schnorr for SecretKey;
     using Schnorr for PublicKey;
     using Schnorr for Signature;
-
-    using Secp256k1 for SecretKey;
 
     //--------------------------------------------------------------------------
     // Properties: Signature
@@ -57,4 +57,6 @@ contract SchnorrPropertiesTest is Test {
 
     //--------------------------------------------------------------------------
     // Properties: (De)Serialization
+    //
+    // TODO: Schnorr (De)Serialization Property tests once serialization defined.
 }

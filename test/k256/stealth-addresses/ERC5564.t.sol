@@ -4,37 +4,37 @@ pragma solidity ^0.8.16;
 import {Test} from "forge-std/Test.sol";
 import {console2 as console} from "forge-std/console2.sol";
 
-import {Secp256k1, SecretKey, PublicKey} from "src/curves/Secp256k1.sol";
+import {K256, SecretKey, PublicKey} from "src/k256/K256.sol";
 import {
-    Secp256k1Arithmetic,
+    K256Arithmetic,
     Point,
     ProjectivePoint
-} from "src/curves/Secp256k1Arithmetic.sol";
+} from "src/k256/K256Arithmetic.sol";
 
 import {
-    StealthAddressesSecp256k1,
+    ERC5564,
     StealthMetaAddress,
     StealthAddress
-} from "src/stealth-addresses/StealthAddressesSecp256k1.sol";
+} from "src/k256/stealth-addresses/ERC5564.sol";
 
 /**
- * @notice StealthAddressesSecp256k1 Unit Tests
+ * @notice ERC-5564 Unit Tests
  */
-contract StealthAddressesSecp256k1Test is Test {
-    using Secp256k1 for SecretKey;
-    using Secp256k1 for PublicKey;
-    using Secp256k1 for Point;
+contract ERC5564Test is Test {
+    using K256 for SecretKey;
+    using K256 for PublicKey;
+    using K256 for Point;
 
-    using Secp256k1Arithmetic for Point;
-    using Secp256k1Arithmetic for ProjectivePoint;
+    using K256Arithmetic for Point;
+    using K256Arithmetic for ProjectivePoint;
 
-    using StealthAddressesSecp256k1 for SecretKey;
-    using StealthAddressesSecp256k1 for StealthMetaAddress;
+    using ERC5564 for SecretKey;
+    using ERC5564 for StealthMetaAddress;
 
-    StealthAddressesSecp256k1Wrapper wrapper;
+    StealthAddressesK256Wrapper wrapper;
 
     function setUp() public {
-        wrapper = new StealthAddressesSecp256k1Wrapper();
+        wrapper = new StealthAddressesK256Wrapper();
     }
 
     //--------------------------------------------------------------------------
@@ -44,10 +44,10 @@ contract StealthAddressesSecp256k1Test is Test {
         // Taken from: https://github.com/nerolation/executable-stealth-address-specs/blob/main/test.ipynb
 
         // Stealth meta address and respective key pairs.
-        SecretKey spendSk = Secp256k1.secretKeyFromUint(
+        SecretKey spendSk = K256.secretKeyFromUint(
             30787322447577792890566286485782027903969759412226064433999487819529647462924
         );
-        SecretKey viewSk = Secp256k1.secretKeyFromUint(
+        SecretKey viewSk = K256.secretKeyFromUint(
             50431308649801251425320023123245644035351225602185776979597242007527042324186
         );
         StealthMetaAddress memory stealthMeta = StealthMetaAddress({
@@ -59,7 +59,7 @@ contract StealthAddressesSecp256k1Test is Test {
         StealthAddress memory stealth;
         stealth = wrapper.generateStealthAddress(
             stealthMeta,
-            Secp256k1.secretKeyFromUint(
+            K256.secretKeyFromUint(
                 31582853143040820948875942041653389873450407831047855470517498178324574486065
             )
         );
@@ -74,10 +74,10 @@ contract StealthAddressesSecp256k1Test is Test {
     function test_checkStealthAddress() public {
         // Taken from: https://github.com/nerolation/executable-stealth-address-specs/blob/main/test.ipynb
 
-        SecretKey spendSk = Secp256k1.secretKeyFromUint(
+        SecretKey spendSk = K256.secretKeyFromUint(
             30787322447577792890566286485782027903969759412226064433999487819529647462924
         );
-        SecretKey viewSk = Secp256k1.secretKeyFromUint(
+        SecretKey viewSk = K256.secretKeyFromUint(
             50431308649801251425320023123245644035351225602185776979597242007527042324186
         );
 
@@ -103,10 +103,10 @@ contract StealthAddressesSecp256k1Test is Test {
     function test_checkStealthAddress_FailsIf_ViewTagIncorrect() public {
         // Taken from: https://github.com/nerolation/executable-stealth-address-specs/blob/main/test.ipynb
 
-        SecretKey spendSk = Secp256k1.secretKeyFromUint(
+        SecretKey spendSk = K256.secretKeyFromUint(
             30787322447577792890566286485782027903969759412226064433999487819529647462924
         );
-        SecretKey viewSk = Secp256k1.secretKeyFromUint(
+        SecretKey viewSk = K256.secretKeyFromUint(
             50431308649801251425320023123245644035351225602185776979597242007527042324186
         );
 
@@ -135,10 +135,10 @@ contract StealthAddressesSecp256k1Test is Test {
     function test_computeStealthSecretKey() public {
         // Taken from: https://github.com/nerolation/executable-stealth-address-specs/blob/main/test.ipynb
 
-        SecretKey spendSk = Secp256k1.secretKeyFromUint(
+        SecretKey spendSk = K256.secretKeyFromUint(
             30787322447577792890566286485782027903969759412226064433999487819529647462924
         );
-        SecretKey viewSk = Secp256k1.secretKeyFromUint(
+        SecretKey viewSk = K256.secretKeyFromUint(
             50431308649801251425320023123245644035351225602185776979597242007527042324186
         );
 
@@ -158,7 +158,7 @@ contract StealthAddressesSecp256k1Test is Test {
 
         SecretKey gotSk =
             wrapper.computeStealthSecretKey(spendSk, viewSk, stealth);
-        SecretKey wantSk = Secp256k1.secretKeyFromUint(
+        SecretKey wantSk = K256.secretKeyFromUint(
             0x81c527d561a196132fe18f2242385e4cdac91990657021cd0cee71a24d55242e
         );
         assertEq(gotSk.asUint(), wantSk.asUint());
@@ -192,9 +192,9 @@ contract StealthAddressesSecp256k1Test is Test {
  *
  * @dev For more info, see https://github.com/foundry-rs/foundry/pull/3128#issuecomment-1241245086.
  */
-contract StealthAddressesSecp256k1Wrapper {
-    using StealthAddressesSecp256k1 for SecretKey;
-    using StealthAddressesSecp256k1 for StealthMetaAddress;
+contract StealthAddressesK256Wrapper {
+    using ERC5564 for SecretKey;
+    using ERC5564 for StealthMetaAddress;
 
     //--------------------------------------------------------------------------
     // Sender

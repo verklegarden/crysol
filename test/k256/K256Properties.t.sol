@@ -6,9 +6,7 @@ import {console2 as console} from "forge-std/console2.sol";
 
 import {K256, SecretKey, PublicKey} from "src/k256/K256.sol";
 import {
-    K256Arithmetic,
-    Point,
-    ProjectivePoint
+    K256Arithmetic, Point, ProjectivePoint
 } from "src/k256/K256Arithmetic.sol";
 
 /**

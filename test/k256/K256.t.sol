@@ -6,9 +6,7 @@ import {console2 as console} from "forge-std/console2.sol";
 
 import {K256, SecretKey, PublicKey} from "src/k256/K256.sol";
 import {
-    K256Arithmetic,
-    Point,
-    ProjectivePoint
+    K256Arithmetic, Point, ProjectivePoint
 } from "src/k256/K256Arithmetic.sol";
 
 /**
@@ -38,9 +36,8 @@ contract K256Test is Test {
 
     function test_G() public {
         PublicKey memory got = wrapper.G();
-        PublicKey memory want = K256Arithmetic.pointFromEncoded(
-            GENERATOR_ENCODED
-        ).intoPublicKey();
+        PublicKey memory want =
+            K256Arithmetic.pointFromEncoded(GENERATOR_ENCODED).intoPublicKey();
 
         assertTrue(got.eq(want));
     }
@@ -82,8 +79,7 @@ contract K256Test is Test {
     // -- toPublicKey
 
     function testFuzz_SecretKey_toPublicKey(uint seed) public {
-        SecretKey sk =
-            K256.secretKeyFromUint(_bound(seed, 1, K256.Q - 1));
+        SecretKey sk = K256.secretKeyFromUint(_bound(seed, 1, K256.Q - 1));
 
         address got = wrapper.toPublicKey(sk).toAddress();
         address want = vm.addr(sk.asUint());
@@ -137,8 +133,7 @@ contract K256Test is Test {
     // -- toAddress
 
     function testFuzz_PublicKey_toAddress(uint seed) public {
-        SecretKey sk =
-            K256.secretKeyFromUint(_bound(seed, 1, K256.Q - 1));
+        SecretKey sk = K256.secretKeyFromUint(_bound(seed, 1, K256.Q - 1));
 
         address got = wrapper.toAddress(K256.toPublicKey(sk));
         address want = vm.addr(sk.asUint());
@@ -160,8 +155,7 @@ contract K256Test is Test {
     function testFuzz_PublicKey_isValid_If_CreatedViaValidSecretKey(uint seed)
         public
     {
-        SecretKey sk =
-            K256.secretKeyFromUint(_bound(seed, 1, K256.Q - 1));
+        SecretKey sk = K256.secretKeyFromUint(_bound(seed, 1, K256.Q - 1));
 
         // Every public key created via valid secret key is valid.
         assertTrue(wrapper.isValid(sk.toPublicKey()));

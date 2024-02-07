@@ -15,11 +15,7 @@ import {Vm} from "forge-std/Vm.sol";
 
 import {Random} from "../common/Random.sol";
 
-import {
-    K256Arithmetic,
-    Point,
-    ProjectivePoint
-} from "./K256Arithmetic.sol";
+import {K256Arithmetic, Point, ProjectivePoint} from "./K256Arithmetic.sol";
 
 /**
  * @notice SecretKey is an secp256k1 secret key

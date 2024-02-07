@@ -16,10 +16,9 @@ contract NonceTest is Test {
         wrapper = new NonceWrapper();
     }
 
-    function testFuzz_deriveNonce_IsDeterministic(
-        uint sk,
-        bytes memory message
-    ) public {
+    function testFuzz_deriveNonce_IsDeterministic(uint sk, bytes memory message)
+        public
+    {
         uint nonce1;
         uint nonce2;
 
@@ -50,11 +49,7 @@ contract NonceWrapper {
         return Nonce.deriveNonceFrom(sk, message);
     }
 
-    function deriveNonce(uint sk, bytes32 digest)
-        public
-        pure
-        returns (uint)
-    {
+    function deriveNonce(uint sk, bytes32 digest) public pure returns (uint) {
         return Nonce.deriveNonceFrom(sk, digest);
     }
 }

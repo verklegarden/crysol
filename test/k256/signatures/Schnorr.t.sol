@@ -4,18 +4,18 @@ pragma solidity ^0.8.16;
 import {Test} from "forge-std/Test.sol";
 import {console2 as console} from "forge-std/console2.sol";
 
-import {Schnorr, Signature} from "src/signatures/Schnorr.sol";
+import {Schnorr, Signature} from "src/k256/signatures/Schnorr.sol";
 
-import {Secp256k1, SecretKey, PublicKey} from "src/curves/Secp256k1.sol";
+import {K256, SecretKey, PublicKey} from "src/k256/K256.sol";
 
-import {Message} from "src/Message.sol";
+import {Message} from "src/common/Message.sol";
 
 /**
  * @notice Schnorr Unit Tests
  */
 contract SchnorrTest is Test {
-    using Secp256k1 for SecretKey;
-    using Secp256k1 for PublicKey;
+    using K256 for SecretKey;
+    using K256 for PublicKey;
 
     using Schnorr for SecretKey;
     using Schnorr for PublicKey;
@@ -71,11 +71,11 @@ contract SchnorrTest is Test {
 
         vm.expectRevert("PublicKeyInvalid()");
         wrapper.verify(
-            pk, message, Secp256k1.secretKeyFromUint(1).sign(message)
+            pk, message, K256.secretKeyFromUint(1).sign(message)
         );
         vm.expectRevert("PublicKeyInvalid()");
         wrapper.verify(
-            pk, keccak256(message), Secp256k1.secretKeyFromUint(1).sign(message)
+            pk, keccak256(message), K256.secretKeyFromUint(1).sign(message)
         );
     }
 
@@ -88,7 +88,7 @@ contract SchnorrTest is Test {
         vm.assume(sig.commitment != address(0));
 
         sig.signature =
-            bytes32(_bound(uint(sig.signature), Secp256k1.Q, type(uint).max));
+            bytes32(_bound(uint(sig.signature), K256.Q, type(uint).max));
 
         PublicKey memory pk = sk.toPublicKey();
 
@@ -187,7 +187,7 @@ contract SchnorrTest is Test {
 
     function testFuzz_Signature_isMalleable(Signature memory sig) public {
         sig.signature =
-            bytes32(_bound(uint(sig.signature), Secp256k1.Q, type(uint).max));
+            bytes32(_bound(uint(sig.signature), K256.Q, type(uint).max));
 
         assertTrue(wrapper.isMalleable(sig));
     }
@@ -195,7 +195,7 @@ contract SchnorrTest is Test {
     function testFuzz_Signature_isMalleable_FailsIf_SignatureNotMalleable(
         Signature memory sig
     ) public {
-        vm.assume(uint(sig.signature) < Secp256k1.Q);
+        vm.assume(uint(sig.signature) < K256.Q);
 
         assertFalse(wrapper.isMalleable(sig));
     }

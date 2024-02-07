@@ -32,7 +32,9 @@ interface IERC5564Registry {
     /// @param schemeId The scheme id based on [ERC-5564 Scheme Registry].
     /// @param stealthMetaAddress The registrant's stealth meta address.
     event StealthMetaAddressSet(
-        bytes indexed registrant, uint indexed schemeId, bytes stealthMetaAddress
+        bytes indexed registrant,
+        uint indexed schemeId,
+        bytes stealthMetaAddress
     );
 
     /// @notice Returns the stealth meta address of recipient `recipient` for

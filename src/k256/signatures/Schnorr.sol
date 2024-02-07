@@ -121,9 +121,8 @@ library Schnorr {
         // computation, i.e. the subtrahend is guaranteed to be less than Q.
         bytes32 ecrecover_msgHash;
         unchecked {
-            ecrecover_msgHash = bytes32(
-                K256.Q - mulmod(uint(sig.signature), pk.x, K256.Q)
-            );
+            ecrecover_msgHash =
+                bytes32(K256.Q - mulmod(uint(sig.signature), pk.x, K256.Q));
         }
 
         // Compute ecrecover_v = Pkₚ + 27
@@ -145,8 +144,7 @@ library Schnorr {
         // computation, i.e. the subtrahend is guaranteed to be less than Q.
         bytes32 ecrecover_s;
         unchecked {
-            ecrecover_s =
-                bytes32(K256.Q - mulmod(challenge, pk.x, K256.Q));
+            ecrecover_s = bytes32(K256.Q - mulmod(challenge, pk.x, K256.Q));
         }
 
         // Compute ([sig]G - [e]Pk)ₑ via ecrecover.
@@ -204,8 +202,7 @@ library Schnorr {
         assert(nonce != 0); // TODO: Revisit once nonce derived via RFC 6979.
 
         // Compute nonce's public key.
-        PublicKey memory noncePk =
-            K256.secretKeyFromUint(nonce).toPublicKey();
+        PublicKey memory noncePk = K256.secretKeyFromUint(nonce).toPublicKey();
 
         // Derive commitment from nonce's public key.
         address commitment = noncePk.toAddress();
@@ -223,11 +220,7 @@ library Schnorr {
 
         // Compute signature = k + (e * sk) (mod Q)
         bytes32 signature = bytes32(
-            addmod(
-                nonce,
-                mulmod(uint(challenge), sk.asUint(), K256.Q),
-                K256.Q
-            )
+            addmod(nonce, mulmod(uint(challenge), sk.asUint(), K256.Q), K256.Q)
         );
 
         return Signature(signature, commitment);

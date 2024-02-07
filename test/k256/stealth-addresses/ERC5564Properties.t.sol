@@ -4,29 +4,29 @@ pragma solidity ^0.8.16;
 import {Test} from "forge-std/Test.sol";
 import {console2 as console} from "forge-std/console2.sol";
 
-import {Secp256k1, SecretKey, PublicKey} from "src/curves/Secp256k1.sol";
+import {K256, SecretKey, PublicKey} from "src/k256/K256.sol";
 import {
-    Secp256k1Arithmetic,
+    K256Arithmetic,
     Point,
     ProjectivePoint
-} from "src/curves/Secp256k1Arithmetic.sol";
+} from "src/k256/K256Arithmetic.sol";
 
 import {
-    StealthAddressesSecp256k1,
+    ERC5564,
     StealthMetaAddress,
     StealthAddress
-} from "src/stealth-addresses/StealthAddressesSecp256k1.sol";
+} from "src/k256/stealth-addresses/ERC5564.sol";
 
-contract StealthAddressesSecp256k1PropertiesTest is Test {
-    using Secp256k1 for SecretKey;
-    using Secp256k1 for PublicKey;
-    using Secp256k1 for Point;
+contract StealthAddressesK256PropertiesTest is Test {
+    using K256 for SecretKey;
+    using K256 for PublicKey;
+    using K256 for Point;
 
-    using Secp256k1Arithmetic for Point;
-    using Secp256k1Arithmetic for ProjectivePoint;
+    using K256Arithmetic for Point;
+    using K256Arithmetic for ProjectivePoint;
 
-    using StealthAddressesSecp256k1 for SecretKey;
-    using StealthAddressesSecp256k1 for StealthMetaAddress;
+    using ERC5564 for SecretKey;
+    using ERC5564 for StealthMetaAddress;
 
     function testProperty_generateStealthAddress_GivenEphSk_IsDeterministic(
         SecretKey viewSk,
