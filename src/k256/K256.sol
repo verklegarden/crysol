@@ -208,6 +208,20 @@ library K256 {
         return digest;
     }
 
+    // TODO: docs PublicKey.toString()
+    function toString(PublicKey memory pk)
+        internal
+        view
+        vmed
+        returns (string memory)
+    {
+        string memory str = "K256::PublicKey({";
+        str = string.concat(str, " x: ", vm.toString(pk.x), ",");
+        str = string.concat(str, " y: ", vm.toString(pk.x));
+        str = string.concat(str, " })");
+        return str;
+    }
+
     /// @dev Returns whether public key `pk` is a valid secp256k1 public key.
     ///
     /// @dev Note that a public key is valid if its either on the curve or the

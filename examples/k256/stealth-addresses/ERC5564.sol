@@ -5,38 +5,47 @@ import {Script} from "forge-std/Script.sol";
 import {console2 as console} from "forge-std/console2.sol";
 import {StdStyle} from "forge-std/StdStyle.sol";
 
-import {Secp256k1, SecretKey, PublicKey} from "src/curves/Secp256k1.sol";
+import {K256, SecretKey, PublicKey} from "src/k256/K256.sol";
 import {
-    Secp256k1Arithmetic,
+    K256Arithmetic,
     Point,
     ProjectivePoint
-} from "src/curves/Secp256k1Arithmetic.sol";
+} from "src/k256/K256.sol";
 
 import {
-    StealthAddressesSecp256k1,
+    ERC5564,
     StealthMetaAddress,
     StealthAddress
-} from "src/stealth-addresses/StealthAddressesSecp256k1.sol";
+} from "src/k256/stealth-addresses/ERC5564.sol";
 
-contract StealthAddressesSecp256k1Example is Script {
-    using Secp256k1 for SecretKey;
-    using Secp256k1 for PublicKey;
+/**
+ * @title ERC5564Example
+ *
+ * @dev Run via:
+ *
+ *      ```bash
+ *      $ forge script examples/k256/stealth-addresses/ERC5564.sol:ERC5564Example -vvvv
+ *      ```
+ */
+contract ERC5564Example is Script {
+    using K256 for SecretKey;
+    using K256 for PublicKey;
 
-    using StealthAddressesSecp256k1 for SecretKey;
-    using StealthAddressesSecp256k1 for StealthMetaAddress;
+    using ERC5564 for SecretKey;
+    using ERC5564 for StealthMetaAddress;
 
     function run() public {
         // Alice creates a key pair funded with 1 ETH.
-        SecretKey aliceSk = Secp256k1.newSecretKey();
+        SecretKey aliceSk = K256.newSecretKey();
         PublicKey memory alicePk = aliceSk.toPublicKey();
         vm.deal(alicePk.toAddress(), 1 ether);
         logAlice("Created new address funded with 1 ETH");
 
         // Bob creates two key pairs for their stealth meta address,
         // the spend key pair and the view key pair.
-        SecretKey bobSpendSk = Secp256k1.newSecretKey();
+        SecretKey bobSpendSk = K256.newSecretKey();
         PublicKey memory bobSpendPk = bobSpendSk.toPublicKey();
-        SecretKey bobViewSk = Secp256k1.newSecretKey();
+        SecretKey bobViewSk = K256.newSecretKey();
         PublicKey memory bobViewPk = bobViewSk.toPublicKey();
         logBob("Created two key pairs for their stealth meta address");
 
@@ -60,7 +69,8 @@ contract StealthAddressesSecp256k1Example is Script {
         // publishes the stealth address via some know channel, eg an ERC-5564
         // Announcer contract.
         vm.prank(alicePk.toAddress());
-        stealth.addr.call{value: 1 ether}("");
+        (bool ok, ) = stealth.addr.call{value: 1 ether}("");
+        assert(ok);
         logAlice(
             "Send 1 ETH to stealth address and published the stealth address"
         );
