@@ -1,4 +1,4 @@
-// SPDX-License-Identifier: MIT
+// SPDX-License-Identifier: MIT OR Apache-2.0
 pragma solidity ^0.8.16;
 
 import {Point} from "src/secp256k1/Secp256k1Arithmetic.sol";

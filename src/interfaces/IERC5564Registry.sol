@@ -8,10 +8,8 @@
 
 */
 
-// SPDX-License-Identifier: MIT
+// SPDX-License-Identifier: MIT OR Apache-2.0
 pragma solidity ^0.8.16;
-
-/// @notice Registry to map an address or other identifier to its stealth meta-address.
 
 /**
  * @title IERC5564Registry

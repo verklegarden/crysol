@@ -8,7 +8,7 @@
 
 */
 
-// SPDX-License-Identifier: MIT
+// SPDX-License-Identifier: MIT OR Apache-2.0
 pragma solidity ^0.8.16;
 
 import {Vm} from "forge-std/Vm.sol";
@@ -119,8 +119,8 @@ library ERC5564 {
         return generateStealthAddress(stealthMeta, ephSk);
     }
 
-    /// @dev Returns a stealth address derived via ephemeral secret key `ephSk`
-    ///      from stealth meta address `stealthMeta`.
+    /// @dev Returns a stealth address derived from stealth meta address
+    ///      `stealthMeta` via ephemeral secret key `ephSk`.
     ///
     /// @dev Note that the ephemeral secret key MUST be kept private to not leak
     ///      the stealth address' owner!

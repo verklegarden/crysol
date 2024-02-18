@@ -8,7 +8,7 @@
 
 */
 
-// SPDX-License-Identifier: MIT
+// SPDX-License-Identifier: MIT OR Apache-2.0
 pragma solidity ^0.8.16;
 
 import {Vm} from "forge-std/Vm.sol";
