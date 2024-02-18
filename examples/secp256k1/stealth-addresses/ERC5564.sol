@@ -69,7 +69,7 @@ contract ERC5564Example is Script {
         // publishes the stealth address via some know channel, eg an ERC-5564
         // Announcer contract.
         vm.prank(alicePk.toAddress());
-        (bool ok, ) = stealth.addr.call{value: 1 ether}("");
+        (bool ok,) = stealth.addr.call{value: 1 ether}("");
         assert(ok);
         logAlice(
             "Send 1 ETH to stealth address and published the stealth address"

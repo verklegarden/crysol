@@ -6,7 +6,9 @@ import {console2 as console} from "forge-std/console2.sol";
 
 import {Secp256k1, SecretKey, PublicKey} from "src/secp256k1/Secp256k1.sol";
 import {
-    Secp256k1Arithmetic, Point, ProjectivePoint
+    Secp256k1Arithmetic,
+    Point,
+    ProjectivePoint
 } from "src/secp256k1/Secp256k1Arithmetic.sol";
 
 /**
