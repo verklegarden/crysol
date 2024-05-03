@@ -21,6 +21,13 @@ import {Secp256k1Arithmetic} from "src/secp256k1/Secp256k1Arithmetic.sol";
  *
  * @notice Library providing unsafe ECDSA functionality
  *
+ * @dev WARNING
+ *
+ *      This library MUST only be used for testing, experimenting and
+ *      researching.
+ *
+ *      Under no circumstances should unsafe/ code be used in production!
+ *
  * @author crysol (https://github.com/pmerkleplant/crysol)
  */
 library ECDSAUnsafe {

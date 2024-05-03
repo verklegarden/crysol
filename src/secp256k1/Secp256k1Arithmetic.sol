@@ -307,6 +307,8 @@ library Secp256k1Arithmetic {
         return result;
     }
 
+    // TODO: Provide verifyMul(point,scalar,want) using ecrecover?
+
     //--------------------------------------------------------------------------
     // Type Conversions
 
@@ -603,8 +605,8 @@ library Secp256k1Arithmetic {
         // The `modexp` precompile is at address 0x05.
         address target = address(5);
 
-        (bool ok, bytes memory result) = target.staticcall(payload);
-        assert(ok); // Precompile calls do not fail.
+        (/*bool ok*/, bytes memory result) = target.staticcall(payload);
+        // assert(ok); // Precompile calls do not fail.
 
         // Note that abi.decode() reverts if result is empty.
         // Result is empty iff the modexp computation failed due to insufficient

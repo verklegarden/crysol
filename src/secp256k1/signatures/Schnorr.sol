@@ -79,6 +79,8 @@ library Schnorr {
             revert("PublicKeyInvalid()");
         }
 
+        // TODO: What about digest of zero?
+
         if (sig.signature == 0 || sig.commitment == address(0)) {
             revert("SignatureTrivial()");
         }

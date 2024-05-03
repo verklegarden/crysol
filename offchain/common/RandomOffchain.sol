@@ -22,7 +22,7 @@ import {Vm} from "forge-std/Vm.sol";
  *
  * @author crysol (https://github.com/pmerkleplant/crysol)
  */
-library Random {
+library RandomOffchain {
     // ~~~~~~~ Prelude ~~~~~~~
     // forgefmt: disable-start
     Vm private constant vm = Vm(address(uint160(uint(keccak256("hevm cheat code")))));

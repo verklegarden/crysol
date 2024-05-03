@@ -56,12 +56,12 @@ library Secp256k1Offchain {
 
     /// @dev Returns a new cryptographically secure secret key.
     ///
-    /// @custom:vm Random::readUint()(uint)
+    /// @custom:vm RandomOffchain::readUint()(uint)
     function newSecretKey() internal vmed returns (SecretKey) {
         uint scalar;
         while (scalar == 0 || scalar >= Secp256k1Arithmetic.Q) {
             // Note to not introduce potential bias via bounding operation.
-            scalar = Random.readUint();
+            scalar = RandomOffchain.readUint();
         }
         return Secp256k1.secretKeyFromUint(scalar);
     }

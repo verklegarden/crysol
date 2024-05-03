@@ -5,21 +5,16 @@ import {Test} from "forge-std/Test.sol";
 import {console2 as console} from "forge-std/console2.sol";
 
 import {Secp256k1Offchain} from "offchain/secp256k1/Secp256k1Offchain.sol";
-
-import {ECDSAUnsafe} from "unsafe/secp256k1/signatures/ECDSAUnsafe.sol";
-
-import {ECDSA, Signature} from "src/secp256k1/signatures/ECDSA.sol";
-
 import {Secp256k1, SecretKey, PublicKey} from "src/secp256k1/Secp256k1.sol";
 
-import {Message} from "src/common/Message.sol";
+import {ECDSA, Signature} from "src/secp256k1/signatures/ECDSA.sol";
+import {ECDSAUnsafe} from "unsafe/secp256k1/signatures/ECDSAUnsafe.sol";
 
 /**
- * @notice Secp256k1 ECDSA Unit Tests
+ * @notice ECDSA Unit Tests
  */
 contract ECDSATest is Test {
     using Secp256k1Offchain for SecretKey;
-
     using Secp256k1 for SecretKey;
     using Secp256k1 for PublicKey;
 
@@ -27,7 +22,6 @@ contract ECDSATest is Test {
     using ECDSA for SecretKey;
     using ECDSA for PublicKey;
     using ECDSA for Signature;
-
     using ECDSAUnsafe for Signature;
 
     ECDSAWrapper wrapper;
@@ -147,80 +141,6 @@ contract ECDSATest is Test {
         wrapper.verify(signer, keccak256(message), sig);
     }
 
-    /*
-    // TODO: Move to offchain tests.
-    //--------------------------------------------------------------------------
-    // Test: Signature Creation
-
-    function testFuzz_sign(SecretKey sk, bytes memory message) public {
-        vm.assume(sk.isValid());
-
-        Signature memory sig1 = wrapper.sign(sk, message);
-        Signature memory sig2 = wrapper.sign(sk, keccak256(message));
-
-        assertEq(sig1.v, sig2.v);
-        assertEq(sig1.r, sig2.r);
-        assertEq(sig1.s, sig2.s);
-
-        PublicKey memory pk = sk.toPublicKey();
-        assertTrue(pk.verify(message, sig1));
-        assertTrue(pk.verify(message, sig2));
-    }
-
-    function testFuzz_sign_RevertsIf_SecretKeyInvalid(
-        SecretKey sk,
-        bytes memory message
-    ) public {
-        vm.assume(!sk.isValid());
-
-        vm.expectRevert("SecretKeyInvalid()");
-        wrapper.sign(sk, message);
-
-        vm.expectRevert("SecretKeyInvalid()");
-        wrapper.sign(sk, keccak256(message));
-    }
-
-    function testFuzz_signEthereumSignedMessageHash(
-        SecretKey sk,
-        bytes memory message
-    ) public {
-        vm.assume(sk.isValid());
-
-        Signature memory sig1 =
-            wrapper.signEthereumSignedMessageHash(sk, message);
-        Signature memory sig2 =
-            wrapper.signEthereumSignedMessageHash(sk, keccak256(message));
-
-        assertEq(sig1.v, sig2.v);
-        assertEq(sig1.r, sig2.r);
-        assertEq(sig1.s, sig2.s);
-
-        PublicKey memory pk = sk.toPublicKey();
-        assertTrue(
-            pk.verify(Message.deriveEthereumSignedMessageHash(message), sig1)
-        );
-        assertTrue(
-            pk.verify(
-                Message.deriveEthereumSignedMessageHash(keccak256(message)),
-                sig2
-            )
-        );
-    }
-
-    function testFuzz_signEthereumSignedMessageHash_RevertsIf_SecretKeyInvalid(
-        SecretKey sk,
-        bytes memory message
-    ) public {
-        vm.assume(!sk.isValid());
-
-        vm.expectRevert("SecretKeyInvalid()");
-        wrapper.signEthereumSignedMessageHash(sk, message);
-
-        vm.expectRevert("SecretKeyInvalid()");
-        wrapper.signEthereumSignedMessageHash(sk, keccak256(message));
-    }
-    */
-
     //--------------------------------------------------------------------------
     // Test: Utils
 
@@ -239,25 +159,6 @@ contract ECDSATest is Test {
 
         assertFalse(wrapper.isMalleable(sig));
     }
-
-    /*
-    // TODO: Move to offchain tests.
-    // -- Signature::toString
-
-    function test_Signature_toString() public {
-        Signature memory sig = Signature({
-            v: 27,
-            r: bytes32(type(uint).max),
-            s: bytes32(type(uint).max)
-        });
-
-        string memory got = wrapper.toString(sig);
-        string memory want =
-            "ECDSA::Signature({ v: 27, r: 0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff, s: 0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff })";
-
-        assertEq(got, want);
-    }
-    */
 
     //--------------------------------------------------------------------------
     // Test: (De)Serialization
@@ -414,61 +315,12 @@ contract ECDSAWrapper {
         return signer.verify(digest, sig);
     }
 
-    /*
-    // TODO: Move to offchaint tests.
-    //--------------------------------------------------------------------------
-    // Signature Creation
-
-    function sign(SecretKey sk, bytes memory message)
-        public
-        view
-        returns (Signature memory)
-    {
-        return sk.sign(message);
-    }
-
-    function sign(SecretKey sk, bytes32 digest)
-        public
-        view
-        returns (Signature memory)
-    {
-        return sk.sign(digest);
-    }
-
-    function signEthereumSignedMessageHash(SecretKey sk, bytes memory message)
-        public
-        view
-        returns (Signature memory)
-    {
-        return sk.signEthereumSignedMessageHash(message);
-    }
-
-    function signEthereumSignedMessageHash(SecretKey sk, bytes32 digest)
-        public
-        view
-        returns (Signature memory)
-    {
-        return sk.signEthereumSignedMessageHash(digest);
-    }
-   */
-
     //--------------------------------------------------------------------------
     // Utils
 
     function isMalleable(Signature memory sig) public pure returns (bool) {
         return sig.isMalleable();
     }
-
-    /*
-    // TODO: Move to offchain tests.
-    function toString(Signature memory sig)
-        public
-        view
-        returns (string memory)
-    {
-        return sig.toString();
-    }
-    */
 
     //--------------------------------------------------------------------------
     // (De)Serialization

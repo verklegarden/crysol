@@ -41,9 +41,9 @@ struct Signature {
  *      secret key. This weakness has lead to numerous bugs in not just smart
  *      contract systems.
  *
- *      Therefore, this library only creates and accepts signatures in one of
- *      the two possible representations. Signatures in the second representation
- *      are deemed invalid.
+ *      Therefore, crysol only creates and accepts signatures in one of the two
+ *      possible representations. Signatures in the second representation are
+ *      deemed invalid.
  *      For more info, see function `isMalleable(Signature)(bool)`.
  *
  *      This behaviour is sync with the broader Ethereum ecosystem as a general
@@ -75,6 +75,12 @@ library ECDSA {
     ///      Equals `(1 << 255) - 1`.
     bytes32 private constant _EIP2098_MASK =
         0x7FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF;
+
+    /// @dev Used during malleability check.
+    ///
+    ///      Note that ECDSA signatures are malleable with regards to their s
+    ///      value and deemed invalid if s > secp256k1's order / 2.
+    uint private constant _SECP256K1_HALF = Secp256k1.Q / 2;
 
     //--------------------------------------------------------------------------
     // Signature Verification
@@ -172,8 +178,7 @@ library ECDSA {
     ///
     /// @dev A signature is malleable if `sig.s > Secp256k1.Q / 2`.
     function isMalleable(Signature memory sig) internal pure returns (bool) {
-        return sig.s
-            > 0x7FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF5D576E7357A4501DDFE92F46681B20A0;
+        return uint(sig.s) > _SECP256K1_HALF;
     }
 
     //--------------------------------------------------------------------------

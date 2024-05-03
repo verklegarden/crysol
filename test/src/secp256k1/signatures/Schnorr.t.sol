@@ -121,75 +121,6 @@ contract SchnorrTest is Test {
         wrapper.verify(pk, keccak256(message), sig);
     }
 
-    /*
-    // TODO: Move to offchain tests.
-    //--------------------------------------------------------------------------
-    // Test: Signature Creation
-
-    function testFuzz_sign(SecretKey sk, bytes memory message) public {
-        vm.assume(sk.isValid());
-
-        Signature memory sig1 = wrapper.sign(sk, message);
-        Signature memory sig2 = wrapper.sign(sk, keccak256(message));
-
-        assertEq(sig1.signature, sig2.signature);
-        assertEq(sig1.commitment, sig2.commitment);
-
-        PublicKey memory pk = sk.toPublicKey();
-        assertTrue(pk.verify(message, sig1));
-        assertTrue(pk.verify(message, sig2));
-    }
-
-    function testFuzz_sign_RevertsIf_SecretKeyInvalid(
-        SecretKey sk,
-        bytes memory message
-    ) public {
-        vm.assume(!sk.isValid());
-
-        vm.expectRevert("SecretKeyInvalid()");
-        wrapper.sign(sk, message);
-
-        vm.expectRevert("SecretKeyInvalid()");
-        wrapper.sign(sk, keccak256(message));
-    }
-
-    function testFuzz_signEthereumSignedMessageHash(
-        SecretKey sk,
-        bytes memory message
-    ) public {
-        vm.assume(sk.isValid());
-
-        Signature memory sig1 =
-            wrapper.signEthereumSignedMessageHash(sk, message);
-        Signature memory sig2 =
-            wrapper.signEthereumSignedMessageHash(sk, keccak256(message));
-
-        assertEq(sig1.signature, sig2.signature);
-        assertEq(sig1.commitment, sig2.commitment);
-
-        PublicKey memory pk = sk.toPublicKey();
-        assertTrue(
-            pk.verify(Message.deriveEthereumSignedMessageHash(message), sig1)
-        );
-        assertTrue(
-            pk.verify(Message.deriveEthereumSignedMessageHash(message), sig2)
-        );
-    }
-
-    function testFuzz_signEthereumSignedMessageHash_RevertsIf_SecretKeyInvalid(
-        SecretKey sk,
-        bytes memory message
-    ) public {
-        vm.assume(!sk.isValid());
-
-        vm.expectRevert("SecretKeyInvalid()");
-        wrapper.signEthereumSignedMessageHash(sk, message);
-
-        vm.expectRevert("SecretKeyInvalid()");
-        wrapper.signEthereumSignedMessageHash(sk, keccak256(message));
-    }
-    */
-
     //--------------------------------------------------------------------------
     // Test: Utils
 
@@ -209,24 +140,6 @@ contract SchnorrTest is Test {
 
         assertFalse(wrapper.isMalleable(sig));
     }
-
-    /*
-    // TODO: Move to offchain tests.
-    // -- Signature::toString
-
-    function test_Signature_toString() public {
-        Signature memory sig = Signature({
-            signature: bytes32(type(uint).max),
-            commitment: address(0x0)
-        });
-
-        string memory got = wrapper.toString(sig);
-        string memory want =
-            "Schnorr::Signature({ signature: 0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff, commitment: 0x0000000000000000000000000000000000000000 })";
-
-        assertEq(got, want);
-    }
-    */
 }
 
 /**
@@ -258,55 +171,10 @@ contract SchnorrWrapper {
         return pk.verify(digest, sig);
     }
 
-    /*
-    // TODO: Move to offchain tests.
-    //--------------------------------------------------------------------------
-    // Signature Creation
-
-    function sign(SecretKey sk, bytes memory message)
-        public
-        returns (Signature memory)
-    {
-        return sk.sign(message);
-    }
-
-    function sign(SecretKey sk, bytes32 digest)
-        public
-        returns (Signature memory)
-    {
-        return sk.sign(digest);
-    }
-
-    function signEthereumSignedMessageHash(SecretKey sk, bytes memory message)
-        public
-        returns (Signature memory)
-    {
-        return sk.signEthereumSignedMessageHash(message);
-    }
-
-    function signEthereumSignedMessageHash(SecretKey sk, bytes32 digest)
-        public
-        returns (Signature memory)
-    {
-        return sk.signEthereumSignedMessageHash(digest);
-    }
-   */
-
     //--------------------------------------------------------------------------
     // Utils
 
     function isMalleable(Signature memory sig) public pure returns (bool) {
         return sig.isMalleable();
     }
-
-    /*
-    // TODO: Move to offchain tests.
-    function toString(Signature memory sig)
-        public
-        view
-        returns (string memory)
-    {
-        return sig.toString();
-    }
-    */
 }

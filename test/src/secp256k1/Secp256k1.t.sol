@@ -5,7 +5,6 @@ import {Test} from "forge-std/Test.sol";
 import {console2 as console} from "forge-std/console2.sol";
 
 import {Secp256k1Offchain} from "offchain/secp256k1/Secp256k1Offchain.sol";
-
 import {Secp256k1, SecretKey, PublicKey} from "src/secp256k1/Secp256k1.sol";
 import {
     Secp256k1Arithmetic,
@@ -18,11 +17,9 @@ import {
  */
 contract Secp256k1Test is Test {
     using Secp256k1Offchain for SecretKey;
-
     using Secp256k1 for SecretKey;
     using Secp256k1 for PublicKey;
     using Secp256k1 for Point;
-
     using Secp256k1Arithmetic for Point;
     using Secp256k1Arithmetic for ProjectivePoint;
 
@@ -52,20 +49,6 @@ contract Secp256k1Test is Test {
     //--------------------------------------------------------------------------
     // Test: Secret Key
 
-    /*
-    // TODO: Move to offchain tests.
-    // -- newSecretKey
-
-    function test_newSecretKey() public {
-        SecretKey sk = wrapper.newSecretKey();
-
-        assertTrue(sk.isValid());
-
-        // Verify vm can create wallet from secret key.
-        vm.createWallet(sk.asUint());
-    }
-    */
-
     // -- isValid
 
     function testFuzz_SecretKey_isValid(uint seed) public {
@@ -85,30 +68,6 @@ contract Secp256k1Test is Test {
 
         assertFalse(wrapper.isValid(SecretKey.wrap(scalar)));
     }
-
-    /*
-    // TODO: Move to offchain tests
-    // -- toPublicKey
-
-    function testFuzz_SecretKey_toPublicKey(uint seed) public {
-        SecretKey sk =
-            Secp256k1.secretKeyFromUint(_bound(seed, 1, Secp256k1.Q - 1));
-
-        address got = wrapper.toPublicKey(sk).toAddress();
-        address want = vm.addr(sk.asUint());
-
-        assertEq(got, want);
-    }
-
-    function testFuzz_SecretKey_toPublicKey_RevertsIf_SecretKeyInvalid(
-        uint seed
-    ) public {
-        SecretKey sk = SecretKey.wrap(_bound(seed, Secp256k1.Q, type(uint).max));
-
-        vm.expectRevert("SecretKeyInvalid()");
-        wrapper.toPublicKey(sk);
-    }
-   */
 
     // -- secretKeyFromUint
 
@@ -343,23 +302,9 @@ contract Secp256k1Wrapper {
     //--------------------------------------------------------------------------
     // Secret Key
 
-    /*
-    // TODO: Move to offchain tests.
-    function newSecretKey() public returns (SecretKey) {
-        return Secp256k1.newSecretKey();
-    }
-    */
-
     function isValid(SecretKey sk) public pure returns (bool) {
         return sk.isValid();
     }
-
-    /*
-    // TODO: Move to offchain tests.
-    function toPublicKey(SecretKey sk) public returns (PublicKey memory) {
-        return sk.toPublicKey();
-    }
-    */
 
     function secretKeyFromUint(uint scalar) public pure returns (SecretKey) {
         return Secp256k1.secretKeyFromUint(scalar);
