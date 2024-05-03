@@ -51,3 +51,4 @@ library Random {
         return uint(keccak256(result));
     }
 }
+

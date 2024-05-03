@@ -4,6 +4,9 @@ pragma solidity ^0.8.16;
 import {Test} from "forge-std/Test.sol";
 import {console2 as console} from "forge-std/console2.sol";
 
+import {Secp256k1Offchain} from "offchain/secp256k1/Secp256k1Offchain.sol";
+import {ECDSAOffchain} from "offchain/secp256k1/signatures/ECDSAOffchain.sol";
+
 import {ECDSA, Signature} from "src/secp256k1/signatures/ECDSA.sol";
 
 import {Secp256k1, SecretKey, PublicKey} from "src/secp256k1/Secp256k1.sol";
@@ -12,11 +15,15 @@ import {Secp256k1, SecretKey, PublicKey} from "src/secp256k1/Secp256k1.sol";
  * @notice Secp256k1 ECDSA Property Tests
  */
 contract ECDSAPropertiesTest is Test {
+    using Secp256k1Offchain for SecretKey;
+
+    using Secp256k1 for SecretKey;
+
+    using ECDSAOffchain for SecretKey;
+
     using ECDSA for SecretKey;
     using ECDSA for PublicKey;
     using ECDSA for Signature;
-
-    using Secp256k1 for SecretKey;
 
     //--------------------------------------------------------------------------
     // Properties: Signature

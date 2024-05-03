@@ -11,10 +11,10 @@
 // SPDX-License-Identifier: MIT OR Apache-2.0
 pragma solidity ^0.8.16;
 
-import {ECDSA, Signature} from "./ECDSA.sol";
+import {ECDSA, Signature} from "src/secp256k1/signatures/ECDSA.sol";
 
-import {Secp256k1} from "../Secp256k1.sol";
-import {Secp256k1Arithmetic} from "../Secp256k1Arithmetic.sol";
+import {Secp256k1} from "src/secp256k1/Secp256k1.sol";
+import {Secp256k1Arithmetic} from "src/secp256k1/Secp256k1Arithmetic.sol";
 
 /**
  * @title ECDSAUnsafe

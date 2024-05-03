@@ -4,6 +4,9 @@ pragma solidity ^0.8.16;
 import {Test} from "forge-std/Test.sol";
 import {console2 as console} from "forge-std/console2.sol";
 
+import {Secp256k1Offchain} from "offchain/secp256k1/Secp256k1Offchain.sol";
+import {SchnorrOffchain} from "offchain/secp256k1/signatures/SchnorrOffchain.sol";
+
 import {Schnorr, Signature} from "src/secp256k1/signatures/Schnorr.sol";
 
 import {Secp256k1, SecretKey, PublicKey} from "src/secp256k1/Secp256k1.sol";
@@ -14,8 +17,12 @@ import {Message} from "src/common/Message.sol";
  * @notice Schnorr Unit Tests
  */
 contract SchnorrTest is Test {
+    using Secp256k1Offchain for SecretKey;
+
     using Secp256k1 for SecretKey;
     using Secp256k1 for PublicKey;
+
+    using SchnorrOffchain for SecretKey;
 
     using Schnorr for SecretKey;
     using Schnorr for PublicKey;
@@ -114,6 +121,8 @@ contract SchnorrTest is Test {
         wrapper.verify(pk, keccak256(message), sig);
     }
 
+    /*
+    // TODO: Move to offchain tests.
     //--------------------------------------------------------------------------
     // Test: Signature Creation
 
@@ -179,6 +188,7 @@ contract SchnorrTest is Test {
         vm.expectRevert("SecretKeyInvalid()");
         wrapper.signEthereumSignedMessageHash(sk, keccak256(message));
     }
+    */
 
     //--------------------------------------------------------------------------
     // Test: Utils
@@ -200,6 +210,8 @@ contract SchnorrTest is Test {
         assertFalse(wrapper.isMalleable(sig));
     }
 
+    /*
+    // TODO: Move to offchain tests.
     // -- Signature::toString
 
     function test_Signature_toString() public {
@@ -214,6 +226,7 @@ contract SchnorrTest is Test {
 
         assertEq(got, want);
     }
+    */
 }
 
 /**
@@ -245,6 +258,8 @@ contract SchnorrWrapper {
         return pk.verify(digest, sig);
     }
 
+    /*
+    // TODO: Move to offchain tests.
     //--------------------------------------------------------------------------
     // Signature Creation
 
@@ -275,6 +290,7 @@ contract SchnorrWrapper {
     {
         return sk.signEthereumSignedMessageHash(digest);
     }
+   */
 
     //--------------------------------------------------------------------------
     // Utils
@@ -283,6 +299,8 @@ contract SchnorrWrapper {
         return sig.isMalleable();
     }
 
+    /*
+    // TODO: Move to offchain tests.
     function toString(Signature memory sig)
         public
         view
@@ -290,4 +308,5 @@ contract SchnorrWrapper {
     {
         return sig.toString();
     }
+    */
 }

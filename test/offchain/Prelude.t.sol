@@ -10,10 +10,8 @@ import {console2 as console} from "forge-std/console2.sol";
 contract PreludeTest is Test {
     // ~~~~~~~ Prelude ~~~~~~~
     // forgefmt: disable-start
-
     // Note that vm is already imported via `is Test`.
     //Vm private constant vm = Vm(address(uint160(uint(keccak256("hevm cheat code")))));
-
     modifier vmed() {
         if (block.chainid != 31337) revert("NotVMed()");
         _;

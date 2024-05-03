@@ -11,10 +11,6 @@
 // SPDX-License-Identifier: MIT OR Apache-2.0
 pragma solidity ^0.8.16;
 
-import {Vm} from "forge-std/Vm.sol";
-
-import {Random} from "../common/Random.sol";
-
 import {
     Secp256k1Arithmetic,
     Point,
@@ -90,16 +86,6 @@ library Secp256k1 {
 
     using Secp256k1Arithmetic for Point;
 
-    // ~~~~~~~ Prelude ~~~~~~~
-    // forgefmt: disable-start
-    Vm private constant vm = Vm(address(uint160(uint(keccak256("hevm cheat code")))));
-    modifier vmed() {
-        if (block.chainid != 31337) revert("requireVm");
-        _;
-    }
-    // forgefmt: disable-end
-    // ~~~~~~~~~~~~~~~~~~~~~~~
-
     //--------------------------------------------------------------------------
     // Private Constants
 
@@ -124,18 +110,6 @@ library Secp256k1 {
     //--------------------------------------------------------------------------
     // Secret Key
 
-    /// @dev Returns a new cryptographically secure secret key.
-    ///
-    /// @custom:vm Random::readUint()(uint)
-    function newSecretKey() internal vmed returns (SecretKey) {
-        uint scalar;
-        while (scalar == 0 || scalar >= Q) {
-            // Note to not introduce potential bias via bounding operation.
-            scalar = Random.readUint();
-        }
-        return secretKeyFromUint(scalar);
-    }
-
     /// @dev Returns whether secret key `sk` is valid.
     ///
     /// @dev Note that a secret key MUST be a field element in order to be valid,
@@ -144,26 +118,6 @@ library Secp256k1 {
         uint scalar = sk.asUint();
 
         return scalar != 0 && scalar < Q;
-    }
-
-    /// @dev Returns the public key of secret key `sk`.
-    ///
-    /// @dev Reverts if:
-    ///        Secret key invalid
-    ///
-    /// @custom:vm vm.createWallet(uint)
-    function toPublicKey(SecretKey sk)
-        internal
-        vmed
-        returns (PublicKey memory)
-    {
-        if (!sk.isValid()) {
-            revert("SecretKeyInvalid()");
-        }
-
-        // Use vm to compute pk = [sk]G.
-        Vm.Wallet memory wallet = vm.createWallet(sk.asUint());
-        return PublicKey(wallet.publicKeyX, wallet.publicKeyY);
     }
 
     /// @dev Returns uint `scalar` as secret key.
@@ -210,20 +164,6 @@ library Secp256k1 {
             digest := keccak256(pk, 0x40)
         }
         return digest;
-    }
-
-    // TODO: docs PublicKey.toString()
-    function toString(PublicKey memory pk)
-        internal
-        view
-        vmed
-        returns (string memory)
-    {
-        string memory str = "Secp256k1::PublicKey({";
-        str = string.concat(str, " x: ", vm.toString(pk.x), ",");
-        str = string.concat(str, " y: ", vm.toString(pk.x));
-        str = string.concat(str, " })");
-        return str;
     }
 
     /// @dev Returns whether public key `pk` is a valid secp256k1 public key.

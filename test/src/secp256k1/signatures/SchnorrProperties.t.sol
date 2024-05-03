@@ -4,6 +4,9 @@ pragma solidity ^0.8.16;
 import {Test} from "forge-std/Test.sol";
 import {console2 as console} from "forge-std/console2.sol";
 
+import {Secp256k1Offchain} from "offchain/secp256k1/Secp256k1Offchain.sol";
+import {SchnorrOffchain} from "offchain/secp256k1/signatures/SchnorrOffchain.sol";
+
 import {Schnorr, Signature} from "src/secp256k1/signatures/Schnorr.sol";
 
 import {Secp256k1, SecretKey, PublicKey} from "src/secp256k1/Secp256k1.sol";
@@ -12,7 +15,11 @@ import {Secp256k1, SecretKey, PublicKey} from "src/secp256k1/Secp256k1.sol";
  * @notice Schnorr Property Tests
  */
 contract SchnorrPropertiesTest is Test {
+    using Secp256k1Offchain for SecretKey;
+
     using Secp256k1 for SecretKey;
+
+    using SchnorrOffchain for SecretKey;
 
     using Schnorr for SecretKey;
     using Schnorr for PublicKey;
