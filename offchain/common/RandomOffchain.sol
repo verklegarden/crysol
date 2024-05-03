@@ -14,9 +14,9 @@ pragma solidity ^0.8.16;
 import {Vm} from "forge-std/Vm.sol";
 
 /**
- * @title Random
+ * @title RandomOffchain
  *
- * @notice Provides access to cryptographically secure randomness
+ * @notice Provides offchain access to cryptographically secure randomness
  *
  * @dev Randomness is sourced from cast's `wallet new` command.
  *

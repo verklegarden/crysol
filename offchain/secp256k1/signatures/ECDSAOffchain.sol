@@ -13,12 +13,11 @@ pragma solidity ^0.8.16;
 
 import {Vm} from "forge-std/Vm.sol";
 
+import {Message} from "src/common/Message.sol";
+
 import {
     Secp256k1Offchain
 } from "../Secp256k1Offchain.sol";
-
-import {Message} from "src/common/Message.sol";
-
 import {
     Secp256k1,
     SecretKey,
@@ -31,9 +30,9 @@ import {
 } from "src/secp256k1/signatures/ECDSA.sol";
 
 /**
- * @title ECDSA
+ * @title ECDSAOffchain
  *
- * @notice Provides ECDSA signature functionality
+ * @notice Provides offchain ECDSA signature functionality
  *
  * @author crysol (https://github.com/pmerkleplant/crysol)
  */
@@ -164,6 +163,5 @@ library ECDSAOffchain {
         str = string.concat(str, " })");
         return str;
     }
-
 }
 

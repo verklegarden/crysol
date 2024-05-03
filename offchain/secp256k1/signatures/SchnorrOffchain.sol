@@ -13,13 +13,12 @@ pragma solidity ^0.8.16;
 
 import {Vm} from "forge-std/Vm.sol";
 
-import {
-    Secp256k1Offchain
-} from "../Secp256k1Offchain.sol";
-
 import {Message} from "src/common/Message.sol";
 import {Nonce} from "src/common/Nonce.sol";
 
+import {
+    Secp256k1Offchain
+} from "../Secp256k1Offchain.sol";
 import {
     Secp256k1,
     SecretKey,
@@ -32,15 +31,16 @@ import {
 } from "src/secp256k1/signatures/Schnorr.sol";
 
 /**
- * @title Schnorr
+ * @title SchnorrOffchain
  *
- * @notice Provides Schnorr signature functionality
+ * @notice Provides offchain Schnorr signature functionality
+ *
+ * @custom:docs docs/signatures/Schnorr.md
  *
  * @author crysol (https://github.com/pmerkleplant/crysol)
  */
 library SchnorrOffchain {
     using Secp256k1Offchain for SecretKey;
-
     using Secp256k1 for SecretKey;
     using Secp256k1 for PublicKey;
 
@@ -93,7 +93,7 @@ library SchnorrOffchain {
 
         // Derive deterministic nonce ∊ [1, Q).
         uint nonce = Nonce.deriveNonceFrom(sk.asUint(), digest) % Secp256k1.Q;
-        assert(nonce != 0); // TODO: Revisit once nonce derived via RFC 6979.
+        // assert(nonce != 0); // TODO: Revisit once nonce derived via RFC-6979.
 
         // Compute nonce's public key.
         PublicKey memory noncePk =

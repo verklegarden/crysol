@@ -13,14 +13,13 @@ pragma solidity ^0.8.16;
 
 import {Vm} from "forge-std/Vm.sol";
 
-import {Random} from "../common/Random.sol";
+import {RandomOffchain} from "../common/RandomOffchain.sol";
 
 import {
     Secp256k1,
     SecretKey,
     PublicKey
 } from "src/secp256k1/Secp256k1.sol";
-
 import {
     Secp256k1Arithmetic,
     Point,
@@ -30,18 +29,16 @@ import {
 /**
  * @title Secp256k1Offchain
  *
- * @notice Providing common cryptography-related functionality for the secp256k1
+ * @notice Providing offchain cryptography-related functionality for the secp256k1
  *         elliptic curve
  *
  * @author crysol (https://github.com/pmerkleplant/crysol)
  */
 library Secp256k1Offchain {
     using Secp256k1Offchain for SecretKey;
-
     using Secp256k1 for SecretKey;
     using Secp256k1 for PublicKey;
     using Secp256k1 for Point;
-
     using Secp256k1Arithmetic for Point;
 
     // ~~~~~~~ Prelude ~~~~~~~

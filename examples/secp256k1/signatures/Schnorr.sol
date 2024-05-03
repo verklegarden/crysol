@@ -5,10 +5,9 @@ import {Script} from "forge-std/Script.sol";
 import {console2 as console} from "forge-std/console2.sol";
 
 import {Secp256k1Offchain} from "offchain/secp256k1/Secp256k1Offchain.sol";
-import {SchnorrOffchain} from "offchain/secp256k1/signatures/SchnorrOffchain.sol";
-
 import {Secp256k1, SecretKey, PublicKey} from "src/secp256k1/Secp256k1.sol";
 
+import {SchnorrOffchain} from "offchain/secp256k1/signatures/SchnorrOffchain.sol";
 import {Schnorr, Signature} from "src/secp256k1/signatures/Schnorr.sol";
 
 /**
@@ -23,14 +22,12 @@ import {Schnorr, Signature} from "src/secp256k1/signatures/Schnorr.sol";
 contract SchnorrExample is Script {
     using Secp256k1Offchain for SecretKey;
     using Secp256k1Offchain for PublicKey;
-
     using Secp256k1 for SecretKey;
     using Secp256k1 for PublicKey;
 
     using SchnorrOffchain for Signature;
     using SchnorrOffchain for SecretKey;
     using SchnorrOffchain for PublicKey;
-
     using Schnorr for SecretKey;
     using Schnorr for PublicKey;
     using Schnorr for Signature;

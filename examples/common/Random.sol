@@ -4,7 +4,7 @@ pragma solidity ^0.8.16;
 import {Script} from "forge-std/Script.sol";
 import {console2 as console} from "forge-std/console2.sol";
 
-import {Random} from "offchain/common/Random.sol";
+import {RandomOffchain} from "offchain/common/RandomOffchain.sol";
 
 /**
  * @title RandomExample
@@ -18,7 +18,7 @@ import {Random} from "offchain/common/Random.sol";
 contract RandomExample is Script {
     function run() public {
         // Create random uint.
-        uint rand = Random.readUint();
+        uint rand = RandomOffchain.readUint();
         console.log("Random uint: ", rand);
 
         // Bound to smaller type via discarding higher-order bits.

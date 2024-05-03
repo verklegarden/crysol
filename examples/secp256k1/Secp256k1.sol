@@ -5,7 +5,6 @@ import {Script} from "forge-std/Script.sol";
 import {console2 as console} from "forge-std/console2.sol";
 
 import {Secp256k1Offchain} from "offchain/secp256k1/Secp256k1Offchain.sol";
-
 import {Secp256k1, SecretKey, PublicKey} from "src/secp256k1/Secp256k1.sol";
 import {
     Secp256k1Arithmetic,
@@ -28,10 +27,8 @@ import {
 contract Secp256k1Example is Script {
     using Secp256k1Offchain for SecretKey;
     using Secp256k1Offchain for PublicKey;
-
     using Secp256k1 for SecretKey;
     using Secp256k1 for PublicKey;
-
     using Secp256k1Arithmetic for Point;
 
     function run() public {

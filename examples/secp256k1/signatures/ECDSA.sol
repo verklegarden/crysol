@@ -23,13 +23,11 @@ import {ECDSA, Signature} from "src/secp256k1/signatures/ECDSA.sol";
 contract ECDSAExample is Script {
     using Secp256k1Offchain for SecretKey;
     using Secp256k1Offchain for PublicKey;
-
     using Secp256k1 for SecretKey;
     using Secp256k1 for PublicKey;
 
     using ECDSAOffchain for SecretKey;
     using ECDSAOffchain for Signature;
-
     using ECDSA for address;
     using ECDSA for SecretKey;
     using ECDSA for PublicKey;
