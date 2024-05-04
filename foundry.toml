@@ -39,5 +39,6 @@ optimizer = true
 optimizer_runs = 100_000
 [profile.ci.fuzz]
 runs = 10_000
+max_test_rejects = 4_294_967_295
 [profile.ci.invariant]
 runs = 10_000

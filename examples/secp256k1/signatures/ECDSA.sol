@@ -51,7 +51,6 @@ contract ECDSAExample is Script {
         console.log("");
 
         // Verify signature via public key or address.
-        PublicKey memory pk = sk.toPublicKey();
         // assert(sk.toPublicKey().verify(message, sig));
         // assert(sk.toPublicKey().toAddress().verify(message, sig));
 
