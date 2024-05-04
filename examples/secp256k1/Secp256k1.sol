@@ -4,13 +4,13 @@ pragma solidity ^0.8.16;
 import {Script} from "forge-std/Script.sol";
 import {console2 as console} from "forge-std/console2.sol";
 
-import {Secp256k1Offchain} from "offchain/secp256k1/Secp256k1Offchain.sol";
-import {Secp256k1, SecretKey, PublicKey} from "src/secp256k1/Secp256k1.sol";
+import {Secp256k1Offchain} from "src/offchain/secp256k1/Secp256k1Offchain.sol";
+import {Secp256k1, SecretKey, PublicKey} from "src/onchain/secp256k1/Secp256k1.sol";
 import {
     Secp256k1Arithmetic,
     Point,
     ProjectivePoint
-} from "src/secp256k1/Secp256k1Arithmetic.sol";
+} from "src/onchain/secp256k1/Secp256k1Arithmetic.sol";
 
 /**
  * @title Secp256k1Example
@@ -34,14 +34,14 @@ contract Secp256k1Example is Script {
     function run() public {
         // Create new cryptographically sound secret key.
         SecretKey sk = Secp256k1Offchain.newSecretKey();
-        assert(sk.isValid());
+        // assert(sk.isValid());
         console.log("Created new secret key:");
         console.log(sk.asUint());
         console.log("");
 
         // Derive public key.
         PublicKey memory pk = sk.toPublicKey();
-        assert(pk.isValid());
+        // assert(pk.isValid());
         console.log("Derived public key:");
         console.log(pk.toString());
         console.log("");

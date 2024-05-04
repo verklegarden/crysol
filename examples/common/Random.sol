@@ -4,7 +4,7 @@ pragma solidity ^0.8.16;
 import {Script} from "forge-std/Script.sol";
 import {console2 as console} from "forge-std/console2.sol";
 
-import {RandomOffchain} from "offchain/common/RandomOffchain.sol";
+import {RandomOffchain} from "src/offchain/common/RandomOffchain.sol";
 
 /**
  * @title RandomExample
