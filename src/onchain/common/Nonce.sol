@@ -31,7 +31,6 @@ access to a source of high-quality randomness.
  * @custom:repository github.com/verklegarden/crysol
  */
 library Nonce {
-
     /// @dev Generates a deterministic nonce ∊ [1, `fieldModulus`) from secret
     ///      key `sk` and message digest `digest`.
     ///
@@ -123,17 +122,15 @@ library Nonce {
         assert(uint(digest) < fieldModulus);
 
         // Initialize v and k as specified.
-        bytes32 v =
-            bytes32(0x0101010101010101010101010101010101010101010101010101010101010101);
-        bytes32 k =
-            bytes32(0x0000000000000000000000000000000000000000000000000000000000000000);
+        bytes32 v = bytes32(
+            0x0101010101010101010101010101010101010101010101010101010101010101
+        );
+        bytes32 k = bytes32(
+            0x0000000000000000000000000000000000000000000000000000000000000000
+        );
 
         // Let k = H(v || 0x00 || sk || digest)
-        k = keccak256(
-                abi.encodePacked(
-                    v, bytes1(0x00), sk, digest
-                )
-        );
+        k = keccak256(abi.encodePacked(v, bytes1(0x00), sk, digest));
         // Let v = H(v) TODO: Can be precomputed?
         v = keccak256(abi.encodePacked(v));
         // Let k = H(v || 0x01 || sk || digest)
