@@ -20,6 +20,8 @@ contract RandomOffchainTest is Test {
         uint a = wrapper.readUint();
         uint b = wrapper.readUint();
 
+        // A: Are you sure these numbers are random?
+        // B: Thats the issue... you can never be sure.
         assertNotEq(a, b);
     }
 }

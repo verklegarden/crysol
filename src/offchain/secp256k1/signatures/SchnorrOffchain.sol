@@ -35,7 +35,8 @@ import {
  *
  * @custom:docs docs/signatures/Schnorr.md
  *
- * @author crysol (https://github.com/pmerkleplant/crysol)
+ * @author verklegarden
+ * @custom:repository github.com/verklegarden/crysol
  */
 library SchnorrOffchain {
     using Secp256k1Offchain for SecretKey;

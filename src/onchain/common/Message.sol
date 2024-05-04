@@ -29,7 +29,8 @@ pragma solidity ^0.8.16;
  * @custom:references
  *      - [eth_sign]: https://ethereum.org/en/developers/docs/apis/json-rpc/#eth_sign
  *
- * @author crysol (https://github.com/pmerkleplant/crysol)
+ * @author verklegarden
+ * @custom:repository github.com/verklegarden/crysol
  * @author Inspired by OpenZeppelin (https://github.com/OpenZeppelin/openzeppelin-contracts)
  */
 library Message {

@@ -1,4 +1,4 @@
-name: "Solidity Version Tests"
+name: "Solc Version Tests"
 
 on:
   workflow_dispatch:
@@ -6,17 +6,19 @@ on:
     - cron: "0 3 * * 0" # Run at 3:00am UTC every Sunday
 
 jobs:
-  solc-version-tests:
-    runs-on: "ubuntu-latest"
+  tests:
+    runs-on: ubuntu-latest
     steps:
-      - name: "Check out repo"
-        uses: "actions/checkout@v3"
+      - uses: actions/checkout@v3
         with:
-          submodules: "recursive"
+          submodules: recursive
 
-      - name: "Build and test with each supported Solidity version"
-        uses: "PaulRBerg/foundry-multibuild@v1"
+      - name: Install Foundry
+        uses: foundry-rs/foundry-toolchain@v1
         with:
-          min: "0.8.16"
-          max: "0.8.24"
-          skip-test: "false"
+          version: nightly
+
+      - name: Run forge tests against lowest and highest supported solc version
+        run: >
+          forge test --use 0.8.4 &&
+          forge test --use 0.8.25

@@ -31,7 +31,8 @@ import {Secp256k1Arithmetic} from
  *
  *      Under no circumstances should unsafe/ code be used in production!
  *
- * @author crysol (https://github.com/pmerkleplant/crysol)
+ * @author verklegarden
+ * @custom:repository github.com/verklegarden/crysol
  */
 library ECDSAUnsafe {
     using ECDSA for Signature;

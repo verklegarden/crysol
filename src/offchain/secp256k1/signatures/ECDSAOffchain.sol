@@ -31,7 +31,8 @@ import {
  *
  * @notice Provides offchain ECDSA signature functionality
  *
- * @author crysol (https://github.com/pmerkleplant/crysol)
+ * @author verklegarden
+ * @custom:repository github.com/verklegarden/crysol
  */
 library ECDSAOffchain {
     using Secp256k1 for SecretKey;

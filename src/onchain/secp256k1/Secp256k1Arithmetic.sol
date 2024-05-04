@@ -49,7 +49,8 @@ struct ProjectivePoint {
  *      - [Renes-Costello-Batina 2015]: https://eprint.iacr.org/2015/1060.pdf
  *      - [Dubois 2023]: https://eprint.iacr.org/2023/939.pdf
  *
- * @author crysol (https://github.com/pmerkleplant/crysol)
+ * @author verklegarden
+ * @custom:repository github.com/verklegarden/crysol
  * @author Inspired by Chronicle Protocol's Scribe (https://github.com/chronicleprotocol/scribe)
  */
 library Secp256k1Arithmetic {

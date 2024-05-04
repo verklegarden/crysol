@@ -55,7 +55,8 @@ struct Signature {
  *      - [EIP-2]: https://eips.ethereum.org/EIPS/eip-2
  *      - [EIP-2098]: https://eips.ethereum.org/EIPS/eip-2098
  *
- * @author crysol (https://github.com/pmerkleplant/crysol)
+ * @author verklegarden
+ * @custom:repository github.com/verklegarden/crysol
  */
 library ECDSA {
     using Secp256k1 for SecretKey;
