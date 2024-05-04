@@ -54,7 +54,7 @@ library Nonce {
         returns (uint)
     {
         if (fieldModulus == 0 || fieldModulus == 1) {
-            revert("InvalidFieldModulus()");
+            revert("FieldModulusInvalid()");
         }
 
         // Computes a nonce suitable for given field modulus without introducing
