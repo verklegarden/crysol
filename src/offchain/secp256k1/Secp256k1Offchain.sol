@@ -32,7 +32,8 @@ import {
  * @notice Providing offchain cryptography-related functionality for the secp256k1
  *         elliptic curve
  *
- * @author crysol (https://github.com/pmerkleplant/crysol)
+ * @author verklegarden
+ * @custom:repository github.com/verklegarden/crysol
  */
 library Secp256k1Offchain {
     using Secp256k1Offchain for SecretKey;
@@ -58,11 +59,12 @@ library Secp256k1Offchain {
     ///
     /// @custom:vm RandomOffchain::readUint()(uint)
     function newSecretKey() internal vmed returns (SecretKey) {
+        // Note to not introduce potential bias via bounding operation.
         uint scalar;
-        while (scalar == 0 || scalar >= Secp256k1Arithmetic.Q) {
-            // Note to not introduce potential bias via bounding operation.
+        do {
             scalar = RandomOffchain.readUint();
-        }
+        } while (scalar == 0 || scalar >= Secp256k1Arithmetic.Q);
+
         return Secp256k1.secretKeyFromUint(scalar);
     }
 

@@ -31,7 +31,8 @@ struct Signature {
  *
  * @custom:docs docs/signatures/Schnorr.md
  *
- * @author crysol (https://github.com/pmerkleplant/crysol)
+ * @author verklegarden
+ * @custom:repository github.com/verklegarden/crysol
  * @author Inspired by Chronicle Protocol's Scribe (https://github.com/chronicleprotocol/scribe)
  */
 library Schnorr {

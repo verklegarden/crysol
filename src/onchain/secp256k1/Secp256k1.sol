@@ -28,11 +28,13 @@ import {
  * @custom:example Securly generating a random secret key:
  *
  *      ```solidity
- *      import {Secp256k1, SecretKey} from "crysol/curves/Secp256k1.sol";
+ *      import {Secp256k1Offchain} from "crysol-offchain/secp256k1/Secp256k1Offchain.sol";
+ *      import {Secp256k1, SecretKey} from "crysol/secp256k1/Secp256k1.sol";
  *      contract Example {
+ *          using Secp256k1Offchain for SecretKey;
  *          using Secp256k1 for SecretKey;
  *
- *          SecretKey sk = Secp256k1.newSecretKey();
+ *          SecretKey sk = Secp256k1Offchain.newSecretKey();
  *          assert(sk.isValid());
  *      }
  *      ````
@@ -47,12 +49,14 @@ type SecretKey is uint;
  * @custom:example Deriving a public key from a secret key:
  *
  *      ```solidity
- *      import {Secp256k1, SecretKey, PublicKey} from "crysol/curves/Secp256k1.sol";
+ *      import {Secp256k1Offchain} from "crysol-offchain/secp256k1/Secp256k1Offchain.sol";
+ *      import {Secp256k1, SecretKey, PublicKey} from "crysol/secp256k1/Secp256k1.sol";
  *      contract Example {
+ *          using Secp256k1Offchain for SecretKey;
  *          using Secp256k1 for SecretKey;
  *          using Secp256k1 for PublicKey;
  *
- *          SecretKey sk = Secp256k1.newSecretKey();
+ *          SecretKey sk = Secp256k1Offchain.newSecretKey();
  *
  *          PublicKey memory pk = sk.toPublicKey();
  *          assert(pk.isValid());
@@ -76,7 +80,8 @@ struct PublicKey {
  *      - [SEC-2 v2]: https://www.secg.org/sec2-v2.pdf
  *      - [Yellow Paper]: https://github.com/ethereum/yellowpaper
  *
- * @author crysol (https://github.com/pmerkleplant/crysol)
+ * @author verklegarden
+ * @custom:repository github.com/verklegarden/crysol
  * @author Inspired by Chronicle Protocol's Scribe (https://github.com/chronicleprotocol/scribe)
  */
 library Secp256k1 {
