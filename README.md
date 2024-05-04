@@ -10,19 +10,11 @@
 
 `crysol` is a collection of **pure Solidity** libraries providing **elliptic curve cryptography** for **on- and offchain operations**.
 
-The project is splitted into multiple source directories:
-```ml
-.
-├─ src - "Cryptographic functionality for onchain, eg signature verification"
-├─ offchain - "Cryptographic functionality to perform offchain, eg key pair generation"
-└─ unsafe - "Access to purposely unsafe functionality, eg for testing"
-```
-
 ## Libraries
 
 ```ml
-.
-├─ src
+src
+├─ onchain
 │  ├─ common
 │  │  ├─ Message - "Functionality for constructing Ethereum Signed Message Hashes"
 │  │  └─ Nonce - "Deterministic nonce derivation"
@@ -60,7 +52,6 @@ Several examples are provided in [`examples/`](./examples), such as:
 - secure key pair and Ethereum address creation
 - secp256k1 point arithmetic
 - Schnorr and ECDSA signature creation and verification
-- private ETH transfer via stealth addresses
 
 ## Contributing
 
