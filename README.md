@@ -14,21 +14,28 @@
 
 ```ml
 src
-├─ common
-│   ├─ Random - "Access to cryptographically secure randomness"
-│   ├─ Message - "Functionality for constructing Ethereum Signed Message Hashes"
-│   └─ Nonce - "Deterministic nonce derivation"
-├─ secp256k1
-│   ├─ Secp256k1 - "Cryptography-related functionality for the secp256k1 elliptic curve"
-│   ├─ Secp256k1Arithmetic — "Arithmetic-related functionality for the secp256k1 elliptic curve"
-│   ├─ signatures
-│   │   ├─ ECDSA — "ECDSA signature functionality for secp256k1"
-│   │   └─ Schnorr — "Schnorr signature functionality for secp256k1"
-│   └─ stealth-addresses
-│       └─ ERC5564 - "ERC-5564 conforming stealth addresses for secp256k1"
-└─ interfaces
-    ├─ IERC5564Announcer - "ERC-5564 stealth address announcement interface"
-    └─ IERC5564Registry - "ERC-5564 stealth meta address registry interface"
+├─ onchain
+│  ├─ common
+│  │  ├─ Message - "Functionality for constructing Ethereum Signed Message Hashes"
+│  │  └─ Nonce - "Deterministic nonce derivation"
+│  └─ secp256k1
+│     ├─ Secp256k1 - "Cryptography-related functionality for the secp256k1 elliptic curve"
+│     ├─ Secp256k1Arithmetic — "Arithmetic-related functionality for the secp256k1 elliptic curve"
+│     └─ signatures
+│        ├─ ECDSA — "ECDSA signature functionality for secp256k1"
+│        └─ Schnorr — "Schnorr signature functionality for secp256k1"
+├─ offchain
+│  ├─ common
+│  │  └─ RandomOffchain - "Access to cryptographically secure randomness"
+│  └─ secp256k1
+│     ├─ Secp256k1Offchain - "Cryptography-related functionality for the secp256k1 elliptic curve"
+│     └─ signatures
+│        ├─ ECDSAOffchain — "ECDSA signature functionality for secp256k1"
+│        └─ SchnorrOffchain — "Schnorr signature functionality for secp256k1"
+└─ unsafe
+   └─ secp256k1
+      └─ signatures
+         └─ ECDSAUnsafe — "Unsafe ECDSA signature functionality for secp256k1"
 ```
 
 ## Installation
@@ -45,7 +52,6 @@ Several examples are provided in [`examples/`](./examples), such as:
 - secure key pair and Ethereum address creation
 - secp256k1 point arithmetic
 - Schnorr and ECDSA signature creation and verification
-- private ETH transfer via stealth addresses
 
 ## Contributing
 

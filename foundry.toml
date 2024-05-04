@@ -9,7 +9,6 @@ evm_version = "shanghai"
 solc_version = "0.8.24"
 via_ir = false
 optimizer = false
-optimizer_runs = 100_000
 extra_output_files = ["irOptimized"]
 
 [fmt]
@@ -19,12 +18,6 @@ number_underscore = "preserve"
 
 [doc]
 out = "docs_generated" # Note to not overwrite own docs
-
-# Profile to compile without --via-ir and optimizations
-# Run via `FOUNDRY_PROFILE=light forge ...`
-[profile.light]
-via_ir = false
-optimizer = false
 
 # Profile to compile with --via-ir and optimizations
 # Run via `FOUNDRY_PROFILE=release forge ...`
@@ -46,5 +39,6 @@ optimizer = true
 optimizer_runs = 100_000
 [profile.ci.fuzz]
 runs = 10_000
+max_test_rejects = 4_294_967_295
 [profile.ci.invariant]
 runs = 10_000

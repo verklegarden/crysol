@@ -34,7 +34,6 @@ Schnorr signatures provide a number of advantages compared to ECDSA signatures:
 - `Pk :: Secp256k1::PublicKey` - The signer's public key, ie `[sk]G`
 - `m :: bytes32` - The keccak256 hash digest to sign
 
-
 ## Signature Creation
 
 1. Derive a cryptographically secure nonce from `m` and `sk`.
