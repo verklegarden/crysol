@@ -5,9 +5,14 @@ import {Script} from "forge-std/Script.sol";
 import {console2 as console} from "forge-std/console2.sol";
 
 import {Secp256k1Offchain} from "src/offchain/secp256k1/Secp256k1Offchain.sol";
-import {Secp256k1, SecretKey, PublicKey} from "src/onchain/secp256k1/Secp256k1.sol";
+import {
+    Secp256k1,
+    SecretKey,
+    PublicKey
+} from "src/onchain/secp256k1/Secp256k1.sol";
 
-import {ECDSAOffchain} from "src/offchain/secp256k1/signatures/ECDSAOffchain.sol";
+import {ECDSAOffchain} from
+    "src/offchain/secp256k1/signatures/ECDSAOffchain.sol";
 import {ECDSA, Signature} from "src/onchain/secp256k1/signatures/ECDSA.sol";
 
 /**
