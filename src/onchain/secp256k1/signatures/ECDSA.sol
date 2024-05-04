@@ -170,7 +170,6 @@ library ECDSA {
         return signer == ecrecover(digest, sig.v, sig.r, sig.s);
     }
 
-
     //--------------------------------------------------------------------------
     // Utils
 

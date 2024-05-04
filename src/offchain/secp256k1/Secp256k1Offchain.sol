@@ -105,4 +105,3 @@ library Secp256k1Offchain {
         return str;
     }
 }
-

@@ -5,7 +5,11 @@ import {Test} from "forge-std/Test.sol";
 import {console2 as console} from "forge-std/console2.sol";
 
 import {Secp256k1Offchain} from "src/offchain/secp256k1/Secp256k1Offchain.sol";
-import {Secp256k1, SecretKey, PublicKey} from "src/onchain/secp256k1/Secp256k1.sol";
+import {
+    Secp256k1,
+    SecretKey,
+    PublicKey
+} from "src/onchain/secp256k1/Secp256k1.sol";
 import {
     Secp256k1Arithmetic,
     Point,
@@ -333,10 +337,10 @@ contract Secp256k1ArithmeticTest is Test {
                 Point({
                     x: uint(
                         0x1111111111111111111111111111111111111111111111111111111111111111
-                        ),
+                    ),
                     y: uint(
                         0x2222222222222222222222222222222222222222222222222222222222222222
-                        )
+                    )
                 })
             )
         );
@@ -385,10 +389,10 @@ contract Secp256k1ArithmeticTest is Test {
         point = Point({
             x: uint(
                 0x1111111111111111111111111111111111111111111111111111111111111111
-                ),
+            ),
             y: uint(
                 0x2222222222222222222222222222222222222222222222222222222222222222
-                )
+            )
         });
         blob = wrapper.toEncoded(point);
         assertEq(
@@ -471,7 +475,7 @@ contract Secp256k1ArithmeticTest is Test {
         Point memory point = Point({
             x: uint(
                 0x1111111111111111111111111111111111111111111111111111111111111111
-                ),
+            ),
             y: uint(2)
         });
         bytes memory blob = wrapper.toCompressedEncoded(point);
@@ -486,7 +490,7 @@ contract Secp256k1ArithmeticTest is Test {
         Point memory point = Point({
             x: uint(
                 0x1111111111111111111111111111111111111111111111111111111111111111
-                ),
+            ),
             y: uint(3)
         });
         bytes memory blob = wrapper.toCompressedEncoded(point);

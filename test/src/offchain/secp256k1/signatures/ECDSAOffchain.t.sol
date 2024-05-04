@@ -7,9 +7,14 @@ import {console2 as console} from "forge-std/console2.sol";
 import {Message} from "src/onchain/common/Message.sol";
 
 import {Secp256k1Offchain} from "src/offchain/secp256k1/Secp256k1Offchain.sol";
-import {Secp256k1, SecretKey, PublicKey} from "src/onchain/secp256k1/Secp256k1.sol";
+import {
+    Secp256k1,
+    SecretKey,
+    PublicKey
+} from "src/onchain/secp256k1/Secp256k1.sol";
 
-import {ECDSAOffchain} from "src/offchain/secp256k1/signatures/ECDSAOffchain.sol";
+import {ECDSAOffchain} from
+    "src/offchain/secp256k1/signatures/ECDSAOffchain.sol";
 import {ECDSA, Signature} from "src/onchain/secp256k1/signatures/ECDSA.sol";
 import {ECDSAUnsafe} from "src/unsafe/secp256k1/signatures/ECDSAUnsafe.sol";
 

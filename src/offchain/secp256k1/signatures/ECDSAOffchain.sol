@@ -15,9 +15,7 @@ import {Vm} from "forge-std/Vm.sol";
 
 import {Message} from "../../../onchain/common/Message.sol";
 
-import {
-    Secp256k1Offchain
-} from "../Secp256k1Offchain.sol";
+import {Secp256k1Offchain} from "../Secp256k1Offchain.sol";
 import {
     Secp256k1,
     SecretKey,
@@ -25,8 +23,7 @@ import {
 } from "../../../onchain/secp256k1/Secp256k1.sol";
 
 import {
-    ECDSA,
-    Signature
+    ECDSA, Signature
 } from "../../..//onchain/secp256k1/signatures/ECDSA.sol";
 
 /**
@@ -164,4 +161,3 @@ library ECDSAOffchain {
         return str;
     }
 }
-

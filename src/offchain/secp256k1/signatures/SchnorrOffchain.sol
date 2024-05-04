@@ -16,9 +16,7 @@ import {Vm} from "forge-std/Vm.sol";
 import {Message} from "../../../onchain/common/Message.sol";
 import {Nonce} from "../../../onchain/common/Nonce.sol";
 
-import {
-    Secp256k1Offchain
-} from "../Secp256k1Offchain.sol";
+import {Secp256k1Offchain} from "../Secp256k1Offchain.sol";
 import {
     Secp256k1,
     SecretKey,
@@ -184,4 +182,3 @@ library SchnorrOffchain {
         // forgefmt: disable-end
     }
 }
-

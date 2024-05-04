@@ -5,7 +5,11 @@ import {Test} from "forge-std/Test.sol";
 import {console2 as console} from "forge-std/console2.sol";
 
 import {Secp256k1Offchain} from "src/offchain/secp256k1/Secp256k1Offchain.sol";
-import {Secp256k1, SecretKey, PublicKey} from "src/onchain/secp256k1/Secp256k1.sol";
+import {
+    Secp256k1,
+    SecretKey,
+    PublicKey
+} from "src/onchain/secp256k1/Secp256k1.sol";
 
 /**
  * @notice Secp256k1Offchain Unit Tests

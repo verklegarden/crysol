@@ -16,4 +16,3 @@ contract RandomExampleTest is Test {
         example.run();
     }
 }
-

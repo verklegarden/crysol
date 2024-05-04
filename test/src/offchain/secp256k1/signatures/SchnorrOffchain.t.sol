@@ -7,10 +7,17 @@ import {console2 as console} from "forge-std/console2.sol";
 import {Message} from "src/onchain/common/Message.sol";
 
 import {Secp256k1Offchain} from "src/offchain/secp256k1/Secp256k1Offchain.sol";
-import {Secp256k1, SecretKey, PublicKey} from "src/onchain/secp256k1/Secp256k1.sol";
+import {
+    Secp256k1,
+    SecretKey,
+    PublicKey
+} from "src/onchain/secp256k1/Secp256k1.sol";
 
-import {SchnorrOffchain} from "src/offchain/secp256k1/signatures/SchnorrOffchain.sol";
-import {Schnorr, Signature} from "src/onchain/secp256k1/signatures/Schnorr.sol";
+import {SchnorrOffchain} from
+    "src/offchain/secp256k1/signatures/SchnorrOffchain.sol";
+import {
+    Schnorr, Signature
+} from "src/onchain/secp256k1/signatures/Schnorr.sol";
 
 /**
  * @notice SchnorrOffchain Unit Tests
@@ -164,4 +171,3 @@ contract SchnorrOffchainWrapper {
         return sig.toString();
     }
 }
-

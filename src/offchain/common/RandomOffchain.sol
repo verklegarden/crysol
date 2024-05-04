@@ -52,4 +52,3 @@ library RandomOffchain {
         return uint(keccak256(result));
     }
 }
-
