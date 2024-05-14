@@ -43,7 +43,7 @@ src
 Install with [Foundry](https://getfoundry.sh/):
 
 ```bash
-$ forge install pmerkleplant/crysol
+$ forge install verklegarden/crysol
 ```
 
 ## Examples
@@ -60,7 +60,7 @@ The project uses the Foundry toolchain. You can find installation instructions [
 Setup:
 
 ```bash
-$ git clone https://github.com/pmerkleplant/crysol
+$ git clone https://github.com/verklegarden/crysol
 $ cd crysol/
 $ forge install
 ```
@@ -86,8 +86,8 @@ This is **experimental software** and is provided on an "as is" and "as availabl
 We **do not give any warranties** and **will not be liable** for any loss incurred through any use of this codebase.
 
 <!--- Shields -->
-[tests-shield]: https://github.com/pmerkleplant/crysol/actions/workflows/unit-tests.yml/badge.svg
-[tests-shield-url]: https://github.com/pmerkleplant/crysol/actions/workflows/unit-tests.yml
+[tests-shield]: https://github.com/verklegarden/crysol/actions/workflows/unit-tests.yml/badge.svg
+[tests-shield-url]: https://github.com/verklegarden/crysol/actions/workflows/unit-tests.yml
 [license-shield]: https://img.shields.io/badge/license-Apache2.0/MIT-blue.svg
 [solidity-shield]: https://img.shields.io/badge/solidity-%3E=0.8.16%20%3C=0.8.24-aa6746
-[solidity-shield-url]: https://github.com/pmerkleplant/crysol/actions/workflows/solc-version-tests.yml
+[solidity-shield-url]: https://github.com/verklegarden/crysol/actions/workflows/solc-version-tests.yml
