@@ -59,13 +59,15 @@ contract Secp256k1Example is Script {
         */
 
         // Derive common constructs.
-        address addr = pk.toAddress();
+        address addr1 = sk.toAddress();
+        address addr2 = pk.toAddress();
+        assert(addr1 == addr2);
         /*
         bytes32 digest = pk.toHash();
         uint yParity = pk.yParity();
         */
         console.log("Derived address:");
-        console.log(addr);
+        console.log(addr1);
         console.log("");
 
         // Serialization.

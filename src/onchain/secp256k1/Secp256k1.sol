@@ -142,6 +142,20 @@ library Secp256k1 {
         return SecretKey.unwrap(sk);
     }
 
+    /// @dev Returns the address of secret key `sk`.
+    ///
+    /// @dev Reverts if:
+    ///        Secret key invalid
+    function toAddress(SecretKey sk) internal pure returns (address) {
+        if (!sk.isValid()) {
+            revert("SecretKeyInvalid()");
+        }
+
+        // Use fastMul to compute pk = [sk]G.
+        Point memory g = Secp256k1Arithmetic.G();
+        return g.fastMul(sk.asUint());
+    }
+
     //--------------------------------------------------------------------------
     // Public Key
 

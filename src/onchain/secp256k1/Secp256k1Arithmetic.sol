@@ -308,6 +308,31 @@ library Secp256k1Arithmetic {
         return result;
     }
 
+    /// @dev Returns the product of point `point` and scalar `scalar`
+    ///      as an Ethereum address.
+    ///
+    ///      See [SEC-1 v2] section 4.1.6 "Public Key Recovery Operation".
+    function fastMul(Point memory point, uint scalar)
+        internal
+        pure
+        returns (address)
+    {
+        if (scalar >= Q) {
+            revert("ScalarMustBeFelt()");
+        }
+
+        if (scalar == 0 || point.isIdentity()) {
+            // This is the same as `Secp256k1Arithmetic.Identity().intoPublicKey().toAddress()`.
+            return 0x2dCC482901728b6df477f4fB2F192733A005d396;
+        }
+
+        uint8 v = uint8(point.yParity()) + 27;
+        uint r = point.x;
+        uint s = mulmod(r, scalar, Q);
+
+        return ecrecover(0, v, bytes32(r), bytes32(s));
+    }
+
     // TODO: Provide verifyMul(point,scalar,want) using ecrecover?
 
     //--------------------------------------------------------------------------
