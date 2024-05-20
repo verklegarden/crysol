@@ -91,8 +91,11 @@ library SchnorrOffchain {
         PublicKey memory pk = sk.toPublicKey();
 
         // Derive deterministic nonce ∊ [1, Q).
-        uint nonce = Nonce.deriveNonceFrom(sk.asUint(), digest) % Secp256k1.Q;
-        // assert(nonce != 0); // TODO: Revisit once nonce derived via RFC-6979.
+        //
+        // Note that modulo bias is acceptable on secp256k1.
+        uint nonce =
+            Nonce.deriveFrom(sk.asUint(), pk.toBytes(), digest) % Secp256k1.Q;
+        // assert(nonce != 0);
 
         // Compute nonce's public key.
         PublicKey memory noncePk =
