@@ -70,7 +70,7 @@ contract Secp256k1ArithmeticTest is Test {
     // -- isIdentity
 
     function testFuzz_Point_isIdentity(Point memory point) public {
-        if (point.x == type(uint).max && point.y == type(uint).max) {
+        if (point.x == 0 && point.y == 0) {
             assertTrue(wrapper.isIdentity(point));
         } else {
             assertFalse(wrapper.isIdentity(point));
