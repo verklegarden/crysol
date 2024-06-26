@@ -26,6 +26,7 @@ contract Secp256k1ArithmeticTest is Test {
     using Secp256k1Offchain for SecretKey;
     using Secp256k1 for SecretKey;
     using Secp256k1 for PublicKey;
+    using Secp256k1 for Point;
     using Secp256k1Arithmetic for Point;
     using Secp256k1Arithmetic for ProjectivePoint;
 
@@ -235,7 +236,6 @@ contract Secp256k1ArithmeticTest is Test {
         vm.assume(sk.isValid());
 
         ProjectivePoint memory id = Secp256k1Arithmetic.ProjectiveIdentity();
-
         assertTrue(wrapper.mul(id, sk.asUint()).isIdentity());
     }
 
@@ -247,6 +247,47 @@ contract Secp256k1ArithmeticTest is Test {
 
         vm.expectRevert("ScalarMustBeFelt()");
         wrapper.mul(point, scalar);
+    }
+
+    // -- mulToAddress
+
+    function testFuzz_ProjectivePoint_mulToAddress(
+        SecretKey sk,
+        uint scalarSeed
+    ) public {
+        vm.assume(sk.isValid());
+
+        Point memory point = sk.toPublicKey().intoPoint();
+        uint scalar = _bound(scalarSeed, 1, Secp256k1Arithmetic.Q - 1);
+
+        address got = wrapper.mulToAddress(point, scalar);
+        // forgefmt: disable-next-item
+        address want = point.toProjectivePoint()
+                            .mul(scalar)
+                            .intoPoint()
+                            .intoPublicKey()
+                            .toAddress();
+
+        assertEq(got, want);
+    }
+
+    function testFuzz_ProjectivePoint_mulToAddress_ReturnsIdentityIfScalarIsZero(
+        Point memory point
+    ) public {
+        assertEq(
+            wrapper.mulToAddress(point, 0),
+            Secp256k1Arithmetic.Identity().intoPublicKey().toAddress()
+        );
+    }
+
+    function testFuzz_ProjectivePoint_mulToAddress_RevertsIf_ScalarNotFelt(
+        Point memory point,
+        uint scalar
+    ) public {
+        vm.assume(scalar >= Secp256k1Arithmetic.Q);
+
+        vm.expectRevert("ScalarMustBeFelt()");
+        wrapper.mulToAddress(point, scalar);
     }
 
     //--------------------------------------------------------------------------
@@ -585,6 +626,14 @@ contract Secp256k1ArithmeticWrapper {
         returns (ProjectivePoint memory)
     {
         return point.mul(scalar);
+    }
+
+    function mulToAddress(Point memory point, uint scalar)
+        public
+        pure
+        returns (address)
+    {
+        return point.mulToAddress(scalar);
     }
 
     //--------------------------------------------------------------------------

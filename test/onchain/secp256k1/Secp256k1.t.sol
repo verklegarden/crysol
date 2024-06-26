@@ -100,8 +100,33 @@ contract Secp256k1Test is Test {
 
     // -- asUint
 
-    function testFuzz_SecertKey_asUint(uint seed) public {
+    function testFuzz_SecretKey_asUint(uint seed) public {
         assertEq(seed, wrapper.asUint(SecretKey.wrap(seed)));
+    }
+
+    function testFuzz_SecretKey_toAddress(SecretKey sk) public {
+        vm.assume(sk.isValid());
+
+        address got = wrapper.toAddress(sk);
+        address want = vm.addr(sk.asUint());
+
+        assertEq(got, want);
+    }
+
+    function test_SecretKey_toAddress_RevertsIf_SecretKeyInvalid_SecretKeyZero()
+        public
+    {
+        vm.expectRevert("SecretKeyInvalid()");
+        wrapper.toAddress(SecretKey.wrap(0));
+    }
+
+    function testFuzz_SecretKey_toAddress_RevertsIf_SecretKeyInvalid_SecretKeyGreaterOrEqualToQ(
+        uint seed
+    ) public {
+        uint scalar = _bound(seed, Secp256k1.Q, type(uint).max);
+
+        vm.expectRevert("SecretKeyInvalid()");
+        wrapper.toAddress(SecretKey.wrap(scalar));
     }
 
     //--------------------------------------------------------------------------
@@ -316,6 +341,10 @@ contract Secp256k1Wrapper {
 
     function asUint(SecretKey sk) public pure returns (uint) {
         return sk.asUint();
+    }
+
+    function toAddress(SecretKey sk) public pure returns (address) {
+        return sk.toAddress();
     }
 
     //--------------------------------------------------------------------------

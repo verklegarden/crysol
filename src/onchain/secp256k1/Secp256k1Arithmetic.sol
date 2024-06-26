@@ -48,6 +48,7 @@ struct ProjectivePoint {
  *      - [Yellow Paper]: https://github.com/ethereum/yellowpaper
  *      - [Renes-Costello-Batina 2015]: https://eprint.iacr.org/2015/1060.pdf
  *      - [Dubois 2023]: https://eprint.iacr.org/2023/939.pdf
+ *      - [Vitalik 2018]: https://ethresear.ch/t/you-can-kinda-abuse-ecrecover-to-do-ecmul-in-secp256k1-today/2384
  *
  * @author verklegarden
  * @custom:repository github.com/verklegarden/crysol
@@ -71,6 +72,10 @@ library Secp256k1Arithmetic {
     /// @dev Note that the square root of an secp256k1 field element x can be
     ///      computed via x^{SQUARE_ROOT_EXPONENT} (mod p).
     uint private constant SQUARE_ROOT_EXPONENT = (P + 1) / 4;
+
+    /// @dev Used as substitute for `Identity().intoPublicKey().toAddress()`.
+    address private constant IDENTITY_ADDRESS =
+        0x2dCC482901728b6df477f4fB2F192733A005d396;
 
     //--------------------------------------------------------------------------
     // Secp256k1 Constants
@@ -319,7 +324,43 @@ library Secp256k1Arithmetic {
         return result;
     }
 
-    // TODO: Provide verifyMul(point,scalar,want) using ecrecover?
+    /// @dev Returns the product of point `point` and scalar `scalar` as
+    ///      address.
+    ///
+    /// @dev Note that this function is substantially cheaper than
+    ///      `mul(ProjectivePoint,uint)(ProjectivePoint)` with the caveat that
+    ///      only the point's address is returned instead of the point itself.
+    function mulToAddress(Point memory point, uint scalar)
+        internal
+        pure
+        returns (address)
+    {
+        if (scalar >= Q) {
+            revert("ScalarMustBeFelt()");
+        }
+
+        if (scalar == 0 || point.isIdentity()) {
+            return IDENTITY_ADDRESS;
+        }
+
+        // Note that ecrecover can be abused to perform an elliptic curve
+        // multiplication with the caveat that the point's address is returned
+        // instead of the point itself.
+        //
+        // For further details, see [Vitalik 2018] and [SEC-1 v2] section 4.1.6
+        // "Public Key Recovery Operation".
+
+        uint8 v;
+        // Unchecked because point.yParity() ∊ {0, 1} which cannot overflow by
+        // adding 27.
+        unchecked {
+            v = uint8(point.yParity() + 27);
+        }
+        uint r = point.x;
+        uint s = mulmod(r, scalar, Q);
+
+        return ecrecover(0, v, bytes32(r), bytes32(s));
+    }
 
     //--------------------------------------------------------------------------
     // Type Conversions
@@ -375,7 +416,7 @@ library Secp256k1Arithmetic {
 
         // Return as Point(point.x, point.y).
         // Note that from this moment, point.z is dirty memory!
-        // TODO: Zero dirty memory.
+        // TODO: Clean dirty memory.
         assembly ("memory-safe") {
             p := point
         }

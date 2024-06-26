@@ -142,6 +142,21 @@ library Secp256k1 {
         return SecretKey.unwrap(sk);
     }
 
+    /// @dev Returns the address of secret key `sk`.
+    ///
+    /// @dev Note that this function is substantially cheaper than computing
+    ///      `sk`'s public key and deriving it's address manually.
+    ///
+    /// @dev Reverts if:
+    ///        Secret key invalid
+    function toAddress(SecretKey sk) internal pure returns (address) {
+        if (!sk.isValid()) {
+            revert("SecretKeyInvalid()");
+        }
+
+        return Secp256k1Arithmetic.G().mulToAddress(sk.asUint());
+    }
+
     //--------------------------------------------------------------------------
     // Public Key
 
