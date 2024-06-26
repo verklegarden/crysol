@@ -200,8 +200,7 @@ contract Secp256k1ArithmeticTest is Test {
     // -- mul
 
     function testVectors_ProjectivePoint_mul() public {
-        Point memory gPoint = Secp256k1Arithmetic.G();
-        ProjectivePoint memory g = gPoint.toProjectivePoint();
+        ProjectivePoint memory g = Secp256k1Arithmetic.G().toProjectivePoint();
 
         uint[] memory scalars;
         Point[] memory products;
@@ -209,28 +208,20 @@ contract Secp256k1ArithmeticTest is Test {
 
         for (uint i; i < scalars.length; i++) {
             Point memory p = wrapper.mul(g, scalars[i]).intoPoint();
-            address addr = wrapper.fastMul(gPoint, scalars[i]);
 
             assertTrue(p.eq(products[i]));
-            assertEq(addr, p.intoPublicKey().toAddress());
         }
     }
 
     function testFuzz_ProjectivePoint_mul(SecretKey sk) public {
         vm.assume(sk.isValid());
 
-        Point memory gPoint = Secp256k1Arithmetic.G();
-        ProjectivePoint memory g = gPoint.toProjectivePoint();
+        ProjectivePoint memory g = Secp256k1Arithmetic.G().toProjectivePoint();
 
-        Point memory gotPoint = wrapper.mul(g, sk.asUint()).intoPoint();
-        address gotAddr = wrapper.fastMul(gPoint, sk.asUint());
+        Point memory got = wrapper.mul(g, sk.asUint()).intoPoint();
+        Point memory want = sk.toPublicKey().intoPoint();
 
-        PublicKey memory pk = sk.toPublicKey();
-        Point memory wantPoint = pk.intoPoint();
-        address wantAddr = pk.toAddress();
-
-        assertTrue(wantPoint.eq(gotPoint));
-        assertEq(gotAddr, wantAddr);
+        assertTrue(want.eq(got));
     }
 
     function testFuzz_ProjectivePoint_mul_ReturnsIdentityIfScalarIsZero(
@@ -239,29 +230,13 @@ contract Secp256k1ArithmeticTest is Test {
         assertTrue(wrapper.mul(point, 0).isIdentity());
     }
 
-    function testFuzz_ProjectivePoint_fastMul_ReturnsIdentityIfScalarIsZero(
-        Point memory point
-    ) public {
-        assertEq(
-            wrapper.fastMul(point, 0),
-            Secp256k1Arithmetic.Identity().intoPublicKey().toAddress()
-        );
-    }
-
     function testFuzz_ProjectivePoint_mul_ReturnsIdentityIfPointIsIdentity(
         SecretKey sk
     ) public {
         vm.assume(sk.isValid());
 
-        ProjectivePoint memory identity1 =
-            Secp256k1Arithmetic.ProjectiveIdentity();
-        assertTrue(wrapper.mul(identity1, sk.asUint()).isIdentity());
-
-        Point memory identity2 = Secp256k1Arithmetic.Identity();
-        assertEq(
-            wrapper.fastMul(identity2, sk.asUint()),
-            identity2.intoPublicKey().toAddress()
-        );
+        ProjectivePoint memory id = Secp256k1Arithmetic.ProjectiveIdentity();
+        assertTrue(wrapper.mul(id, sk.asUint()).isIdentity());
     }
 
     function testFuzz_ProjectivePoint_mul_RevertsIf_ScalarNotFelt(
@@ -274,14 +249,45 @@ contract Secp256k1ArithmeticTest is Test {
         wrapper.mul(point, scalar);
     }
 
-    function testFuzz_ProjectivePoint_fastMul_RevertsIf_ScalarNotFelt(
+    // -- mulToAddress
+
+    function testFuzz_ProjectivePoint_mulToAddress(
+        SecretKey sk,
+        uint scalarSeed
+    ) public {
+        vm.assume(sk.isValid());
+
+        Point memory point = sk.toPublicKey().intoPoint();
+        uint scalar = _bound(scalarSeed, 1, Secp256k1Arithmetic.Q - 1);
+
+        address got = wrapper.mulToAddress(point, scalar);
+        // forgefmt: disable-next-item
+        address want = point.toProjectivePoint()
+                            .mul(scalar)
+                            .intoPoint()
+                            .intoPublicKey()
+                            .toAddress();
+
+        assertEq(got, want);
+    }
+
+    function testFuzz_ProjectivePoint_mulToAddress_ReturnsIdentityIfScalarIsZero(
+        Point memory point
+    ) public {
+        assertEq(
+            wrapper.mulToAddress(point, 0),
+            Secp256k1Arithmetic.Identity().intoPublicKey().toAddress()
+        );
+    }
+
+    function testFuzz_ProjectivePoint_mulToAddress_RevertsIf_ScalarNotFelt(
         Point memory point,
         uint scalar
     ) public {
         vm.assume(scalar >= Secp256k1Arithmetic.Q);
 
         vm.expectRevert("ScalarMustBeFelt()");
-        wrapper.fastMul(point, scalar);
+        wrapper.mulToAddress(point, scalar);
     }
 
     //--------------------------------------------------------------------------
@@ -622,12 +628,12 @@ contract Secp256k1ArithmeticWrapper {
         return point.mul(scalar);
     }
 
-    function fastMul(Point memory point, uint scalar)
+    function mulToAddress(Point memory point, uint scalar)
         public
         pure
         returns (address)
     {
-        return point.fastMul(scalar);
+        return point.mulToAddress(scalar);
     }
 
     //--------------------------------------------------------------------------
