@@ -4,33 +4,52 @@ pragma solidity ^0.8.16;
 import {Test} from "forge-std/Test.sol";
 import {console2 as console} from "forge-std/console2.sol";
 
+import {
+    Secp256k1,
+    SecretKey,
+    PublicKey
+} from "src/onchain/secp256k1/Secp256k1.sol";
+import {Secp256k1Offchain} from "src/offchain/secp256k1/Secp256k1Offchain.sol";
+
 import {Nonce} from "src/onchain/common/Nonce.sol";
 
 /**
  * @notice Nonce Unit Tests
  */
 contract NonceTest is Test {
+    using Secp256k1 for SecretKey;
+    using Secp256k1Offchain for SecretKey;
+    using Secp256k1 for PublicKey;
+
     NonceWrapper wrapper;
 
     function setUp() public {
         wrapper = new NonceWrapper();
     }
 
-    function testFuzz_deriveNonce_IsDeterministic(uint sk, bytes memory message)
+    function testFuzz_deriveFrom_IsDeterministic(SecretKey sk, bytes32 digest)
         public
     {
-        uint nonce1;
-        uint nonce2;
+        vm.assume(sk.isValid());
 
-        // Using deriveNonceFrom message.
-        nonce1 = wrapper.deriveNonce(sk, message);
-        nonce2 = wrapper.deriveNonce(sk, message);
+        bytes memory pk = sk.toPublicKey().toBytes();
+
+        uint nonce1 = wrapper.deriveFrom(sk.asUint(), pk, digest);
+        uint nonce2 = wrapper.deriveFrom(sk.asUint(), pk, digest);
         assertEq(nonce1, nonce2);
+    }
 
-        // Using deriveNonceFrom digest.
-        bytes32 digest = keccak256(message);
-        nonce1 = wrapper.deriveNonce(sk, digest);
-        nonce2 = wrapper.deriveNonce(sk, digest);
+    function testFuzz_deriveFrom_WithSalt_IsDeterministic(
+        SecretKey sk,
+        bytes32 digest,
+        bytes32 salt
+    ) public {
+        vm.assume(sk.isValid());
+
+        bytes memory pk = sk.toPublicKey().toBytes();
+
+        uint nonce1 = wrapper.deriveFrom(sk.asUint(), pk, digest, salt);
+        uint nonce2 = wrapper.deriveFrom(sk.asUint(), pk, digest, salt);
         assertEq(nonce1, nonce2);
     }
 }
@@ -41,15 +60,19 @@ contract NonceTest is Test {
  * @dev For more info, see https://github.com/foundry-rs/foundry/pull/3128#issuecomment-1241245086.
  */
 contract NonceWrapper {
-    function deriveNonce(uint sk, bytes memory message)
+    function deriveFrom(uint sk, bytes memory pk, bytes32 digest)
         public
         pure
         returns (uint)
     {
-        return Nonce.deriveNonceFrom(sk, message);
+        return Nonce.deriveFrom(sk, pk, digest);
     }
 
-    function deriveNonce(uint sk, bytes32 digest) public pure returns (uint) {
-        return Nonce.deriveNonceFrom(sk, digest);
+    function deriveFrom(uint sk, bytes memory pk, bytes32 digest, bytes32 salt)
+        public
+        pure
+        returns (uint)
+    {
+        return Nonce.deriveFrom(sk, pk, digest, salt);
     }
 }
