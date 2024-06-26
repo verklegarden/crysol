@@ -15,7 +15,7 @@ pragma solidity ^0.8.16;
  * @notice Point is a secp256k1 point in affine coordinates
  *
  * @dev The identity, aka point at infinity, is represented via:
- *          x = y = type(uint).max
+ *          x = y = 0
  */
 struct Point {
     uint x;
@@ -75,7 +75,7 @@ library Secp256k1Arithmetic {
 
     /// @dev Used as substitute for `Identity().intoPublicKey().toAddress()`.
     address private constant IDENTITY_ADDRESS =
-        0x2dCC482901728b6df477f4fB2F192733A005d396;
+        0x3f17f1962B36e491b30A40b2405849e597Ba5FB5;
 
     //--------------------------------------------------------------------------
     // Secp256k1 Constants
@@ -111,28 +111,18 @@ library Secp256k1Arithmetic {
     //--------------------------------------------------------------------------
     // Point
 
-    /// @dev Returns the zero point.
-    ///
-    /// @dev Note that the zero point is invalid and this function only provided
-    ///      for convenience.
-    function ZeroPoint() internal pure returns (Point memory) {
-        return Point(0, 0);
-    }
-
-    /// @dev Returns whether point `point` is the zero point.
-    function isZeroPoint(Point memory point) internal pure returns (bool) {
-        return (point.x | point.y) == 0;
-    }
-
-    // TODO: Use (0, 0) as infinity? Follows general convention...
     /// @dev Returns the additive identity.
     ///
     /// @dev Note that the identity is represented via:
-    ///         point.x = point.y = type(uint).max
+    ///         point.x = point.y = 0
+    ///
+    /// @dev Note that the identity is a valid point on the curve to enable
+    ///      arithmetic functionality. However, the identity is not a valid
+    ///      PublicKey and MUST NOT be used as cryptographic object.
     ///
     /// @dev Note that the identity is also called point at infinity.
     function Identity() internal pure returns (Point memory) {
-        return Point(type(uint).max, type(uint).max);
+        return Point(0, 0);
     }
 
     /// @dev Returns whether point `point` is the identity.
@@ -142,7 +132,7 @@ library Secp256k1Arithmetic {
     ///
     /// @dev Note that the identity is also called point at infinity.
     function isIdentity(Point memory point) internal pure returns (bool) {
-        return (point.x & point.y) == type(uint).max;
+        return (point.x | point.y) == 0;
     }
 
     /// @dev Returns whether point `point` is on the curve.
@@ -152,18 +142,8 @@ library Secp256k1Arithmetic {
     ///         a = 0
     ///         b = 7
     ///
-    /// @dev Note that the identity is also on the curve.
+    /// @dev Note that the identity is on the curve.
     function isOnCurve(Point memory point) internal pure returns (bool) {
-        // TODO: Issue with whether identity is on curve:
-        //
-        //       isOnCurve should return true to enable arithmetic functionality.
-        //       However, publicKey.isValid should return false! Identity is only
-        //       valid inside Arithmetic package. For crypto package it is invalid.
-        //
-        //       See also go's issue: https://github.com/golang/go/issues/37294.
-        //
-        //       Important: It MUST NOT be possible to de-/serialize identity to
-        //       normal public key.
         if (point.isIdentity()) {
             return true;
         }
@@ -396,8 +376,8 @@ library Secp256k1Arithmetic {
             assembly ("memory-safe") {
                 p := point
             }
-            p.x = type(uint).max;
-            p.y = type(uint).max;
+            p.x = 0;
+            p.y = 0;
             return p;
         }
 

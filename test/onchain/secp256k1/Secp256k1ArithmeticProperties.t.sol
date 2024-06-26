@@ -44,7 +44,7 @@ contract Secp256k1ArithmeticPropertiesTest is Test {
 
         Point memory sum = p1.add(p2).intoPoint();
 
-        assertFalse(sum.isZeroPoint());
+        assertFalse(sum.x == 0 && sum.y == 0);
     }
 
     function testProperty_ProjectivePoint_add_ResultIsOnCurve(
@@ -64,29 +64,12 @@ contract Secp256k1ArithmeticPropertiesTest is Test {
 
     // -- mul
 
-    function testProperty_ProjectivePoint_mul_NeverReturnsZeroPoint(
-        SecretKey sk,
-        uint scalar
-    ) public {
-        vm.assume(sk.isValid());
-
-        // TODO: Make Felt type to circumvent manual bounding?
-        vm.assume(scalar < Secp256k1Arithmetic.Q);
-
-        ProjectivePoint memory p = sk.toPublicKey().toProjectivePoint();
-
-        Point memory product = p.mul(scalar).intoPoint();
-
-        assertFalse(product.isZeroPoint());
-    }
-
     function testProperty_ProjectivePoint_mul_ResultIsOnCurve(
         SecretKey sk,
         uint scalar
     ) public {
         vm.assume(sk.isValid());
 
-        // TODO: Make Felt type to circumvent manual bounding?
         vm.assume(scalar < Secp256k1Arithmetic.Q);
 
         ProjectivePoint memory p = sk.toPublicKey().toProjectivePoint();

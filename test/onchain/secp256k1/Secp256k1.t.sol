@@ -165,21 +165,15 @@ contract Secp256k1Test is Test {
         assertTrue(wrapper.isValid(sk.toPublicKey()));
     }
 
-    function test_PublicKey_isValid_If_Identity() public {
+    function test_PublicKey_isValid_FailsIf_Identity() public {
         PublicKey memory pk = Secp256k1Arithmetic.Identity().intoPublicKey();
 
-        assertTrue(pk.isValid());
+        assertFalse(wrapper.isValid(pk));
     }
 
     function test_PublicKey_isValid_FailsIf_PointNotOnCurve() public {
         PublicKey memory pk;
 
-        // Zero point not on curve.
-        pk.x = 0;
-        pk.y = 0;
-        assertFalse(wrapper.isValid(pk));
-
-        // Some other point.
         pk.x = 1;
         pk.x = 3;
         assertFalse(wrapper.isValid(pk));
