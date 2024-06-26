@@ -12,3 +12,4 @@ docs_generated/
 
 # Coverage file
 lcov.info
+coverage/
