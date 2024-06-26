@@ -119,6 +119,7 @@ library Secp256k1Arithmetic {
         return (point.x | point.y) == 0;
     }
 
+    // TODO: Use (0, 0) as infinity? Follows general convention...
     /// @dev Returns the additive identity.
     ///
     /// @dev Note that the identity is represented via:
@@ -148,6 +149,16 @@ library Secp256k1Arithmetic {
     ///
     /// @dev Note that the identity is also on the curve.
     function isOnCurve(Point memory point) internal pure returns (bool) {
+        // TODO: Issue with whether identity is on curve:
+        //
+        //       isOnCurve should return true to enable arithmetic functionality.
+        //       However, publicKey.isValid should return false! Identity is only
+        //       valid inside Arithmetic package. For crypto package it is invalid.
+        //
+        //       See also go's issue: https://github.com/golang/go/issues/37294.
+        //
+        //       Important: It MUST NOT be possible to de-/serialize identity to
+        //       normal public key.
         if (point.isIdentity()) {
             return true;
         }
@@ -364,6 +375,7 @@ library Secp256k1Arithmetic {
 
         // Return as Point(point.x, point.y).
         // Note that from this moment, point.z is dirty memory!
+        // TODO: Zero dirty memory.
         assembly ("memory-safe") {
             p := point
         }

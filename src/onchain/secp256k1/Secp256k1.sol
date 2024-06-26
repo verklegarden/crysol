@@ -260,7 +260,7 @@ library Secp256k1 {
             scalar := mload(add(blob, 0x20))
         }
 
-        // Note to not use secretKeyFromUint(uint) to not revert in case secrect
+        // Note to not use secretKeyFromUint(uint) to not revert in case secret
         // key is invalid.
         // This responsibility is delegated to the caller.
         return SecretKey.wrap(scalar);
