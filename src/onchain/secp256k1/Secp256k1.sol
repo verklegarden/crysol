@@ -188,13 +188,11 @@ library Secp256k1 {
 
     /// @dev Returns whether public key `pk` is a valid secp256k1 public key.
     ///
-    /// @dev Note that a public key is valid if its either on the curve or the
-    ///      identity (aka point at infinity) point.
+    /// @dev Note that the identity point is not a valid public key.
     function isValid(PublicKey memory pk) internal pure returns (bool) {
-        // TODO: Should identity be a valid public key?
-        //       Point memory p = pk.intoPoint();
-        //       return p.isOnCurve() && !p.isIdentity();
-        return pk.intoPoint().isOnCurve();
+        Point memory p = pk.intoPoint();
+
+        return p.isOnCurve() && !p.isIdentity();
     }
 
     /// @dev Returns the y parity of public key `pk`.

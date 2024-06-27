@@ -61,22 +61,6 @@ contract Secp256k1ArithmeticTest is Test {
     //--------------------------------------------------------------------------
     // Test: Point
 
-    // -- ZeroPoint
-
-    function test_ZeroPoint() public {
-        assertTrue(wrapper.ZeroPoint().isZeroPoint());
-    }
-
-    // -- isZeroPoint
-
-    function testFuzz_Point_isZeroPoint(Point memory point) public {
-        if (point.x == 0 && point.y == 0) {
-            assertTrue(wrapper.isZeroPoint(point));
-        } else {
-            assertFalse(wrapper.isZeroPoint(point));
-        }
-    }
-
     // -- Identity
 
     function test_Identity() public {
@@ -86,7 +70,7 @@ contract Secp256k1ArithmeticTest is Test {
     // -- isIdentity
 
     function testFuzz_Point_isIdentity(Point memory point) public {
-        if (point.x == type(uint).max && point.y == type(uint).max) {
+        if (point.x == 0 && point.y == 0) {
             assertTrue(wrapper.isIdentity(point));
         } else {
             assertFalse(wrapper.isIdentity(point));
@@ -568,14 +552,6 @@ contract Secp256k1ArithmeticWrapper {
 
     //--------------------------------------------------------------------------
     // Point
-
-    function ZeroPoint() public pure returns (Point memory) {
-        return Secp256k1Arithmetic.ZeroPoint();
-    }
-
-    function isZeroPoint(Point memory point) public pure returns (bool) {
-        return point.isZeroPoint();
-    }
 
     function Identity() public pure returns (Point memory) {
         return Secp256k1Arithmetic.Identity();
