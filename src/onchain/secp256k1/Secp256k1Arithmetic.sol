@@ -126,11 +126,6 @@ library Secp256k1Arithmetic {
     }
 
     /// @dev Returns whether point `point` is the identity.
-    ///
-    /// @dev Note that the identity is represented via:
-    ///         point.x = point.y = type(uint).max
-    ///
-    /// @dev Note that the identity is also called point at infinity.
     function isIdentity(Point memory point) internal pure returns (bool) {
         return (point.x | point.y) == 0;
     }

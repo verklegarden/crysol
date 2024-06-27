@@ -444,7 +444,9 @@ contract Secp256k1ArithmeticTest is Test {
         assertEq(blob, hex"00");
     }
 
-    function testFuzz_Point_toEncoded_RevertsIf_PointNotOnCurve(Point memory point) public {
+    function testFuzz_Point_toEncoded_RevertsIf_PointNotOnCurve(
+        Point memory point
+    ) public {
         vm.assume(!point.isOnCurve());
 
         vm.expectRevert("PointNotOnCurve()");
