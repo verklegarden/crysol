@@ -353,18 +353,18 @@ contract Secp256k1ArithmeticTest is Test {
         point = wrapper.pointFromEncoded(blob);
         assertTrue(point.eq(Secp256k1Arithmetic.G()));
 
-        // Some other point.
+        // Some other point, ie [2]G.
         blob =
-            hex"0411111111111111111111111111111111111111111111111111111111111111112222222222222222222222222222222222222222222222222222222222222222";
+            hex"04C6047F9441ED7D6D3045406E95C07CD85C778E4B8CEF3CA7ABAC09B95C709EE51AE168FEA63DC339A3C58419466CEAEEF7F632653266D0E1236431A950CFE52A";
         point = wrapper.pointFromEncoded(blob);
         assertTrue(
             point.eq(
                 Point({
                     x: uint(
-                        0x1111111111111111111111111111111111111111111111111111111111111111
+                        0xC6047F9441ED7D6D3045406E95C07CD85C778E4B8CEF3CA7ABAC09B95C709EE5
                     ),
                     y: uint(
-                        0x2222222222222222222222222222222222222222222222222222222222222222
+                        0x1AE168FEA63DC339A3C58419466CEAEEF7F632653266D0E1236431A950CFE52A
                     )
                 })
             )
@@ -401,6 +401,17 @@ contract Secp256k1ArithmeticTest is Test {
         wrapper.pointFromEncoded(blob);
     }
 
+    function testFuzz_pointFromEncoded_RevertsIf_DeserializedPointNotOnCurve(
+        Point memory point
+    ) public {
+        vm.assume(!point.isOnCurve());
+
+        bytes memory blob = abi.encodePacked(bytes1(0x04), point.x, point.y);
+
+        vm.expectRevert("PointNotOnCurve()");
+        wrapper.pointFromEncoded(blob);
+    }
+
     function test_Point_toEncoded() public {
         Point memory point;
         bytes memory blob;
@@ -410,19 +421,19 @@ contract Secp256k1ArithmeticTest is Test {
         blob = wrapper.toEncoded(point);
         assertEq(blob, GENERATOR_ENCODED);
 
-        // Some other point.
+        // Some other point, ie [2]G.
         point = Point({
             x: uint(
-                0x1111111111111111111111111111111111111111111111111111111111111111
+                0xC6047F9441ED7D6D3045406E95C07CD85C778E4B8CEF3CA7ABAC09B95C709EE5
             ),
             y: uint(
-                0x2222222222222222222222222222222222222222222222222222222222222222
+                0x1AE168FEA63DC339A3C58419466CEAEEF7F632653266D0E1236431A950CFE52A
             )
         });
         blob = wrapper.toEncoded(point);
         assertEq(
             blob,
-            hex"0411111111111111111111111111111111111111111111111111111111111111112222222222222222222222222222222222222222222222222222222222222222"
+            hex"04C6047F9441ED7D6D3045406E95C07CD85C778E4B8CEF3CA7ABAC09B95C709EE51AE168FEA63DC339A3C58419466CEAEEF7F632653266D0E1236431A950CFE52A"
         );
     }
 
@@ -431,6 +442,15 @@ contract Secp256k1ArithmeticTest is Test {
         bytes memory blob = wrapper.toEncoded(point);
 
         assertEq(blob, hex"00");
+    }
+
+    function testFuzz_Point_toEncoded_RevertsIf_PointNotOnCurve(
+        Point memory point
+    ) public {
+        vm.assume(!point.isOnCurve());
+
+        vm.expectRevert("PointNotOnCurve()");
+        wrapper.toEncoded(point);
     }
 
     // -- Point <-> CompressedEncoded
@@ -496,33 +516,48 @@ contract Secp256k1ArithmeticTest is Test {
         wrapper.pointFromCompressedEncoded(blob);
     }
 
+    function test_Point_pointFromCompressedEncoded_RevertsIf_PointNotOnCurve()
+        public
+    {
+        bytes memory blob = abi.encodePacked(bytes1(0x02), uint(0));
+
+        vm.expectRevert("PointNotOnCurve()");
+        wrapper.pointFromCompressedEncoded(blob);
+    }
+
     function test_Point_toCompressedEncoded_IfyParityEven() public {
+        // Some point, ie [2]G.
         Point memory point = Point({
             x: uint(
-                0x1111111111111111111111111111111111111111111111111111111111111111
+                0xC6047F9441ED7D6D3045406E95C07CD85C778E4B8CEF3CA7ABAC09B95C709EE5
             ),
-            y: uint(2)
+            y: uint(
+                0x1AE168FEA63DC339A3C58419466CEAEEF7F632653266D0E1236431A950CFE52A
+            )
         });
         bytes memory blob = wrapper.toCompressedEncoded(point);
 
         assertEq(
             blob,
-            hex"021111111111111111111111111111111111111111111111111111111111111111"
+            hex"02C6047F9441ED7D6D3045406E95C07CD85C778E4B8CEF3CA7ABAC09B95C709EE5"
         );
     }
 
     function test_Point_toCompressedEncoded_IfyParityOdd() public {
+        // Some point, ie [6]G.
         Point memory point = Point({
             x: uint(
-                0x1111111111111111111111111111111111111111111111111111111111111111
+                0xFFF97BD5755EEEA420453A14355235D382F6472F8568A18B2F057A1460297556
             ),
-            y: uint(3)
+            y: uint(
+                0xAE12777AACFBB620F3BE96017F45C560DE80F0F6518FE4A03C870C36B075F297
+            )
         });
         bytes memory blob = wrapper.toCompressedEncoded(point);
 
         assertEq(
             blob,
-            hex"031111111111111111111111111111111111111111111111111111111111111111"
+            hex"03FFF97BD5755EEEA420453A14355235D382F6472F8568A18B2F057A1460297556"
         );
     }
 
@@ -531,6 +566,15 @@ contract Secp256k1ArithmeticTest is Test {
         bytes memory blob = wrapper.toCompressedEncoded(point);
 
         assertEq(blob, hex"00");
+    }
+
+    function testFuzz_Point_toCompressedEncoded_RevertsIf_PointNotOnCurve(
+        Point memory point
+    ) public {
+        vm.assume(!point.isOnCurve());
+
+        vm.expectRevert("PointNotOnCurve()");
+        wrapper.toCompressedEncoded(point);
     }
 }
 

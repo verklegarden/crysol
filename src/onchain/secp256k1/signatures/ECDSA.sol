@@ -96,17 +96,17 @@ library ECDSA {
     /// @custom:invariant No valid public key's address is zero.
     ///     ∀ pk ∊ PublicKey: pk.isValid() → pk.toAddress() != address(0)
     function verify(
-        PublicKey memory pl,
+        PublicKey memory pk,
         bytes memory message,
         Signature memory sig
     ) internal pure returns (bool) {
-        if (!pl.isValid()) {
+        if (!pk.isValid()) {
             revert("PublicKeyInvalid()");
         }
 
         bytes32 digest = keccak256(message);
 
-        return pl.toAddress().verify(digest, sig);
+        return pk.toAddress().verify(digest, sig);
     }
 
     /// @dev Returns whether public key `pk` signs via ECDSA signature `sig`
