@@ -382,7 +382,7 @@ library Secp256k1Arithmetic {
         }
 
         // Compute z⁻¹, i.e. the modular inverse of point.z.
-        uint zInv = modinv(point.z);
+        uint zInv = _modinv(point.z);
 
         // Compute affine coordinates being x * z⁻¹ and y * z⁻¹, respectively.
         uint x = mulmod(point.x, zInv, P);
@@ -414,7 +414,7 @@ library Secp256k1Arithmetic {
         }
 
         // Compute z⁻¹, i.e. the modular inverse of point.z.
-        uint zInv = modinv(point.z);
+        uint zInv = _modinv(point.z);
 
         // Compute affine coordinates being x * z⁻¹ and y * z⁻¹, respectively.
         uint x = mulmod(point.x, zInv, P);
@@ -556,7 +556,7 @@ library Secp256k1Arithmetic {
 
         // Compute β = √α              (mod p)
         //           = α^{(p + 1) / 4} (mod p)
-        uint beta = modexp(alpha, SQUARE_ROOT_EXPONENT);
+        uint beta = _modexp(alpha, SQUARE_ROOT_EXPONENT);
 
         // Compute y coordinate.
         //
@@ -608,7 +608,7 @@ library Secp256k1Arithmetic {
     ///        x not in [1, P)
     ///
     /// @dev Uses modular exponentiation based on Fermat's little theorem.
-    function modinv(uint x) internal view returns (uint) {
+    function _modinv(uint x) private view returns (uint) {
         if (x == 0) {
             revert("ModularInverseOfZeroDoesNotExist()");
         }
@@ -627,11 +627,11 @@ library Secp256k1Arithmetic {
         // algorithm.
         //
         // For further details, see [Dubois 2023].
-        return modexp(x, NEG_2);
+        return _modexp(x, NEG_2);
     }
 
     /// @dev Computes base^{exponent} (mod P) using the modexp precompile.
-    function modexp(uint base, uint exponent) private view returns (uint) {
+    function _modexp(uint base, uint exponent) private view returns (uint) {
         // Payload to compute base^{exponent} (mod P).
         // Note that the size of each argument is 32 bytes.
         bytes memory payload = abi.encode(32, 32, 32, base, exponent, P);
