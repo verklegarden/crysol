@@ -82,9 +82,13 @@ contract Secp256k1ArithmeticPropertiesTest is Test {
     //--------------------------------------------------------------------------
     // Test: (De)Serialization
 
-    function testProperty_Point_Encoded_SerializationLoop(Point memory start)
+    function testProperty_Point_Encoded_SerializationLoop(SecretKey sk)
         public
     {
+        vm.assume(sk.isValid());
+
+        Point memory start = sk.toPublicKey().intoPoint();
+
         Point memory end =
             Secp256k1Arithmetic.pointFromEncoded(start.toEncoded());
 

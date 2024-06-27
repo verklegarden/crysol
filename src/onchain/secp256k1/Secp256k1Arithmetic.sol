@@ -430,9 +430,10 @@ library Secp256k1Arithmetic {
     /// @dev Decodes point from [SEC-1 v2] encoded bytes `blob`.
     ///
     /// @dev Reverts if:
-    ///        Blob not 0x00
-    ///      ∧ Length not 65 bytes
-    ///        ∨ Prefix byte not 0x04
+    ///          Blob not 0x00
+    ///        ∧ Length not 65 bytes
+    ///          ∨ Prefix byte not 0x04
+    ///      ∨ Deserialized point not on curve
     ///
     /// @dev Expects uncompressed 65 bytes encoding if point is not identity:
     ///         [0x04 prefix][32 bytes x coordinate][32 bytes y coordinate]
@@ -475,14 +476,21 @@ library Secp256k1Arithmetic {
             y := mload(add(blob, 0x41))
         }
 
-        // Return as new point.
-        //
-        // Note that point's validity is not verified.
-        // This responsibility is delegated to the caller.
-        return Point(x, y);
+        // Make point.
+        Point memory point = Point(x, y);
+
+        // Revert if point not on curve.
+        if (!point.isOnCurve()) {
+            revert("PointNotOnCurve()");
+        }
+
+        return point;
     }
 
     /// @dev Encodes point `point` as [SEC-1 v2] encoded bytes.
+    ///
+    /// @dev Reverts if:
+    ///        Point not on curve
     ///
     /// @dev Provides uncompressed 65 bytes encoding if point is not identity:
     ///         [0x04 prefix][32 bytes x coordinate][32 bytes y coordinate]
@@ -496,6 +504,10 @@ library Secp256k1Arithmetic {
         pure
         returns (bytes memory blob)
     {
+        if (!point.isOnCurve()) {
+            revert("PointNotOnCurve()");
+        }
+
         // Note to catch special encoding for identity.
         if (point.isIdentity()) {
             return bytes(hex"00");
@@ -507,9 +519,10 @@ library Secp256k1Arithmetic {
     /// @dev Decodes point from [SEC-1 v2] compressed encoded bytes `blob`.
     ///
     /// @dev Reverts if:
-    ///        Blob not 0x00
-    ///      ∧ Length not 33 bytes
-    ///        ∨ Prefix byte not one in [0x02, 0x03]
+    ///          Blob not 0x00
+    ///        ∧ Length not 33 bytes
+    ///          ∨ Prefix byte not one in [0x02, 0x03]
+    ///      ∨ Deserialized point not on curve
     ///
     /// @dev Expects compressed 33 bytes encoding if point is not identity:
     ///         [0x02 or 0x03 prefix][32 bytes x coordinate]
@@ -566,14 +579,21 @@ library Secp256k1Arithmetic {
             y = beta & 1 == prefix & 1 ? beta : P - beta;
         }
 
-        // Return as new point.
-        //
-        // Note that point's validity is not verified.
-        // This responsibility is delegated to the caller.
-        return Point(x, y);
+        // Make point.
+        Point memory point = Point(x, y);
+
+        // Revert if point not on curve.
+        if (!point.isOnCurve()) {
+            revert("PointNotOnCurve()");
+        }
+
+        return point;
     }
 
     /// @dev Encodes point `point` as [SEC-1 v2] compressed encoded bytes.
+    ///
+    /// @dev Reverts if:
+    ///        Point not on curve
     ///
     /// @dev Provides compressed 33 bytes encoding if point is not identity:
     ///         [0x02 or 0x03 prefix][32 bytes x coordinate]
@@ -587,6 +607,10 @@ library Secp256k1Arithmetic {
         pure
         returns (bytes memory blob)
     {
+        if (!point.isOnCurve()) {
+            revert("PointNotOnCurve()");
+        }
+
         // Note to catch special encoding for identity.
         if (point.isIdentity()) {
             return bytes(hex"00");

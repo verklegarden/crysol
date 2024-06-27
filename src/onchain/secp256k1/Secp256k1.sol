@@ -255,10 +255,11 @@ library Secp256k1 {
     //----------------------------------
     // Secret Key
 
-    /// @dev Returns bytes `blob` as secret key.
+    /// @dev Decodes secret key from bytes `blob`.
     ///
     /// @dev Reverts if:
     ///        Length not 32 bytes
+    ///      ∨ Deserialized secret key invalid
     function secretKeyFromBytes(bytes memory blob)
         internal
         pure
@@ -273,14 +274,26 @@ library Secp256k1 {
             scalar := mload(add(blob, 0x20))
         }
 
-        // Note to not use secretKeyFromUint(uint) to not revert in case secret
-        // key is invalid.
-        // This responsibility is delegated to the caller.
-        return SecretKey.wrap(scalar);
+        // Make secret key.
+        SecretKey sk = SecretKey.wrap(scalar);
+
+        // Revert if secret key invalid.
+        if (!sk.isValid()) {
+            revert("SecretKeyInvalid()");
+        }
+
+        return sk;
     }
 
-    /// @dev Returns secret key `sk` as bytes.
+    /// @dev Encodes secret key `sk` as bytes.
+    ///
+    /// @dev Reverts if:
+    ///        Secret key invalid
     function toBytes(SecretKey sk) internal pure returns (bytes memory) {
+        if (!sk.isValid()) {
+            revert("SecretKeyInvalid()");
+        }
+
         return abi.encodePacked(sk.asUint());
     }
 
@@ -291,6 +304,7 @@ library Secp256k1 {
     ///
     /// @dev Reverts if:
     ///        Length not 64 bytes
+    ///      ∨ Deserialized public key invalid
     ///
     /// @dev Expects 64 bytes encoding:
     ///         [32 bytes x coordinate][32 bytes y coordinate]
@@ -315,12 +329,18 @@ library Secp256k1 {
         // Make public key.
         PublicKey memory pk = PublicKey(x, y);
 
-        // Note that public key's validity is not verified.
-        // This responsibility is delegated to the caller.
+        // Revert if public key invalid.
+        if (!pk.isValid()) {
+            revert("PublicKeyInvalid()");
+        }
+
         return pk;
     }
 
     /// @dev Encodes public key `pk` as ABI-encoded bytes.
+    ///
+    /// @dev Reverts if:
+    ///        Public key invalid
     ///
     /// @dev Provides 64 bytes encoding:
     ///         [32 bytes x coordinate][32 bytes y coordinate]
@@ -329,6 +349,10 @@ library Secp256k1 {
         pure
         returns (bytes memory)
     {
+        if (!pk.isValid()) {
+            revert("PublicKeyInvalid()");
+        }
+
         return abi.encodePacked(pk.x, pk.y);
     }
 }
