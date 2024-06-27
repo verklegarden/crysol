@@ -303,12 +303,26 @@ contract Secp256k1ArithmeticTest is Test {
     // -- intoPoint
 
     // TODO: Test no new memory allocation.
-    // TODO: Not a real test. Use vectors from Paul Miller.
-    function testFuzz_ProjectivePoint_intoPoint(SecretKey sk) public {
-        vm.assume(sk.isValid());
+    function testFuzz_ProjectivePoint_intoPoint2(SecretKey a, SecretKey b)
+        public
+    {
+        vm.assume(a.isValid());
+        vm.assume(b.isValid());
 
-        Point memory want = sk.toPublicKey().intoPoint();
-        Point memory got = wrapper.intoPoint(want.toProjectivePoint());
+        // To produce random ProjectivePoints with non-zero z coordinate, add
+        // two random points via ProjectivePoint::add().
+
+        // Compute [a+b]G.
+        uint scalar = addmod(a.asUint(), b.asUint(), Secp256k1.Q);
+        Point memory want =
+            Secp256k1.secretKeyFromUint(scalar).toPublicKey().intoPoint();
+
+        // Compute [a]G + [b]G via ProjectivePoints.
+        // forgefmt: disable-next-item
+        ProjectivePoint memory sum = a.toPublicKey().toProjectivePoint()
+                                      .add(b.toPublicKey().toProjectivePoint());
+
+        Point memory got = wrapper.intoPoint(sum);
 
         assertTrue(want.eq(got));
     }
@@ -322,12 +336,26 @@ contract Secp256k1ArithmeticTest is Test {
 
     // -- toPoint
 
-    // TODO: Not a real test. Use vectors from Paul Miller.
-    function test_ProjectivePoint_toPoint(SecretKey sk) public {
-        vm.assume(sk.isValid());
+    function test_ProjectivePoint_toPoint(SecretKey a, SecretKey b) public {
+        vm.assume(a.isValid());
+        vm.assume(b.isValid());
 
-        Point memory want = sk.toPublicKey().intoPoint();
-        Point memory got = wrapper.toPoint(want.toProjectivePoint());
+        // To produce random ProjectivePoints with non-zero z coordinate, add
+        // two random points via ProjectivePoint::add().
+
+        // Compute [a+b]G.
+        uint scalar = addmod(a.asUint(), b.asUint(), Secp256k1.Q);
+        Point memory want =
+            Secp256k1.secretKeyFromUint(scalar).toPublicKey().intoPoint();
+
+        // Compute [a]G + [b]G via ProjectivePoints.
+        // forgefmt: disable-next-item
+        // Compute [a]G + [b]G via ProjectivePoints.
+        // forgefmt: disable-next-item
+        ProjectivePoint memory sum = a.toPublicKey().toProjectivePoint()
+                                      .add(b.toPublicKey().toProjectivePoint());
+
+        Point memory got = wrapper.toPoint(sum);
 
         assertTrue(want.eq(got));
     }
