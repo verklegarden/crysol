@@ -11,6 +11,8 @@ import {
     PublicKey
 } from "src/onchain/secp256k1/Secp256k1.sol";
 
+import {ECDSAOffchain} from
+    "src/offchain/secp256k1/signatures/ECDSAOffchain.sol";
 import {ECDSA, Signature} from "src/onchain/secp256k1/signatures/ECDSA.sol";
 import {ECDSAUnsafe} from "src/unsafe/secp256k1/signatures/ECDSAUnsafe.sol";
 
@@ -22,6 +24,7 @@ contract ECDSATest is Test {
     using Secp256k1 for SecretKey;
     using Secp256k1 for PublicKey;
 
+    using ECDSAOffchain for SecretKey;
     using ECDSA for address;
     using ECDSA for SecretKey;
     using ECDSA for PublicKey;
@@ -43,12 +46,7 @@ contract ECDSATest is Test {
         PublicKey memory pk = sk.toPublicKey();
         bytes32 digest = keccak256(message);
 
-        uint8 v;
-        bytes32 r;
-        bytes32 s;
-        (v, r, s) = vm.sign(sk.asUint(), digest);
-
-        Signature memory sig = Signature(v, r, s);
+        Signature memory sig = sk.sign(digest);
 
         assertTrue(wrapper.verify(pk, message, sig));
         assertTrue(wrapper.verify(pk, digest, sig));
@@ -69,16 +67,11 @@ contract ECDSATest is Test {
         PublicKey memory pk = sk.toPublicKey();
         bytes32 digest = keccak256(message);
 
-        uint8 v;
-        bytes32 r;
-        bytes32 s;
-        (v, r, s) = vm.sign(sk.asUint(), digest);
+        Signature memory sig = sk.sign(digest);
 
-        v ^= vMask;
-        r = bytes32(uint(r) ^ rMask);
-        s = bytes32(uint(s) ^ sMask);
-
-        Signature memory sig = Signature(v, r, s);
+        sig.v ^= vMask;
+        sig.r = bytes32(uint(sig.r) ^ rMask);
+        sig.s = bytes32(uint(sig.s) ^ sMask);
 
         // Note that verify() reverts if signature is malleable.
         sig.intoNonMalleable();
@@ -98,24 +91,19 @@ contract ECDSATest is Test {
         PublicKey memory pk = sk.toPublicKey();
         bytes32 digest = keccak256(message);
 
-        uint8 v;
-        bytes32 r;
-        bytes32 s;
-        (v, r, s) = vm.sign(sk.asUint(), digest);
-
-        Signature memory badSig = Signature(v, r, s).intoMalleable();
+        Signature memory sig = sk.sign(digest).intoMalleable();
 
         vm.expectRevert("SignatureMalleable()");
-        wrapper.verify(pk, message, badSig);
+        wrapper.verify(pk, message, sig);
 
         vm.expectRevert("SignatureMalleable()");
-        wrapper.verify(pk, digest, badSig);
+        wrapper.verify(pk, digest, sig);
 
         vm.expectRevert("SignatureMalleable()");
-        wrapper.verify(pk.toAddress(), message, badSig);
+        wrapper.verify(pk.toAddress(), message, sig);
 
         vm.expectRevert("SignatureMalleable()");
-        wrapper.verify(pk.toAddress(), digest, badSig);
+        wrapper.verify(pk.toAddress(), digest, sig);
     }
 
     function testFuzz_verify_RevertsIf_PublicKeyInvalid(
@@ -169,16 +157,18 @@ contract ECDSATest is Test {
 
     // -- Signature <-> Encoded
 
-    function testFuzz_signatureFromEncoded(uint8 v, bytes32 r, bytes32 s)
-        public
-    {
-        bytes memory blob = abi.encodePacked(r, s, v);
+    // TODO: Not a good test, also already implemented as property.
+    //       Can we get test vectors?
+    function testFuzz_signatureFromEncoded(Signature memory sig) public {
+        vm.assume(!sig.isMalleable());
+
+        bytes memory blob = sig.toEncoded();
 
         Signature memory got = wrapper.signatureFromEncoded(blob);
 
-        assertEq(got.v, v);
-        assertEq(got.r, r);
-        assertEq(got.s, s);
+        assertEq(got.v, sig.v);
+        assertEq(got.r, sig.r);
+        assertEq(got.s, sig.s);
     }
 
     function testFuzz_signatureFromEncoded_RevertsIf_LengthInvalid(
@@ -190,11 +180,36 @@ contract ECDSATest is Test {
         wrapper.signatureFromEncoded(blob);
     }
 
+    function testFuzz_signatureFromEncoded_RevertsIf_SignatureMalleable(
+        SecretKey sk,
+        bytes32 digest
+    ) public {
+        vm.assume(sk.isValid());
+
+        Signature memory sig = sk.sign(digest).intoMalleable();
+
+        bytes memory blob = abi.encodePacked(sig.r, sig.s, sig.v);
+
+        vm.expectRevert("SignatureMalleable()");
+        wrapper.signatureFromEncoded(blob);
+    }
+
     function testFuzz_Signature_toEncoded(Signature memory sig) public {
+        vm.assume(!sig.isMalleable());
+
         bytes memory got = wrapper.toEncoded(sig);
         bytes memory want = abi.encodePacked(sig.r, sig.s, sig.v);
 
         assertEq(got, want);
+    }
+
+    function testFuzz_Signature_toEncoded_RevertsIf_SignatureMalleable(
+        Signature memory sig
+    ) public {
+        vm.assume(sig.isMalleable());
+
+        vm.expectRevert("SignatureMalleable()");
+        wrapper.toEncoded(sig);
     }
 
     // -- Signature <-> Compact Encoded
@@ -242,6 +257,15 @@ contract ECDSATest is Test {
         wrapper.signatureFromCompactEncoded(blob);
     }
 
+    function test_signatureFromCompactEncoded_RevertsIf_SignatureMalleable()
+        public
+    {
+        bytes memory blob = abi.encodePacked(type(uint).max, type(uint).max);
+
+        vm.expectRevert("SignatureMalleable()");
+        wrapper.signatureFromCompactEncoded(blob);
+    }
+
     function test_Signature_toCompactEncoded() public {
         // Note that test cases are taken from EIP-2098.
 
@@ -270,6 +294,15 @@ contract ECDSATest is Test {
             hex"939c6d6b623b42da56557e5e734a43dc83345ddfadec52cbe24d0cc64f550793"
         );
         assertEq(got2, want2);
+    }
+
+    function test_Signature_toCompactEncoded_RevertsIf_SignatureMalleable(
+        Signature memory sig
+    ) public {
+        vm.assume(sig.isMalleable());
+
+        vm.expectRevert("SignatureMalleable()");
+        wrapper.toCompactEncoded(sig);
     }
 }
 

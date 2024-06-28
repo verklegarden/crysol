@@ -73,6 +73,8 @@ contract ECDSAPropertiesTest is Test {
     function testProperty_Encoding_SerializationLoop(Signature memory start)
         public
     {
+        vm.assume(!start.isMalleable());
+
         Signature memory end = ECDSA.signatureFromEncoded(start.toEncoded());
 
         assertEq(start.v, end.v);

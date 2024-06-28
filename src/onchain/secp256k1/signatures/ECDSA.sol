@@ -11,8 +11,6 @@
 // SPDX-License-Identifier: MIT OR Apache-2.0
 pragma solidity ^0.8.16;
 
-import {Message} from "../../common/Message.sol";
-
 import {Secp256k1, SecretKey, PublicKey} from "../Secp256k1.sol";
 
 /**
@@ -188,6 +186,7 @@ library ECDSA {
     ///
     /// @dev Reverts if:
     ///        Length not 65 bytes
+    ///      ∨ Deserialized ECDSA signature malleable
     ///
     /// @dev Expects 65 bytes encoding:
     ///         [256-bit r value][256-bit s value][8-bit v value]
@@ -200,6 +199,7 @@ library ECDSA {
             revert("LengthInvalid()");
         }
 
+        // Read (v, r, s) triplet.
         uint8 v;
         bytes32 r;
         bytes32 s;
@@ -209,10 +209,21 @@ library ECDSA {
             v := byte(0, mload(add(blob, 0x60)))
         }
 
-        return Signature(v, r, s);
+        // Make signature.
+        Signature memory sig = Signature(v, r, s);
+
+        // Revert if signature malleable.
+        if (sig.isMalleable()) {
+            revert("SignatureMalleable()");
+        }
+
+        return sig;
     }
 
     /// @dev Encodes ECDSA signature `sig` as ABI-encoded bytes.
+    ///
+    /// @dev Reverts if:
+    ///        ECDSA signature malleable
     ///
     /// @dev Provides 65 bytes encoding:
     ///         [256-bit r value][256-bit s value][8-bit v value]
@@ -221,6 +232,10 @@ library ECDSA {
         pure
         returns (bytes memory)
     {
+        if (sig.isMalleable()) {
+            revert("SignatureMalleable()");
+        }
+
         return abi.encodePacked(sig.r, sig.s, sig.v);
     }
 
@@ -229,6 +244,7 @@ library ECDSA {
     ///
     /// @dev Reverts if:
     ///        Length not 64 bytes
+    ///      ∨ Deserialized ECDSA signature malleable
     ///
     /// @dev Expects compact 64 bytes encoding:
     ///         [256-bit r value][1-bit yParity value][255-bit s value]
@@ -243,6 +259,7 @@ library ECDSA {
             revert("LengthInvalid()");
         }
 
+        // Read (v, r, s) triplet.
         uint8 v;
         bytes32 r;
         bytes32 s;
@@ -260,10 +277,21 @@ library ECDSA {
             v := add(shr(255, yParityAndS), 27)
         }
 
-        return Signature(v, r, s);
+        // Make signature.
+        Signature memory sig = Signature(v, r, s);
+
+        // Revert if signature malleable.
+        if (sig.isMalleable()) {
+            revert("SignatureMalleable()");
+        }
+
+        return sig;
     }
 
     /// @dev Encodes ECDSA signature `sig` as [EIP-2098] compact encoded bytes.
+    ///
+    /// @dev Reverts if:
+    ///        ECDSA signature malleable
     ///
     /// @dev Provides 64 bytes encoding:
     ///         [256-bit r value][1-bit yParity value][255-bit s value]
@@ -274,6 +302,10 @@ library ECDSA {
         pure
         returns (bytes memory)
     {
+        if (sig.isMalleable()) {
+            revert("SignatureMalleable()");
+        }
+
         bytes memory blob;
 
         uint8 v = sig.v;
