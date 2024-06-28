@@ -350,8 +350,6 @@ contract Secp256k1ArithmeticTest is Test {
 
         // Compute [a]G + [b]G via ProjectivePoints.
         // forgefmt: disable-next-item
-        // Compute [a]G + [b]G via ProjectivePoints.
-        // forgefmt: disable-next-item
         ProjectivePoint memory sum = a.toPublicKey().toProjectivePoint()
                                       .add(b.toPublicKey().toProjectivePoint());
 
