@@ -44,9 +44,13 @@ struct ProjectivePoint {
  * @notice Provides common arithmetic-related functionality for the secp256r1
  *         elliptic curve
  *
+ * @dev TODO r1 library docs
+ *
  * @custom:references
  *      - [SEC-1 v2]: https://www.secg.org/sec1-v2.pdf
  *      - [SEC-2 v2]: https://www.secg.org/sec2-v2.pdf
+ *      - [Yellow Paper]: https://github.com/ethereum/yellowpaper
+ *      - [Renes-Costello-Batina 2015]: https://eprint.iacr.org/2015/1060.pdf
  *
  * @author verklegarden
  * @custom:repository github.com/verklegarden/crysol
@@ -70,7 +74,7 @@ library Secp256r1Arithmetic {
     //--------------------------------------------------------------------------
     // Secp256r1 Constants
     //
-    // Secp256r1 is a "random" curve specified as:
+    // Secp256r1 is a "random" Weierstrass curve specified as:
     //      y² ≡ x³ + ax + b (mod p)
     //
     // where:
@@ -124,18 +128,13 @@ library Secp256r1Arithmetic {
 
     /// @dev Returns whether point `point` is on the curve.
     ///
-    /// @dev Note that secp256k1 curve is specified as y² ≡ x³ + ax + b (mod p)
-    ///      where:
-    ///         a = 0xFFFFFFFF00000001000000000000000000000000FFFFFFFFFFFFFFFFFFFFFFFC
-    ///         b = 0x5AC635D8AA3A93E7B3EBBD55769886BC651D06B0CC53B0F63BCE3C3E27D2604B
-    ///         p = 0xFFFFFFFF00000001000000000000000000000000FFFFFFFFFFFFFFFFFFFFFFFF
-    ///
     /// @dev Note that the identity is on the curve.
     function isOnCurve(Point memory point) internal pure returns (bool) {
         if (point.isIdentity()) {
             return true;
         }
 
+        // Verify whether y² ≡ x³ + ax + b (mod p).
         uint left = mulmod(point.y, point.y, P);
         uint right = addmod(
             addmod(
@@ -197,8 +196,9 @@ library Secp256r1Arithmetic {
     /// @dev Returns the sum of projective points `point` and `other` as
     ///      projective point.
     ///
-    /// @dev Uses algorithm 7 from [Renes-Costello-Batina 2015] based on a
-    ///      complete addition formula for Weierstrass curves with a = 0.
+    /// @dev Uses algorithm 1 from [Renes-Costello-Batina 2015] based on a
+    ///      complete addition formula for arbitrary prime order short
+    ///      Weierstrass curves.
     function add(ProjectivePoint memory point, ProjectivePoint memory other)
         internal
         pure
@@ -227,7 +227,7 @@ library Secp256r1Arithmetic {
         // - B3 = mulmod(B, 3, P)
 
         // Variables:
-        uint t0; uint t1; uint t2; uint t3; uint t4;
+        uint t0; uint t1; uint t2; uint t3; uint t4; uint t5;
 
         // Computations:
         // Note that x - y = x + (P - y) (mod P)
@@ -240,29 +240,36 @@ library Secp256r1Arithmetic {
         t4 = addmod(t0, t1, P);
         unchecked { t3 = addmod(t3, P - t4, P); }
         t4 = addmod(y1, z1, P);
+        t5 = addmod(y2, z2, P);
+        t4 = mulmod(t4, t5, P);
+        t5 = addmod(t0, t2, P);
+        unchecked { t4 = addmod(t4, P - t5, P); }
+        t5 = addmod(x1, z1, P);
         x3 = addmod(y2, z2, P);
-        t4 = mulmod(t4, x3, P);
+        t5 = mulmod(t5, x3, P);
         x3 = addmod(t1, t2, P);
-        unchecked { t4 = addmod(t4, P - x3, P); }
-        x3 = addmod(x1, z1, P);
-        y3 = addmod(x2, z2, P);
-        x3 = mulmod(x3, y3, P);
-        y3 = addmod(t0, t2, P);
-        unchecked { y3 = addmod(x3, P - y3, P); }
-        x3 = addmod(t0, t0, P);
-        t0 = addmod(x3, t0, P);
-        t2 = mulmod(B3, t2, P);
-        z3 = addmod(t1, t2, P);
-        unchecked { t1 = addmod(t1, P - t2, P); }
-        y3 = mulmod(B3, y3, P);
-        x3 = mulmod(t4, y3, P);
-        t2 = mulmod(t3, t1, P);
-        unchecked { x3 = addmod(t2, P - x3, P); }
-        y3 = mulmod(y3, t0, P);
-        t1 = mulmod(t1, z3, P);
-        y3 = addmod(t1, y3, P);
-        t0 = mulmod(t0, t3, P);
-        z3 = mulmod(z3, t4, P);
+        unchecked { t5 = addmod(t5, P - x3, P); }
+        z3 = mulmod(A, t4, P);
+        x3 = mulmod(B3, t2, P);
+        z3 = addmod(x3, z3, P);
+        unchecked { x3 = addmod(t1, P - z3, P); }
+        z3 = addmod(t1, z3, P);
+        y3 = mulmod(x3, z3, P);
+        t1 = addmod(t0, t0, P);
+        t1 = addmod(t1, t0, P);
+        t2 = mulmod(A, t2, P);
+        t4 = mulmod(B3, t4, P);
+        t1 = addmod(t1, t2, P);
+        unchecked { t2 = addmod(t0, P - t2, P); }
+        t2 = mulmod(A, t2, P);
+        t4 = addmod(t4, t2, P);
+        t0 = mulmod(t1, t4, P);
+        y3 = addmod(y3, t0, P);
+        t0 = mulmod(t5, t4, P);
+        x3 = mulmod(t3, x3, P);
+        unchecked { x3 = addmod(x3, P - t0, P); }
+        t0 = mulmod(t3, t1, P);
+        z3 = mulmod(t5, z3, P);
         z3 = addmod(z3, t0, P);
         // forgefmt: disable-end
 
@@ -520,8 +527,9 @@ library Secp256r1Arithmetic {
         }
 
         // Compute α = x³ + ax + b (mod p).
-        // Note that adding a * x can be waived as ∀x: a * x = 0.
-        uint alpha = addmod(mulmod(x, mulmod(x, x, P), P), B, P);
+        uint alpha = addmod(
+            addmod(mulmod(x, mulmod(x, x, P), P), mulmod(A, x, P), P), B, P
+        );
 
         // Compute β = √α              (mod p)
         //           = α^{(p + 1) / 4} (mod p)

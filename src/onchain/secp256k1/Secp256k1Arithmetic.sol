@@ -134,20 +134,15 @@ library Secp256k1Arithmetic {
 
     /// @dev Returns whether point `point` is on the curve.
     ///
-    /// @dev Note that secp256k1 curve is specified as y² ≡ x³ + ax + b (mod p)
-    ///      where:
-    ///         a = 0
-    ///         b = 7
-    ///         p = 0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFEFFFFFC2F
-    ///
     /// @dev Note that the identity is on the curve.
     function isOnCurve(Point memory point) internal pure returns (bool) {
         if (point.isIdentity()) {
             return true;
         }
 
-        uint left = mulmod(point.y, point.y, P);
+        // Verify whether y² ≡ x³ + ax + b (mod p).
         // Note that adding a * x can be waived as ∀x: a * x = 0.
+        uint left = mulmod(point.y, point.y, P);
         uint right =
             addmod(mulmod(point.x, mulmod(point.x, point.x, P), P), B, P);
 

@@ -11,11 +11,24 @@
 // SPDX-License-Identifier: MIT OR Apache-2.0
 pragma solidity ^0.8.16;
 
+/**
+ * @title ModularArithmetic
+ *
+ * @notice
+ *
+ * @custom:references
+ *      - [Dubois 2023]: https://eprint.iacr.org/2023/939.pdf
+ *
+ * @author verklegarden
+ * @custom:repository github.com/verklegarden/crysol
+ */
 library ModularArithmetic {
     /// @dev Returns the modular inverse of `x` for modulo `prime`.
     ///
     ///      The modular inverse of `x` is x⁻¹ such that
     ///      x * x⁻¹ ≡ 1 (mod prime).
+    ///
+    /// @dev Note that `prime` MUST be a prime number!
     ///
     /// @dev Reverts if:
     ///        x not in [1, prime)
