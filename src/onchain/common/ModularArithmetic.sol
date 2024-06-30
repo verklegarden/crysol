@@ -23,7 +23,7 @@ pragma solidity ^0.8.16;
  * @custom:repository github.com/verklegarden/crysol
  */
 library ModularArithmetic {
-    /// @dev Computes the modular inverse of `x` for modulo `prime`.
+    /// @dev Computes the modular inverse of `x` mod `prime`.
     ///
     ///      The modular inverse of `x` is x⁻¹ such that
     ///      x * x⁻¹ ≡ 1 (mod prime).
@@ -39,7 +39,7 @@ library ModularArithmetic {
             revert("ModularInverseOfZeroDoesNotExist()");
         }
         if (x >= prime) {
-            revert("ModularInverseOfXGreaterThanP()");
+            revert("ModularInverseOfXGreaterThanPrime()");
         }
 
         // Note that while modular inversion is usually performed using the
@@ -56,7 +56,7 @@ library ModularArithmetic {
         return computeExponentiation(x, addmod(0, prime - 2, prime), prime);
     }
 
-    /// @dev Computes base^{exponent} for module `prime`.
+    /// @dev Computes base^{exponent} mod `prime`.
     ///
     /// @dev Note that `prime` MUST be a prime number!
     ///
@@ -66,7 +66,7 @@ library ModularArithmetic {
         view
         returns (uint)
     {
-        // Payload to compute base^{exponent} (mod P).
+        // Payload to compute base^{exponent} (mod prime).
         // Note that the size of each argument is 32 bytes.
         bytes memory payload = abi.encode(32, 32, 32, base, exponent, prime);
 

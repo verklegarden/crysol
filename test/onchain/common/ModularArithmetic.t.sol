@@ -23,11 +23,50 @@ contract ModularArithmeticTest is Test {
         // TODO: Implement computeInverse() tests.
     }
 
+    function testFuzz_computeInverse_ReturnsIdentity_IfIdentity(uint prime)
+        public
+    {
+        // Note to just assume prime to be a prime.
+        vm.assume(prime > 1);
+
+        assertEq(wrapper.computeInverse(1, prime), 1);
+    }
+
+    function testFuzz_computeInverse_RevertsIf_XIsZero(uint prime) public {
+        // Note to just assume prime to be a prime.
+
+        vm.expectRevert("ModularInverseOfZeroDoesNotExist()");
+        wrapper.computeInverse(0, prime);
+    }
+
+    function testFuzz_computeInverse_RevertsIf_XGreaterThanOrEqualToPrime(
+        uint x,
+        uint prime
+    ) public {
+        // Note to just assume prime to be a prime.
+        vm.assume(x >= prime);
+
+        vm.expectRevert("ModularInverseOfXGreaterThanPrime()");
+        wrapper.computeInverse(x, prime);
+    }
+
     // -- computeExponentiation
 
     function test_computeExponentiation() public {
         vm.skip(true);
         // TODO: Implement computeExponentiation() tests.
+    }
+
+    function testFuzz_computeExponentiation_RevertsIf_OutOfGas(
+        uint base,
+        uint exponent,
+        uint prime
+    ) public {
+        // Note that modexp's min gas cost is 200.
+        try wrapper.computeExponentiation{gas: 200}(base, exponent, prime)
+        returns (uint) {
+            fail();
+        } catch {}
     }
 }
 
@@ -36,4 +75,16 @@ contract ModularArithmeticTest is Test {
  *
  * @dev For more info, see https://github.com/foundry-rs/foundry/pull/3128#issuecomment-1241245086.
  */
-contract ModularArithmeticWrapper {}
+contract ModularArithmeticWrapper {
+    function computeInverse(uint x, uint prime) public view returns (uint) {
+        return ModularArithmetic.computeInverse(x, prime);
+    }
+
+    function computeExponentiation(uint base, uint exponent, uint prime)
+        public
+        view
+        returns (uint)
+    {
+        return ModularArithmetic.computeExponentiation(base, exponent, prime);
+    }
+}

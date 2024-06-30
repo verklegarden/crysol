@@ -22,7 +22,7 @@ import {
  * @dev Run via:
  *
  *      ```bash
- *      $ forge script examples/secp256r1/Secp256r1.sol:Secp256k1Example -vvvv
+ *      $ forge script examples/secp256r1/Secp256r1.sol:Secp256r1Example -vvvv
  *      ```
  *
  * @dev Note that some code is commented out to reduce compiler warnings
