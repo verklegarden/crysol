@@ -65,9 +65,7 @@ contract Secp256r1OffchainTest is Test {
     //--------------------------------------------------------------------------
     // Public Key
 
-    function test_PublicKey_toString(
-        SecretKey sk
-    ) public {
+    function test_PublicKey_toString(SecretKey sk) public {
         vm.assume(sk.isValid());
 
         string memory str = wrapper.toString(sk.toPublicKey());
