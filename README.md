@@ -25,7 +25,7 @@ src
 │  │  └─ signatures
 │  │     ├─ ECDSA — "ECDSA signature functionality for secp256k1"
 │  │     └─ Schnorr — "Schnorr signature functionality for secp256k1"
-│  └─ secp25611
+│  └─ secp256r1
 │     ├─ Secp256r1 - "Cryptographic-related functionality for the secp256r1 elliptic curve"
 │     └─ Secp256r1Arithmetic — "Arithmetic-related functionality for the secp256r1 elliptic curve"
 ├─ offchain

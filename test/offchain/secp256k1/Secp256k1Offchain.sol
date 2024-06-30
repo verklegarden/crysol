@@ -41,9 +41,8 @@ contract Secp256k1OffchainTest is Test {
 
     // -- toPublicKey
 
-    function testFuzz_SecretKey_toPublicKey(uint seed) public {
-        SecretKey sk =
-            Secp256k1.secretKeyFromUint(_bound(seed, 1, Secp256k1.Q - 1));
+    function testFuzz_SecretKey_toPublicKey(SecretKey sk) public {
+        vm.assume(sk.isValid());
 
         address got = wrapper.toPublicKey(sk).toAddress();
         address want = vm.addr(sk.asUint());
