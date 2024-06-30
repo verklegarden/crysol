@@ -25,10 +25,16 @@ struct PublicKey {
 }
 
 /**
- * @title Secp25611
+ * @title Secp256r1
  *
  * @notice Providing common cryptography-related functionality for the secp256r1
  *         elliptic curve
+ *
+ * @dev TODO NIST's p256 curve, based on "random" seed.
+ *           Does not provide PublicKey::toAddress() function as not defined.
+ *           RIP-XXX exists and offers ECDSA verification. Not planned to
+ *           implement yet! -> How to ensure precompile deployed on chain?
+ *
  *
  * @custom:references
  *

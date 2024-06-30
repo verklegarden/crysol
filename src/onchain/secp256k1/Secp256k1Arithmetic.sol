@@ -168,6 +168,44 @@ library Secp256k1Arithmetic {
         return (point.x == other.x) && (point.y == other.y);
     }
 
+    /// @dev Returns the product of point `point` and scalar `scalar` as
+    ///      address.
+    ///
+    /// @dev Note that this function is substantially cheaper than
+    ///      `mul(ProjectivePoint,uint)(ProjectivePoint)` with the caveat that
+    ///      only the point's address is returned instead of the point itself.
+    function mulToAddress(Point memory point, uint scalar)
+        internal
+        pure
+        returns (address)
+    {
+        if (scalar >= Q) {
+            revert("ScalarMustBeFelt()");
+        }
+
+        if (scalar == 0 || point.isIdentity()) {
+            return IDENTITY_ADDRESS;
+        }
+
+        // Note that ecrecover can be abused to perform an elliptic curve
+        // multiplication with the caveat that the point's address is returned
+        // instead of the point itself.
+        //
+        // For further details, see [Vitalik 2018] and [SEC-1 v2] section 4.1.6
+        // "Public Key Recovery Operation".
+
+        uint8 v;
+        // Unchecked because point.yParity() ∊ {0, 1} which cannot overflow by
+        // adding 27.
+        unchecked {
+            v = uint8(point.yParity() + 27);
+        }
+        uint r = point.x;
+        uint s = mulmod(r, scalar, Q);
+
+        return ecrecover(0, v, bytes32(r), bytes32(s));
+    }
+
     //--------------------------------------------------------------------------
     // Projective Point
 
@@ -295,44 +333,6 @@ library Secp256k1Arithmetic {
         }
 
         return result;
-    }
-
-    /// @dev Returns the product of point `point` and scalar `scalar` as
-    ///      address.
-    ///
-    /// @dev Note that this function is substantially cheaper than
-    ///      `mul(ProjectivePoint,uint)(ProjectivePoint)` with the caveat that
-    ///      only the point's address is returned instead of the point itself.
-    function mulToAddress(Point memory point, uint scalar)
-        internal
-        pure
-        returns (address)
-    {
-        if (scalar >= Q) {
-            revert("ScalarMustBeFelt()");
-        }
-
-        if (scalar == 0 || point.isIdentity()) {
-            return IDENTITY_ADDRESS;
-        }
-
-        // Note that ecrecover can be abused to perform an elliptic curve
-        // multiplication with the caveat that the point's address is returned
-        // instead of the point itself.
-        //
-        // For further details, see [Vitalik 2018] and [SEC-1 v2] section 4.1.6
-        // "Public Key Recovery Operation".
-
-        uint8 v;
-        // Unchecked because point.yParity() ∊ {0, 1} which cannot overflow by
-        // adding 27.
-        unchecked {
-            v = uint8(point.yParity() + 27);
-        }
-        uint r = point.x;
-        uint s = mulmod(r, scalar, Q);
-
-        return ecrecover(0, v, bytes32(r), bytes32(s));
     }
 
     //--------------------------------------------------------------------------
@@ -556,6 +556,15 @@ library Secp256k1Arithmetic {
             x := mload(add(blob, 0x21))
         }
 
+        // Revert if identity not 1 byte encoded.
+        // TODO: Should have own error for identity not 1 byte encoded?
+        //
+        // Note that identity is explicitly enforced to be 1 byte encoded,
+        // eventhough for x = 0 the resulting point is not on the curve anyway.
+        if (x == 0) {
+            revert("PointNotOnCurve()");
+        }
+
         // Compute α = x³ + ax + b (mod p).
         // Note that adding a * x can be waived as ∀x: a * x = 0.
         uint alpha = addmod(mulmod(x, mulmod(x, x, P), P), B, P);
@@ -578,6 +587,7 @@ library Secp256k1Arithmetic {
         Point memory point = Point(x, y);
 
         // Revert if point not on curve.
+        // TODO: Find vectors for x coordinates not on the curve.
         if (!point.isOnCurve()) {
             revert("PointNotOnCurve()");
         }

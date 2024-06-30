@@ -193,6 +193,21 @@ library Secp256r1Arithmetic {
         return (point.x | point.z == 0);
     }
 
+    /// @dev DO NOT IMPORT!
+    ///
+    /// @dev This is an internal struct to circumvent stack-too-deep errors in
+    ///      ProjectivePoint::add() during non --via-ir compilation.
+    ///
+    /// @dev Tracking issue: TODO: Create issue.
+    struct __addTempVars {
+        uint t0;
+        uint t1;
+        uint t2;
+        uint t3;
+        uint t4;
+        uint t5;
+    }
+
     /// @dev Returns the sum of projective points `point` and `other` as
     ///      projective point.
     ///
@@ -227,50 +242,57 @@ library Secp256r1Arithmetic {
         // - B3 = mulmod(B, 3, P)
 
         // Variables:
-        uint t0; uint t1; uint t2; uint t3; uint t4; uint t5;
+        __addTempVars memory tmp = __addTempVars({
+            t0: 0,
+            t1: 0,
+            t2: 0,
+            t3: 0,
+            t4: 0,
+            t5: 0
+        });
 
         // Computations:
         // Note that x - y = x + (P - y) (mod P)
-        t0 = mulmod(x1, x2, P);
-        t1 = mulmod(y1, y2, P);
-        t2 = mulmod(z1, z2, P);
-        t3 = addmod(x1, y1, P);
-        t4 = addmod(x2, y2, P);
-        t3 = mulmod(t3, t4, P);
-        t4 = addmod(t0, t1, P);
-        unchecked { t3 = addmod(t3, P - t4, P); }
-        t4 = addmod(y1, z1, P);
-        t5 = addmod(y2, z2, P);
-        t4 = mulmod(t4, t5, P);
-        t5 = addmod(t0, t2, P);
-        unchecked { t4 = addmod(t4, P - t5, P); }
-        t5 = addmod(x1, z1, P);
+        tmp.t0 = mulmod(x1, x2, P);
+        tmp.t1 = mulmod(y1, y2, P);
+        tmp.t2 = mulmod(z1, z2, P);
+        tmp.t3 = addmod(x1, y1, P);
+        tmp.t4 = addmod(x2, y2, P);
+        tmp.t3 = mulmod(tmp.t3, tmp.t4, P);
+        tmp.t4 = addmod(tmp.t0, tmp.t1, P);
+        unchecked { tmp.t3 = addmod(tmp.t3, P - tmp.t4, P); }
+        tmp.t4 = addmod(x1, z1, P);
+        tmp.t5 = addmod(x2, z2, P);
+        tmp.t4 = mulmod(tmp.t4, tmp.t5, P);
+        tmp.t5 = addmod(tmp.t0, tmp.t2, P);
+        unchecked { tmp.t4 = addmod(tmp.t4, P - tmp.t5, P); }
+        tmp.t5 = addmod(y1, z1, P);
         x3 = addmod(y2, z2, P);
-        t5 = mulmod(t5, x3, P);
-        x3 = addmod(t1, t2, P);
-        unchecked { t5 = addmod(t5, P - x3, P); }
-        z3 = mulmod(A, t4, P);
-        x3 = mulmod(B3, t2, P);
+        tmp.t5 = mulmod(tmp.t5, x3, P);
+        x3 = addmod(tmp.t1, tmp.t2, P);
+        unchecked { tmp.t5 = addmod(tmp.t5, P - x3, P); }
+        z3 = mulmod(A, tmp.t4, P);
+        x3 = mulmod(B3, tmp.t2, P);
         z3 = addmod(x3, z3, P);
-        unchecked { x3 = addmod(t1, P - z3, P); }
-        z3 = addmod(t1, z3, P);
+        unchecked { x3 = addmod(tmp.t1, P - z3, P); }
+        z3 = addmod(tmp.t1, z3, P);
         y3 = mulmod(x3, z3, P);
-        t1 = addmod(t0, t0, P);
-        t1 = addmod(t1, t0, P);
-        t2 = mulmod(A, t2, P);
-        t4 = mulmod(B3, t4, P);
-        t1 = addmod(t1, t2, P);
-        unchecked { t2 = addmod(t0, P - t2, P); }
-        t2 = mulmod(A, t2, P);
-        t4 = addmod(t4, t2, P);
-        t0 = mulmod(t1, t4, P);
-        y3 = addmod(y3, t0, P);
-        t0 = mulmod(t5, t4, P);
-        x3 = mulmod(t3, x3, P);
-        unchecked { x3 = addmod(x3, P - t0, P); }
-        t0 = mulmod(t3, t1, P);
-        z3 = mulmod(t5, z3, P);
-        z3 = addmod(z3, t0, P);
+        tmp.t1 = addmod(tmp.t0, tmp.t0, P);
+        tmp.t1 = addmod(tmp.t1, tmp.t0, P);
+        tmp.t2 = mulmod(A, tmp.t2, P);
+        tmp.t4 = mulmod(B3, tmp.t4, P);
+        tmp.t1 = addmod(tmp.t1, tmp.t2, P);
+        unchecked { tmp.t2 = addmod(tmp.t0, P - tmp.t2, P); }
+        tmp.t2 = mulmod(A, tmp.t2, P);
+        tmp.t4 = addmod(tmp.t4, tmp.t2, P);
+        tmp.t0 = mulmod(tmp.t1, tmp.t4, P);
+        y3 = addmod(y3, tmp.t0, P);
+        tmp.t0 = mulmod(tmp.t5, tmp.t4, P);
+        x3 = mulmod(tmp.t3, x3, P);
+        unchecked { x3 = addmod(x3, P - tmp.t0, P); }
+        tmp.t0 = mulmod(tmp.t3, tmp.t1, P);
+        z3 = mulmod(tmp.t5, z3, P);
+        z3 = addmod(z3, tmp.t0, P);
         // forgefmt: disable-end
 
         return ProjectivePoint(x3, y3, z3);
@@ -526,6 +548,12 @@ library Secp256r1Arithmetic {
             x := mload(add(blob, 0x21))
         }
 
+        // Revert if identity not 1 byte encoded.
+        // TODO: Should have own error for identity not 1 byte encoded?
+        if (x == 0) {
+            revert("PointNotOnCurve()");
+        }
+
         // Compute α = x³ + ax + b (mod p).
         uint alpha = addmod(
             addmod(mulmod(x, mulmod(x, x, P), P), mulmod(A, x, P), P), B, P
@@ -549,6 +577,7 @@ library Secp256r1Arithmetic {
         Point memory point = Point(x, y);
 
         // Revert if point not on curve.
+        // TODO: Find vectors for x coordinates not on the curve.
         if (!point.isOnCurve()) {
             revert("PointNotOnCurve()");
         }
