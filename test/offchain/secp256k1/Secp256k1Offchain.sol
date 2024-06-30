@@ -16,6 +16,7 @@ import {
  */
 contract Secp256k1OffchainTest is Test {
     using Secp256k1Offchain for SecretKey;
+    using Secp256k1Offchain for PublicKey;
     using Secp256k1 for SecretKey;
     using Secp256k1 for PublicKey;
 
@@ -58,6 +59,18 @@ contract Secp256k1OffchainTest is Test {
         vm.expectRevert("SecretKeyInvalid()");
         wrapper.toPublicKey(sk);
     }
+
+    //--------------------------------------------------------------------------
+    // Public Key
+
+    function test_PublicKey_toString(
+        SecretKey sk
+    ) public {
+        vm.assume(sk.isValid());
+
+        string memory str = wrapper.toString(sk.toPublicKey());
+        console.log(str);
+    }
 }
 
 /**
@@ -67,6 +80,7 @@ contract Secp256k1OffchainTest is Test {
  */
 contract Secp256k1OffchainWrapper {
     using Secp256k1Offchain for SecretKey;
+    using Secp256k1Offchain for PublicKey;
 
     //--------------------------------------------------------------------------
     // Secret Key
@@ -77,5 +91,12 @@ contract Secp256k1OffchainWrapper {
 
     function toPublicKey(SecretKey sk) public returns (PublicKey memory) {
         return sk.toPublicKey();
+    }
+
+    //--------------------------------------------------------------------------
+    // Public Key
+
+    function toString(PublicKey memory pk) public returns (string memory) {
+        return pk.toString();
     }
 }

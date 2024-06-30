@@ -14,7 +14,7 @@ build: ## Build project
 	@forge build
 
 .PHONY: clean
-clear: ## Clean build artifacts
+clean: ## Clean build artifacts
 	@forge clean
 
 .PHONY: test
@@ -25,12 +25,22 @@ test: ## Run full test suite
 test-intense: ## Run full test suite with intense fuzzing
 	@FOUNDRY_PROFILE=intense forge test
 
+.PHONY: test-summary
+test-summary: ## Print summary of test suite
+	@forge test --summary
+
 .PHONY: coverage
 coverage: ## Update coverage report and open lcov web interface
 	@rm -rf coverage
 	@forge coverage --report lcov
 	@genhtml --branch-coverage --output "coverage" lcov.info
 	@open coverage/index.html
+
+# Note that ripgrep instead of grep is used.
+# See https://github.com/BurntSushi/ripgrep.
+.PHONY: todos
+todos: ## Grep TODO's in src/ and test/
+	@rg -rn "TODO" src/ test/
 
 .PHONY: examples
 examples: ## Run examples

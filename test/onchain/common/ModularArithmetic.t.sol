@@ -20,14 +20,14 @@ contract ModularArithmeticTest is Test {
 
     function test_computeInverse() public {
         vm.skip(true);
-        // TODO: Implement ModularArithmetic::computeInverse() tests.
+        // TODO: Implement computeInverse() tests.
     }
 
     // -- computeExponentiation
 
     function test_computeExponentiation() public {
         vm.skip(true);
-        // TODO: Implement ModularArithmetic::computeExponentiation() tests.
+        // TODO: Implement computeExponentiation() tests.
     }
 }
 
