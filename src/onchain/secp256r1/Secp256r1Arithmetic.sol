@@ -8,10 +8,10 @@
 
 */
 
-import {ModularArithmetic} from "../common/ModularArithmetic.sol";
-
 // SPDX-License-Identifier: MIT OR Apache-2.0
 pragma solidity ^0.8.16;
+
+import {ModularArithmetic} from "../common/ModularArithmetic.sol";
 
 /**
  * @notice Point is a secp256k1 point in affine coordinates
@@ -463,6 +463,13 @@ library Secp256r1Arithmetic {
 
         // Make point.
         Point memory point = Point(x, y);
+
+        // Revert if identity not 1 byte encoded.
+        // TODO: Not explicitly tested.
+        // TODO: Should have own error for identity not 1 byte encoded?
+        if (point.isIdentity()) {
+            revert("PointNotOnCurve()");
+        }
 
         // Revert if point not on curve.
         if (!point.isOnCurve()) {

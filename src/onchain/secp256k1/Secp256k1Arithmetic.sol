@@ -472,6 +472,13 @@ library Secp256k1Arithmetic {
         // Make point.
         Point memory point = Point(x, y);
 
+        // Revert if identity not 1 byte encoded.
+        // TODO: Not explicitly tested.
+        // TODO: Should have own error for identity not 1 byte encoded?
+        if (point.isIdentity()) {
+            revert("PointNotOnCurve()");
+        }
+
         // Revert if point not on curve.
         if (!point.isOnCurve()) {
             revert("PointNotOnCurve()");

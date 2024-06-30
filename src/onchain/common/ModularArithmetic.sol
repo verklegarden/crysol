@@ -14,7 +14,7 @@ pragma solidity ^0.8.16;
 /**
  * @title ModularArithmetic
  *
- * @notice
+ * @notice Provides modular arithmetic functionality
  *
  * @custom:references
  *      - [Dubois 2023]: https://eprint.iacr.org/2023/939.pdf
@@ -23,7 +23,7 @@ pragma solidity ^0.8.16;
  * @custom:repository github.com/verklegarden/crysol
  */
 library ModularArithmetic {
-    /// @dev Returns the modular inverse of `x` for modulo `prime`.
+    /// @dev Computes the modular inverse of `x` for modulo `prime`.
     ///
     ///      The modular inverse of `x` is x⁻¹ such that
     ///      x * x⁻¹ ≡ 1 (mod prime).
@@ -56,7 +56,11 @@ library ModularArithmetic {
         return computeExponentiation(x, addmod(0, prime - 2, prime), prime);
     }
 
-    /// @dev Computes base^{exponent} (mod prime) using the modexp precompile.
+    /// @dev Computes base^{exponent} for module `prime`.
+    ///
+    /// @dev Note that `prime` MUST be a prime number!
+    ///
+    /// @dev Uses the `modexp` precompile.
     function computeExponentiation(uint base, uint exponent, uint prime)
         internal
         view
