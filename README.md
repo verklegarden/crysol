@@ -20,13 +20,13 @@ src
 │  │  ├─ Nonce - "Deterministic nonce derivation"
 │  │  └─ ModularArithmetic - "Provides modular arithmetic functionality"
 │  ├─ secp256k1
-│  │  ├─ Secp256k1 - "Cryptographic-related functionality for the secp256k1 elliptic curve"
+│  │  ├─ Secp256k1 - "Cryptography-related functionality for the secp256k1 elliptic curve"
 │  │  ├─ Secp256k1Arithmetic — "Arithmetic-related functionality for the secp256k1 elliptic curve"
 │  │  └─ signatures
 │  │     ├─ ECDSA — "ECDSA signature functionality for secp256k1"
 │  │     └─ Schnorr — "Schnorr signature functionality for secp256k1"
 │  └─ secp256r1
-│     ├─ Secp256r1 - "Cryptographic-related functionality for the secp256r1 elliptic curve"
+│     ├─ Secp256r1 - "Cryptography-related functionality for the secp256r1 elliptic curve"
 │     └─ Secp256r1Arithmetic — "Arithmetic-related functionality for the secp256r1 elliptic curve"
 ├─ offchain
 │  ├─ common

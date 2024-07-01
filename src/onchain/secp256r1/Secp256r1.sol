@@ -17,8 +17,53 @@ import {
     ProjectivePoint
 } from "./Secp256r1Arithmetic.sol";
 
+/**
+ * @notice SecretKey is an secp256r1 secret key
+ *
+ * @dev Note that a secret key MUST be a field element, ie sk ∊ [1, Q).
+ *
+ * @dev Note that a secret key MUST be created cryptographically sound.
+ *      Generally, this means via randomness sourced from an CSPRNG.
+ *
+ * @custom:example Securly generating a random secret key:
+ *
+ *      ```solidity
+ *      import {Secp256r1Offchain} from "crysol-offchain/secp256r1/Secp256r1Offchain.sol";
+ *      import {Secp256r1, SecretKey} from "crysol/secp256r1/Secp256r1.sol";
+ *      contract Example {
+ *          using Secp256r1Offchain for SecretKey;
+ *          using Secp256r1 for SecretKey;
+ *
+ *          SecretKey sk = Secp256r1Offchain.newSecretKey();
+ *          assert(sk.isValid());
+ *      }
+ *      ````
+ */
 type SecretKey is uint;
 
+/**
+ * @notice PublicKey is a secret key's public identifier
+ *
+ * @dev A public key is a point on the secp256r1 curve computed via [sk]G.
+ *
+ * @custom:example Deriving a public key from a secret key:
+ *
+ *      ```solidity
+ *      import {Secp256r1Offchain} from "crysol-offchain/secp256r1/Secp256r1Offchain.sol";
+ *      import {Secp256r1, SecretKey, PublicKey} from "crysol/secp256r1/Secp256r1.sol";
+ *      contract Example {
+ *          using Secp256r1Offchain for SecretKey;
+ *          using Secp256r1 for SecretKey;
+ *          using Secp256r1 for PublicKey;
+ *
+ *          SecretKey sk = Secp256r1Offchain.newSecretKey();
+ *
+ *          PublicKey memory pk = sk.toPublicKey();
+ *          assert(pk.isValid());
+ *          assert(pk.toAddress() != address(0));
+ *      }
+ *      ```
+ */
 struct PublicKey {
     uint x;
     uint y;
@@ -30,13 +75,19 @@ struct PublicKey {
  * @notice Providing common cryptography-related functionality for the secp256r1
  *         elliptic curve
  *
- * @dev TODO NIST's p256 curve, based on "random" seed.
- *           Does not provide PublicKey::toAddress() function as not defined.
- *           RIP-XXX exists and offers ECDSA verification. Not planned to
- *           implement yet! -> How to ensure precompile deployed on chain?
+ * @dev Note that secp256r1 is also known as p256 and [NIST SP 800-186]
+ *      approved. Note that the curve is considered "randomly" generated because
+ *      part of the curve's definition is a SHA-1 hash. However, the origins of
+ *      this NSA-created constant have never been fully disclosed.
  *
+ * @dev Note that Ethereum does not provide support for the secp256r1 curve.
+ *      However, [RIP-7212] specifies an secp256r1 ECDSA verification precompile
+ *      that rollups MAY support. For more info, see [RIP].
  *
  * @custom:references
+ *      [NIST SP 800-186]: https://csrc.nist.gov/pubs/sp/800/186/final
+ *      [RIP]: https://github.com/ethereum/RIPs/blob/master/README.md
+ *      [RIP-7212]: https://github.com/ethereum/RIPs/blob/master/RIPS/rip-7212.md
  *
  * @author verklegarden
  * @custom:repository github.com/verklegarden/crysol

@@ -44,8 +44,6 @@ struct ProjectivePoint {
  * @notice Provides common arithmetic-related functionality for the secp256r1
  *         elliptic curve
  *
- * @dev TODO r1 library docs
- *
  * @custom:references
  *      - [SEC-1 v2]: https://www.secg.org/sec1-v2.pdf
  *      - [SEC-2 v2]: https://www.secg.org/sec2-v2.pdf
