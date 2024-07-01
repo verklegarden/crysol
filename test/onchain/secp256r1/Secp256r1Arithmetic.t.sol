@@ -16,6 +16,9 @@ import {
     ProjectivePoint
 } from "src/onchain/secp256r1/Secp256r1Arithmetic.sol";
 
+import {Secp256r1ArithmeticTestVectors} from
+    "./test-vectors/Secp256r1ArithmeticTestVectors.sol";
+
 /**
  * @notice Secp256r1Arithmetic Unit Tests
  */
@@ -180,7 +183,18 @@ contract Secp256r1ArithmeticTest is Test {
         assertTrue(want.eq(got));
     }
 
-    // TODO: Need r1 add() test vectors.
+    function testVectors_ProjectivePoint_add() public {
+        ProjectivePoint memory g = Secp256r1Arithmetic.G().toProjectivePoint();
+        ProjectivePoint memory p = Secp256r1Arithmetic.ProjectiveIdentity();
+
+        Point[] memory vectors = Secp256r1ArithmeticTestVectors.addVectors();
+
+        for (uint i; i < vectors.length; i++) {
+            p = wrapper.add(p, g);
+
+            assertTrue(p.toPoint().eq(vectors[i]));
+        }
+    }
 
     function test_ProjectivePoint_add_Identity() public {
         ProjectivePoint memory g = Secp256r1Arithmetic.G().toProjectivePoint();
@@ -223,7 +237,19 @@ contract Secp256r1ArithmeticTest is Test {
         assertTrue(want.eq(got));
     }
 
-    // TODO: Need r1 mul() test vectors.
+    function testVectors_ProjectivePoint_mul() public {
+        ProjectivePoint memory g = Secp256r1Arithmetic.G().toProjectivePoint();
+
+        uint[] memory scalars;
+        Point[] memory products;
+        (scalars, products) = Secp256r1ArithmeticTestVectors.mulVectors();
+
+        for (uint i; i < scalars.length; i++) {
+            Point memory p = wrapper.mul(g, scalars[i]).intoPoint();
+
+            assertTrue(p.eq(products[i]));
+        }
+    }
 
     function testFuzz_ProjectivePoint_mul_ReturnsIdentityIfScalarIsZero(
         ProjectivePoint memory point
