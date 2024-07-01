@@ -10,6 +10,10 @@ import {ModularArithmetic} from "src/onchain/common/ModularArithmetic.sol";
  * @notice ModularArithmetic Unit Tests
  */
 contract ModularArithmeticTest is Test {
+    /// @dev Using secp256k1 prime for testing.
+    uint internal constant P =
+        0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFEFFFFFC2F;
+
     ModularArithmeticWrapper wrapper;
 
     function setUp() public {
@@ -18,36 +22,31 @@ contract ModularArithmeticTest is Test {
 
     // -- computeInverse
 
-    function test_computeInverse() public {
-        vm.skip(true);
-        // TODO: Implement computeInverse() tests.
+    function testFuzz_computeInverse(uint x) public {
+        vm.assume(x != 0);
+        vm.assume(x < P);
+
+        uint xInv = wrapper.computeInverse(x, P);
+        assertEq(mulmod(x, xInv, P), 1);
     }
 
-    function testFuzz_computeInverse_ReturnsIdentity_IfIdentity(uint prime)
-        public
-    {
-        // Note to just assume prime to be a prime.
-        vm.assume(prime > 1);
-
-        assertEq(wrapper.computeInverse(1, prime), 1);
+    function test_computeInverse_ReturnsIdentity_IfIdentity() public {
+        assertEq(wrapper.computeInverse(1, P), 1);
     }
 
-    function testFuzz_computeInverse_RevertsIf_XIsZero(uint prime) public {
-        // Note to just assume prime to be a prime.
-
+    function test_computeInverse_RevertsIf_XIsZero() public {
         vm.expectRevert("ModularInverseOfZeroDoesNotExist()");
-        wrapper.computeInverse(0, prime);
+        wrapper.computeInverse(0, P);
     }
 
     function testFuzz_computeInverse_RevertsIf_XGreaterThanOrEqualToPrime(
-        uint x,
-        uint prime
+        uint x
     ) public {
-        // Note to just assume prime to be a prime.
-        vm.assume(x >= prime);
+        vm.assume(x != 0);
+        vm.assume(x >= P);
 
         vm.expectRevert("ModularInverseOfXGreaterThanPrime()");
-        wrapper.computeInverse(x, prime);
+        wrapper.computeInverse(x, P);
     }
 
     // -- computeExponentiation
@@ -59,12 +58,12 @@ contract ModularArithmeticTest is Test {
 
     function testFuzz_computeExponentiation_RevertsIf_OutOfGas(
         uint base,
-        uint exponent,
-        uint prime
+        uint exponent
     ) public {
         // Note that modexp's min gas cost is 200.
-        try wrapper.computeExponentiation{gas: 200}(base, exponent, prime)
-        returns (uint) {
+        try wrapper.computeExponentiation{gas: 200}(base, exponent, P) returns (
+            uint
+        ) {
             fail();
         } catch {}
     }
