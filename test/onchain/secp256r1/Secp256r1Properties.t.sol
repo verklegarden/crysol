@@ -4,26 +4,26 @@ pragma solidity ^0.8.16;
 import {Test} from "forge-std/Test.sol";
 import {console2 as console} from "forge-std/console2.sol";
 
-import {Secp256k1Offchain} from "src/offchain/secp256k1/Secp256k1Offchain.sol";
+import {Secp256r1Offchain} from "src/offchain/secp256r1/Secp256r1Offchain.sol";
 import {
-    Secp256k1,
+    Secp256r1,
     SecretKey,
     PublicKey
-} from "src/onchain/secp256k1/Secp256k1.sol";
+} from "src/onchain/secp256r1/Secp256r1.sol";
 import {
-    Secp256k1Arithmetic,
+    Secp256r1Arithmetic,
     Point,
     ProjectivePoint
-} from "src/onchain/secp256k1/Secp256k1Arithmetic.sol";
+} from "src/onchain/secp256r1/Secp256r1Arithmetic.sol";
 
 /**
- * @notice Secp256k1 Property Tests
+ * @notice Secp256r1 Property Tests
  */
-contract Secp256k1PropertiesTest is Test {
-    using Secp256k1Offchain for SecretKey;
-    using Secp256k1 for SecretKey;
-    using Secp256k1 for PublicKey;
-    using Secp256k1 for Point;
+contract Secp256r1PropertiesTest is Test {
+    using Secp256r1Offchain for SecretKey;
+    using Secp256r1 for SecretKey;
+    using Secp256r1 for PublicKey;
+    using Secp256r1 for Point;
 
     //--------------------------------------------------------------------------
     // Test: (De)Serialization
@@ -37,7 +37,7 @@ contract Secp256k1PropertiesTest is Test {
     {
         vm.assume(start.isValid());
 
-        SecretKey end = Secp256k1.secretKeyFromBytes(start.toBytes());
+        SecretKey end = Secp256r1.secretKeyFromBytes(start.toBytes());
 
         assertEq(start.asUint(), end.asUint());
     }
@@ -47,11 +47,12 @@ contract Secp256k1PropertiesTest is Test {
 
     function testProperty_PublicKey_Bytes_SerializationLoop(SecretKey sk)
         public
+        view
     {
         vm.assume(sk.isValid());
 
         PublicKey memory start = sk.toPublicKey();
-        PublicKey memory end = Secp256k1.publicKeyFromBytes(start.toBytes());
+        PublicKey memory end = Secp256r1.publicKeyFromBytes(start.toBytes());
 
         assertTrue(start.eq(end));
     }

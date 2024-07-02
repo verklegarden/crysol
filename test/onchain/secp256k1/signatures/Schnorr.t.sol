@@ -130,7 +130,7 @@ contract SchnorrTest is Test {
 
     // -- Signature::isMalleable
 
-    function testFuzz_Signature_isMalleable(Signature memory sig) public {
+    function testFuzz_Signature_isMalleable(Signature memory sig) public view {
         sig.signature =
             bytes32(_bound(uint(sig.signature), Secp256k1.Q, type(uint).max));
 
@@ -139,7 +139,7 @@ contract SchnorrTest is Test {
 
     function testFuzz_Signature_isMalleable_FailsIf_SignatureNotMalleable(
         Signature memory sig
-    ) public {
+    ) public view {
         vm.assume(uint(sig.signature) < Secp256k1.Q);
 
         assertFalse(wrapper.isMalleable(sig));

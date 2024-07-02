@@ -16,6 +16,7 @@ import {
  */
 contract Secp256k1OffchainTest is Test {
     using Secp256k1Offchain for SecretKey;
+    using Secp256k1Offchain for PublicKey;
     using Secp256k1 for SecretKey;
     using Secp256k1 for PublicKey;
 
@@ -41,9 +42,8 @@ contract Secp256k1OffchainTest is Test {
 
     // -- toPublicKey
 
-    function testFuzz_SecretKey_toPublicKey(uint seed) public {
-        SecretKey sk =
-            Secp256k1.secretKeyFromUint(_bound(seed, 1, Secp256k1.Q - 1));
+    function testFuzz_SecretKey_toPublicKey(SecretKey sk) public {
+        vm.assume(sk.isValid());
 
         address got = wrapper.toPublicKey(sk).toAddress();
         address want = vm.addr(sk.asUint());
@@ -59,6 +59,16 @@ contract Secp256k1OffchainTest is Test {
         vm.expectRevert("SecretKeyInvalid()");
         wrapper.toPublicKey(sk);
     }
+
+    //--------------------------------------------------------------------------
+    // Public Key
+
+    function test_PublicKey_toString(SecretKey sk) public {
+        vm.assume(sk.isValid());
+
+        string memory str = wrapper.toString(sk.toPublicKey());
+        console.log(str);
+    }
 }
 
 /**
@@ -68,6 +78,7 @@ contract Secp256k1OffchainTest is Test {
  */
 contract Secp256k1OffchainWrapper {
     using Secp256k1Offchain for SecretKey;
+    using Secp256k1Offchain for PublicKey;
 
     //--------------------------------------------------------------------------
     // Secret Key
@@ -78,5 +89,16 @@ contract Secp256k1OffchainWrapper {
 
     function toPublicKey(SecretKey sk) public returns (PublicKey memory) {
         return sk.toPublicKey();
+    }
+
+    //--------------------------------------------------------------------------
+    // Public Key
+
+    function toString(PublicKey memory pk)
+        public
+        view
+        returns (string memory)
+    {
+        return pk.toString();
     }
 }
