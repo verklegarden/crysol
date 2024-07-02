@@ -381,17 +381,22 @@ contract Secp256r1ArithmeticTest is Test {
         point = wrapper.pointFromEncoded(blob);
         assertTrue(point.eq(Secp256r1Arithmetic.G()));
 
-        // TODO: Find r1 point to test encoding.
-        //blob = hex"";
-        //point = wrapper.pointFromEncoded(blob);
-        //assertTrue(
-        //    point.eq(
-        //        Point({
-        //            x: uint(),
-        //            y: uint()
-        //        })
-        //    )
-        //);
+        // Some other point, ie [2]G.
+        blob =
+            hex"047CF27B188D034F7E8A52380304B51AC3C08969E277F21B35A60B48FC4766997807775510DB8ED040293D9AC69F7430DBBA7DADE63CE982299E04B79D227873D1";
+        point = wrapper.pointFromEncoded(blob);
+        assertTrue(
+            point.eq(
+                Point({
+                    x: uint(
+                        0x7CF27B188D034F7E8A52380304B51AC3C08969E277F21B35A60B48FC47669978
+                    ),
+                    y: uint(
+                        0x07775510DB8ED040293D9AC69F7430DBBA7DADE63CE982299E04B79D227873D1
+                    )
+                })
+            )
+        );
     }
 
     function test_pointFromEncoded_Identity() public {
@@ -444,17 +449,20 @@ contract Secp256r1ArithmeticTest is Test {
         blob = wrapper.toEncoded(point);
         assertEq(blob, GENERATOR_ENCODED);
 
-        // TODO: Find r1 point to test encoding.
         // Some other point, ie [2]G.
-        //point = Point({
-        //    x: uint(),
-        //    y: uint()
-        //});
-        //blob = wrapper.toEncoded(point);
-        //assertEq(
-        //    blob,
-        //    hex""
-        //);
+        point = Point({
+            x: uint(
+                0x7CF27B188D034F7E8A52380304B51AC3C08969E277F21B35A60B48FC47669978
+            ),
+            y: uint(
+                0x07775510DB8ED040293D9AC69F7430DBBA7DADE63CE982299E04B79D227873D1
+            )
+        });
+        blob = wrapper.toEncoded(point);
+        assertEq(
+            blob,
+            hex"047CF27B188D034F7E8A52380304B51AC3C08969E277F21B35A60B48FC4766997807775510DB8ED040293D9AC69F7430DBBA7DADE63CE982299E04B79D227873D1"
+        );
     }
 
     function test_Point_toEncoded_Identity() public {
@@ -560,35 +568,39 @@ contract Secp256r1ArithmeticTest is Test {
     }
 
     function test_Point_toCompressedEncoded_IfyParityEven() public {
-        vm.skip(true);
-        // TODO: Find r1 point to test encoding.
-        // Some point, ie [2]G.
-        //Point memory point = Point({
-        //    x: uint(),
-        //    y: uint()
-        //});
-        //bytes memory blob = wrapper.toCompressedEncoded(point);
-        //
-        //assertEq(
-        //    blob,
-        //    hex""
-        //);
+        // Some point, ie [6]G.
+        Point memory point = Point({
+            x: uint(
+                0xB01A172A76A4602C92D3242CB897DDE3024C740DEBB215B4C6B0AAE93C2291A9
+            ),
+            y: uint(
+                0xE85C10743237DAD56FEC0E2DFBA703791C00F7701C7E16BDFD7C48538FC77FE2
+            )
+        });
+        bytes memory blob = wrapper.toCompressedEncoded(point);
+
+        assertEq(
+            blob,
+            hex"02B01A172A76A4602C92D3242CB897DDE3024C740DEBB215B4C6B0AAE93C2291A9"
+        );
     }
 
     function test_Point_toCompressedEncoded_IfyParityOdd() public {
-        vm.skip(true);
-        // TODO: Find r1 point to test encoding.
-        // Some point, ie [6]G.
-        //Point memory point = Point({
-        //    x: uint(),
-        //    y: uint()
-        //});
-        //bytes memory blob = wrapper.toCompressedEncoded(point);
-        //
-        //assertEq(
-        //    blob,
-        //    hex""
-        //);
+        // Some point, ie [2]G.
+        Point memory point = Point({
+            x: uint(
+                0x7CF27B188D034F7E8A52380304B51AC3C08969E277F21B35A60B48FC47669978
+            ),
+            y: uint(
+                0x07775510DB8ED040293D9AC69F7430DBBA7DADE63CE982299E04B79D227873D1
+            )
+        });
+        bytes memory blob = wrapper.toCompressedEncoded(point);
+
+        assertEq(
+            blob,
+            hex"037CF27B188D034F7E8A52380304B51AC3C08969E277F21B35A60B48FC47669978"
+        );
     }
 
     function test_Point_toCompressedEncoded_Identity() public {
