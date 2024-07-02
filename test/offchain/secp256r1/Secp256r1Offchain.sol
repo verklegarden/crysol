@@ -44,7 +44,7 @@ contract Secp256r1OffchainTest is Test {
 
     function testFuzz_SecretKey_toPublicKey(SecretKey sk) public {
         vm.skip(true);
-        // TODO: Need vm support for p256 public key.
+        // TODO: Implement once vm has p256 support.
         //vm.assume(sk.isValid());
         //
         //address got = wrapper.toPublicKey(sk).toAddress();

@@ -84,8 +84,7 @@ library Secp256r1Offchain {
             revert("SecretKeyInvalid()");
         }
 
-        // TODO: Use vm to compute pk = [sk]G.
-        //       Need to update forge-std lib.
+        // TODO: Need vm support for p256 public key derivation.
         // forgefmt: disable-next-item
         Point memory p = Secp256r1.G().toProjectivePoint()
                                       .mul(sk.asUint())
