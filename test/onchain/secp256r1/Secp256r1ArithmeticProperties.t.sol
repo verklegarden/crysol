@@ -35,7 +35,7 @@ contract Secp256r1ArithmeticPropertiesTest is Test {
     function testProperty_ProjectivePoint_add_NeverReturnsZeroPoint(
         SecretKey sr1,
         SecretKey sk2
-    ) public {
+    ) public view {
         vm.assume(sr1.isValid());
         vm.assume(sk2.isValid());
 
@@ -50,7 +50,7 @@ contract Secp256r1ArithmeticPropertiesTest is Test {
     function testProperty_ProjectivePoint_add_ResultIsOnCurve(
         SecretKey sr1,
         SecretKey sk2
-    ) public {
+    ) public view {
         vm.assume(sr1.isValid());
         vm.assume(sk2.isValid());
 
@@ -67,7 +67,7 @@ contract Secp256r1ArithmeticPropertiesTest is Test {
     function testProperty_ProjectivePoint_mul_ResultIsOnCurve(
         SecretKey sk,
         uint scalar
-    ) public {
+    ) public view {
         vm.assume(sk.isValid());
 
         vm.assume(scalar < Secp256r1Arithmetic.Q);
@@ -84,6 +84,7 @@ contract Secp256r1ArithmeticPropertiesTest is Test {
 
     function testProperty_Point_Encoded_SerializationLoop(SecretKey sk)
         public
+        view
     {
         vm.assume(sk.isValid());
 
@@ -97,7 +98,7 @@ contract Secp256r1ArithmeticPropertiesTest is Test {
 
     function testProperty_Point_CompressedEncoded_SerializationLoop(
         SecretKey sk
-    ) public {
+    ) public view {
         vm.assume(sk.isValid());
 
         Point memory start = sk.toPublicKey().intoPoint();

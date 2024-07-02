@@ -41,7 +41,7 @@ contract Secp256r1Test is Test {
     //--------------------------------------------------------------------------
     // Test: Constants
 
-    function test_G() public {
+    function test_G() public view {
         PublicKey memory got = wrapper.G();
         PublicKey memory want = Secp256r1Arithmetic.pointFromEncoded(
             GENERATOR_ENCODED
@@ -55,19 +55,19 @@ contract Secp256r1Test is Test {
 
     // -- isValid
 
-    function testFuzz_SecretKey_isValid(uint seed) public {
+    function testFuzz_SecretKey_isValid(uint seed) public view {
         uint scalar = _bound(seed, 1, Secp256r1.Q - 1);
 
         assertTrue(wrapper.isValid(SecretKey.wrap(scalar)));
     }
 
-    function test_SecretKey_isValid_FailsIf_SecretKeyIsZero() public {
+    function test_SecretKey_isValid_FailsIf_SecretKeyIsZero() public view {
         assertFalse(wrapper.isValid(SecretKey.wrap(0)));
     }
 
     function testFuzz_SecretKey_isValid_FailsIf_SecretKeyGreaterOrEqualToQ(
         uint seed
-    ) public {
+    ) public view {
         uint scalar = _bound(seed, Secp256r1.Q, type(uint).max);
 
         assertFalse(wrapper.isValid(SecretKey.wrap(scalar)));
@@ -75,7 +75,7 @@ contract Secp256r1Test is Test {
 
     // -- secretKeyFromUint
 
-    function testFuzz_secretKeyFromUint(uint seed) public {
+    function testFuzz_secretKeyFromUint(uint seed) public view {
         uint scalar = _bound(seed, 1, Secp256r1.Q - 1);
 
         SecretKey sk = wrapper.secretKeyFromUint(scalar);
@@ -100,7 +100,7 @@ contract Secp256r1Test is Test {
 
     // -- asUint
 
-    function testFuzz_SecretKey_asUint(uint seed) public {
+    function testFuzz_SecretKey_asUint(uint seed) public view {
         assertEq(seed, wrapper.asUint(SecretKey.wrap(seed)));
     }
 
@@ -109,7 +109,7 @@ contract Secp256r1Test is Test {
 
     // -- toHash
 
-    function testFuzz_PublicKey_toHash(PublicKey memory pk) public {
+    function testFuzz_PublicKey_toHash(PublicKey memory pk) public view {
         bytes32 got = wrapper.toHash(pk);
         bytes32 want = keccak256(abi.encodePacked(pk.x, pk.y));
 
@@ -120,6 +120,7 @@ contract Secp256r1Test is Test {
 
     function testFuzz_PublicKey_isValid_If_CreatedViaValidSecretKey(uint seed)
         public
+        view
     {
         SecretKey sk =
             Secp256r1.secretKeyFromUint(_bound(seed, 1, Secp256r1.Q - 1));
@@ -128,13 +129,13 @@ contract Secp256r1Test is Test {
         assertTrue(wrapper.isValid(sk.toPublicKey()));
     }
 
-    function test_PublicKey_isValid_FailsIf_Identity() public {
+    function test_PublicKey_isValid_FailsIf_Identity() public view {
         PublicKey memory pk = Secp256r1Arithmetic.Identity().intoPublicKey();
 
         assertFalse(wrapper.isValid(pk));
     }
 
-    function test_PublicKey_isValid_FailsIf_PointNotOnCurve() public {
+    function test_PublicKey_isValid_FailsIf_PointNotOnCurve() public view {
         PublicKey memory pk;
 
         pk.x = 1;
@@ -144,7 +145,7 @@ contract Secp256r1Test is Test {
 
     // -- yParity
 
-    function testFuzz_PublicKey_yParity(uint x, uint y) public {
+    function testFuzz_PublicKey_yParity(uint x, uint y) public view {
         // yParity is 0 if y is even and 1 if y is odd.
         uint want = y % 2 == 0 ? 0 : 1;
         uint got = wrapper.yParity(PublicKey(x, y));
@@ -156,6 +157,7 @@ contract Secp256r1Test is Test {
 
     function testFuzz_PublicKey_eq(PublicKey memory pr1, PublicKey memory pk2)
         public
+        view
     {
         bool want = pr1.x == pk2.x && pr1.y == pk2.y;
         bool got = wrapper.eq(pr1, pk2);
@@ -168,7 +170,7 @@ contract Secp256r1Test is Test {
     // TODO: Add no memory expansion tests for `into__()` functions.
     //       Must directly use library, not wrapper.
 
-    function testFuzz_PublicKey_intoPoint(PublicKey memory pk) public {
+    function testFuzz_PublicKey_intoPoint(PublicKey memory pk) public view {
         Point memory point = wrapper.intoPoint(pk);
 
         assertEq(point.x, pk.x);
@@ -177,7 +179,7 @@ contract Secp256r1Test is Test {
 
     // -- Point::intoPublicKey
 
-    function testFuzz_Point_intoPublicKey(Point memory point) public {
+    function testFuzz_Point_intoPublicKey(Point memory point) public view {
         PublicKey memory pk = wrapper.intoPublicKey(point);
 
         assertEq(pk.x, point.x);
@@ -186,7 +188,10 @@ contract Secp256r1Test is Test {
 
     // -- toProjectivePoint
 
-    function testFuzz_PublicKey_toProjectivePoint(PublicKey memory pk) public {
+    function testFuzz_PublicKey_toProjectivePoint(PublicKey memory pk)
+        public
+        view
+    {
         ProjectivePoint memory point = wrapper.toProjectivePoint(pk);
 
         if (pk.intoPoint().isIdentity()) {
@@ -206,7 +211,7 @@ contract Secp256r1Test is Test {
 
     // -- SecretKey <-> Bytes
 
-    function testFuzz_secretKeyFromBytes(SecretKey sk) public {
+    function testFuzz_secretKeyFromBytes(SecretKey sk) public view {
         vm.assume(sk.isValid());
 
         bytes memory blob = abi.encodePacked(sk.asUint());
@@ -244,7 +249,7 @@ contract Secp256r1Test is Test {
         wrapper.secretKeyFromBytes(blob);
     }
 
-    function testFuzz_SecretKey_toBytes(SecretKey sk) public {
+    function testFuzz_SecretKey_toBytes(SecretKey sk) public view {
         vm.assume(sk.isValid());
 
         bytes memory blob = wrapper.toBytes(sk);
@@ -277,7 +282,7 @@ contract Secp256r1Test is Test {
     // -- PublicKey <-> Bytes
 
     // TODO: PublicKey <-> Bytes: Need test vectors.
-    function testFuzz_publicKeyFromBytes(SecretKey sk) public {
+    function testFuzz_publicKeyFromBytes(SecretKey sk) public view {
         vm.assume(sk.isValid());
 
         PublicKey memory pr1 = sk.toPublicKey();
@@ -308,7 +313,7 @@ contract Secp256r1Test is Test {
         wrapper.publicKeyFromBytes(blob);
     }
 
-    function testFuzz_PublicKey_toBytes(SecretKey sk) public {
+    function testFuzz_PublicKey_toBytes(SecretKey sk) public view {
         vm.assume(sk.isValid());
 
         PublicKey memory pr1 = sk.toPublicKey();

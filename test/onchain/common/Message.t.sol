@@ -22,14 +22,14 @@ contract MessageTest is Test {
         wrapper = new MessageWrapper();
     }
 
-    function test_deriveEthereumSignedMessageHash_From_Bytes() public {
+    function test_deriveEthereumSignedMessageHash_From_Bytes() public view {
         assertEq(
             wrapper.deriveEthereumSignedMessageHash(MESSAGE),
             ETHEREUM_SIGNED_MESSAGE_HASH
         );
     }
 
-    function test_deriveEthereumSignedMessageHash_From_Digest() public {
+    function test_deriveEthereumSignedMessageHash_From_Digest() public view {
         assertEq(
             wrapper.deriveEthereumSignedMessageHash(keccak256(MESSAGE)),
             ETHEREUM_SIGNED_MESSAGE_HASH

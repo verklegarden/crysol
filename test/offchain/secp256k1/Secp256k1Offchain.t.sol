@@ -94,7 +94,11 @@ contract Secp256k1OffchainWrapper {
     //--------------------------------------------------------------------------
     // Public Key
 
-    function toString(PublicKey memory pk) public returns (string memory) {
+    function toString(PublicKey memory pk)
+        public
+        view
+        returns (string memory)
+    {
         return pk.toString();
     }
 }

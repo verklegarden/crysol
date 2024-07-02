@@ -110,7 +110,7 @@ contract ECDSAOffchainTest is Test {
 
     // -- Signature::toString
 
-    function test_Signature_toString() public {
+    function test_Signature_toString() public view {
         Signature memory sig = Signature({
             v: 27,
             r: bytes32(type(uint).max),

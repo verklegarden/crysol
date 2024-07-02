@@ -106,7 +106,7 @@ contract SchnorrOffchainTest is Test {
 
     // -- Signature::toString
 
-    function test_Signature_toString() public {
+    function test_Signature_toString() public view {
         Signature memory sig = Signature({
             signature: bytes32(type(uint).max),
             commitment: address(0x0)

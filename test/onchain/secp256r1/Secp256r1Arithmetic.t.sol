@@ -49,7 +49,7 @@ contract Secp256r1ArithmeticTest is Test {
     //--------------------------------------------------------------------------
     // Test: Constants
 
-    function test_G() public {
+    function test_G() public view {
         Point memory got = wrapper.G();
         Point memory want =
             Secp256r1Arithmetic.pointFromEncoded(GENERATOR_ENCODED);
@@ -63,13 +63,13 @@ contract Secp256r1ArithmeticTest is Test {
 
     // -- Identity
 
-    function test_Identity() public {
+    function test_Identity() public view {
         assertTrue(wrapper.Identity().isIdentity());
     }
 
     // -- isIdentity
 
-    function testFuzz_Point_isIdentity(Point memory point) public {
+    function testFuzz_Point_isIdentity(Point memory point) public view {
         if (point.x == 0 && point.y == 0) {
             assertTrue(wrapper.isIdentity(point));
         } else {
@@ -79,7 +79,7 @@ contract Secp256r1ArithmeticTest is Test {
 
     // -- isOnCurve
 
-    function testFuzz_Point_isOnCurve(SecretKey sk) public {
+    function testFuzz_Point_isOnCurve(SecretKey sk) public view {
         vm.assume(sk.isValid());
 
         Point memory point = sk.toPublicKey().intoPoint();
@@ -87,7 +87,7 @@ contract Secp256r1ArithmeticTest is Test {
         assertTrue(wrapper.isOnCurve(point));
     }
 
-    function test_Point_isOnCurve_Identity() public {
+    function test_Point_isOnCurve_Identity() public view {
         assertTrue(wrapper.isOnCurve(Secp256r1Arithmetic.Identity()));
     }
 
@@ -95,7 +95,7 @@ contract Secp256r1ArithmeticTest is Test {
         SecretKey sk,
         uint xMask,
         uint yMask
-    ) public {
+    ) public view {
         vm.assume(sk.isValid());
         vm.assume(xMask != 0 || yMask != 0);
 
@@ -110,7 +110,7 @@ contract Secp256r1ArithmeticTest is Test {
 
     // -- yParity
 
-    function testFuzz_Point_yParity(uint x, uint y) public {
+    function testFuzz_Point_yParity(uint x, uint y) public view {
         // yParity is 0 if y is even and 1 if y is odd.
         uint want = y % 2 == 0 ? 0 : 1;
         uint got = wrapper.yParity(Point(x, y));
@@ -120,7 +120,7 @@ contract Secp256r1ArithmeticTest is Test {
 
     // -- eq
 
-    function testFuzz_Point_eq(SecretKey sk1, SecretKey sk2) public {
+    function testFuzz_Point_eq(SecretKey sk1, SecretKey sk2) public view {
         vm.assume(sk1.isValid());
         vm.assume(sk2.isValid());
 
@@ -139,7 +139,7 @@ contract Secp256r1ArithmeticTest is Test {
 
     // -- ProjectiveIdentity
 
-    function test_ProjectiveIdentity() public {
+    function test_ProjectiveIdentity() public view {
         assertTrue(wrapper.ProjectiveIdentity().isIdentity());
     }
 
@@ -147,6 +147,7 @@ contract Secp256r1ArithmeticTest is Test {
 
     function testFuzz_ProjectivePoint_isIdentity(ProjectivePoint memory point)
         public
+        view
     {
         if (point.x == 0 && point.z == 0) {
             assertTrue(wrapper.isIdentity(point));
@@ -159,6 +160,7 @@ contract Secp256r1ArithmeticTest is Test {
 
     function testFuzz_ProjectivePoint_add(SecretKey sk1, SecretKey sk2)
         public
+        view
     {
         vm.assume(sk1.isValid());
         vm.assume(sk2.isValid());
@@ -183,7 +185,7 @@ contract Secp256r1ArithmeticTest is Test {
         assertTrue(want.eq(got));
     }
 
-    function testVectors_ProjectivePoint_add() public {
+    function testVectors_ProjectivePoint_add() public view {
         ProjectivePoint memory g = Secp256r1Arithmetic.G().toProjectivePoint();
         ProjectivePoint memory p = Secp256r1Arithmetic.ProjectiveIdentity();
 
@@ -196,7 +198,7 @@ contract Secp256r1ArithmeticTest is Test {
         }
     }
 
-    function test_ProjectivePoint_add_Identity() public {
+    function test_ProjectivePoint_add_Identity() public view {
         ProjectivePoint memory g = Secp256r1Arithmetic.G().toProjectivePoint();
         ProjectivePoint memory id = Secp256r1Arithmetic.ProjectiveIdentity();
         Point memory got;
@@ -209,7 +211,7 @@ contract Secp256r1ArithmeticTest is Test {
         assertTrue(got.eq(Secp256r1Arithmetic.G()));
     }
 
-    function test_ProjectivePoint_add_UpToIdentity() public {
+    function test_ProjectivePoint_add_UpToIdentity() public view {
         // Note that 1 + Q-1 = Q and [Q]G = Identity().
         SecretKey sk1 = Secp256r1.secretKeyFromUint(1);
         SecretKey sk2 = Secp256r1.secretKeyFromUint(Secp256r1.Q - 1);
@@ -226,7 +228,7 @@ contract Secp256r1ArithmeticTest is Test {
     // -- mul
 
     // TODO: secp256r1 mul() test useless if offchain not using vm.
-    function testFuzz_ProjectivePoint_mul(SecretKey sk) public {
+    function testFuzz_ProjectivePoint_mul(SecretKey sk) public view {
         vm.assume(sk.isValid());
 
         ProjectivePoint memory g = Secp256r1Arithmetic.G().toProjectivePoint();
@@ -237,7 +239,7 @@ contract Secp256r1ArithmeticTest is Test {
         assertTrue(want.eq(got));
     }
 
-    function testVectors_ProjectivePoint_mul() public {
+    function testVectors_ProjectivePoint_mul() public view {
         ProjectivePoint memory g = Secp256r1Arithmetic.G().toProjectivePoint();
 
         uint[] memory scalars;
@@ -253,13 +255,13 @@ contract Secp256r1ArithmeticTest is Test {
 
     function testFuzz_ProjectivePoint_mul_ReturnsIdentityIfScalarIsZero(
         ProjectivePoint memory point
-    ) public {
+    ) public view {
         assertTrue(wrapper.mul(point, 0).isIdentity());
     }
 
     function testFuzz_ProjectivePoint_mul_ReturnsIdentityIfPointIsIdentity(
         SecretKey sk
-    ) public {
+    ) public view {
         vm.assume(sk.isValid());
 
         ProjectivePoint memory id = Secp256r1Arithmetic.ProjectiveIdentity();
@@ -284,7 +286,7 @@ contract Secp256r1ArithmeticTest is Test {
 
     // -- toProjectivePoint
 
-    function testFuzz_Point_toProjectivePoint(SecretKey sk) public {
+    function testFuzz_Point_toProjectivePoint(SecretKey sk) public view {
         vm.assume(sk.isValid());
 
         Point memory want = sk.toPublicKey().intoPoint();
@@ -293,7 +295,7 @@ contract Secp256r1ArithmeticTest is Test {
         assertTrue(want.eq(got));
     }
 
-    function test_Point_toProjectivePoint_Identity() public {
+    function test_Point_toProjectivePoint_Identity() public view {
         Point memory identity = Secp256r1Arithmetic.Identity();
 
         assertTrue(wrapper.toProjectivePoint(identity).isIdentity());
@@ -307,6 +309,7 @@ contract Secp256r1ArithmeticTest is Test {
     // TODO: Test no new memory allocation.
     function testFuzz_ProjectivePoint_intoPoint(SecretKey a, SecretKey b)
         public
+        view
     {
         vm.assume(a.isValid());
         vm.assume(b.isValid());
@@ -329,7 +332,7 @@ contract Secp256r1ArithmeticTest is Test {
         assertTrue(want.eq(got));
     }
 
-    function test_ProjectivePoint_intoPoint_Identity() public {
+    function test_ProjectivePoint_intoPoint_Identity() public view {
         ProjectivePoint memory identity =
             Secp256r1Arithmetic.ProjectiveIdentity();
 
@@ -338,7 +341,10 @@ contract Secp256r1ArithmeticTest is Test {
 
     // -- toPoint
 
-    function test_ProjectivePoint_toPoint(SecretKey a, SecretKey b) public {
+    function test_ProjectivePoint_toPoint(SecretKey a, SecretKey b)
+        public
+        view
+    {
         vm.assume(a.isValid());
         vm.assume(b.isValid());
 
@@ -360,7 +366,7 @@ contract Secp256r1ArithmeticTest is Test {
         assertTrue(want.eq(got));
     }
 
-    function test_ProjectivePoint_toPoint_Identity() public {
+    function test_ProjectivePoint_toPoint_Identity() public view {
         ProjectivePoint memory identity =
             Secp256r1Arithmetic.ProjectiveIdentity();
 
@@ -372,7 +378,7 @@ contract Secp256r1ArithmeticTest is Test {
 
     // -- Point <-> Encoded
 
-    function test_pointFromEncoded() public {
+    function test_pointFromEncoded() public view {
         bytes memory blob;
         Point memory point;
 
@@ -399,7 +405,7 @@ contract Secp256r1ArithmeticTest is Test {
         );
     }
 
-    function test_pointFromEncoded_Identity() public {
+    function test_pointFromEncoded_Identity() public view {
         bytes memory blob = hex"00";
         Point memory point;
 
@@ -440,7 +446,7 @@ contract Secp256r1ArithmeticTest is Test {
         wrapper.pointFromEncoded(blob);
     }
 
-    function test_Point_toEncoded() public {
+    function test_Point_toEncoded() public view {
         Point memory point;
         bytes memory blob;
 
@@ -465,7 +471,7 @@ contract Secp256r1ArithmeticTest is Test {
         );
     }
 
-    function test_Point_toEncoded_Identity() public {
+    function test_Point_toEncoded_Identity() public view {
         Point memory point = Secp256r1Arithmetic.Identity();
         bytes memory blob = wrapper.toEncoded(point);
 
@@ -483,7 +489,7 @@ contract Secp256r1ArithmeticTest is Test {
 
     // -- Point <-> CompressedEncoded
 
-    function test_Point_pointFromCompressedEncoded() public {
+    function test_Point_pointFromCompressedEncoded() public view {
         bytes memory blob;
         Point memory point;
 
@@ -493,7 +499,10 @@ contract Secp256r1ArithmeticTest is Test {
         assertTrue(point.eq(Secp256r1Arithmetic.G()));
     }
 
-    function test_Point_pointFromCompressedEncoded_IfyParityEven() public {
+    function test_Point_pointFromCompressedEncoded_IfyParityEven()
+        public
+        view
+    {
         SecretKey sk = Secp256r1.secretKeyFromUint(4);
         Point memory point = sk.toPublicKey().intoPoint();
         assert(point.yParity() == 0);
@@ -503,7 +512,7 @@ contract Secp256r1ArithmeticTest is Test {
         assertTrue(point.eq(got));
     }
 
-    function test_Point_pointFromCompressedEncoded_IfyParityOdd() public {
+    function test_Point_pointFromCompressedEncoded_IfyParityOdd() public view {
         SecretKey sk = Secp256r1.secretKeyFromUint(2);
         Point memory point = sk.toPublicKey().intoPoint();
         assert(point.yParity() == 1);
@@ -513,7 +522,7 @@ contract Secp256r1ArithmeticTest is Test {
         assertTrue(point.eq(got));
     }
 
-    function test_Point_pointFromCompressedEncoded_Identity() public {
+    function test_Point_pointFromCompressedEncoded_Identity() public view {
         Point memory id = Secp256r1Arithmetic.Identity();
 
         Point memory got =
@@ -560,14 +569,16 @@ contract Secp256r1ArithmeticTest is Test {
     }
 
     function testFuzz_Point_pointFromCompressedEncoded_RevertsIf_PointNotOnCurve(
-        Point memory point
-    ) public {
+    )
+        /*Point memory point*/
+        public
+    {
         vm.skip(true);
         // TODO: Find secp256r1 x coordinates not on the curve for compressed
         //       byte encoding.
     }
 
-    function test_Point_toCompressedEncoded_IfyParityEven() public {
+    function test_Point_toCompressedEncoded_IfyParityEven() public view {
         // Some point, ie [6]G.
         Point memory point = Point({
             x: uint(
@@ -585,7 +596,7 @@ contract Secp256r1ArithmeticTest is Test {
         );
     }
 
-    function test_Point_toCompressedEncoded_IfyParityOdd() public {
+    function test_Point_toCompressedEncoded_IfyParityOdd() public view {
         // Some point, ie [2]G.
         Point memory point = Point({
             x: uint(
@@ -603,7 +614,7 @@ contract Secp256r1ArithmeticTest is Test {
         );
     }
 
-    function test_Point_toCompressedEncoded_Identity() public {
+    function test_Point_toCompressedEncoded_Identity() public view {
         Point memory point = Secp256r1Arithmetic.Identity();
         bytes memory blob = wrapper.toCompressedEncoded(point);
 

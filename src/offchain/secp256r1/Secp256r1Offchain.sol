@@ -77,6 +77,7 @@ library Secp256r1Offchain {
     /// @custom:vm vm.createWallet(uint)
     function toPublicKey(SecretKey sk)
         internal
+        view
         vmed
         returns (PublicKey memory)
     {
@@ -85,6 +86,12 @@ library Secp256r1Offchain {
         }
 
         // TODO: Need vm support for p256 public key derivation.
+        //       Note that this function, in its current form, does not actually
+        //       depend on vm. However, for performance an issue in foundry will
+        //       be created to provide vm functionality for secp256r1 public key
+        //       derivation.
+        //       Note that this function should for obvious reasons not be
+        //       executed onchain anyway.
         // forgefmt: disable-next-item
         Point memory p = Secp256r1.G().toProjectivePoint()
                                       .mul(sk.asUint())

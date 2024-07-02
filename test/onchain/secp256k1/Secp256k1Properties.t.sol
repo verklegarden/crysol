@@ -33,6 +33,7 @@ contract Secp256k1PropertiesTest is Test {
 
     function testProperty_SecretKey_Bytes_SerializationLoop(SecretKey start)
         public
+        pure
     {
         vm.assume(start.isValid());
 

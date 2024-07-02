@@ -45,7 +45,7 @@ contract ECDSAPropertiesTest is Test {
     function testProperty_sign_CreatesDeterministicSignatures(
         SecretKey sk,
         bytes memory message
-    ) public {
+    ) public view {
         vm.assume(sk.isValid());
 
         Signature memory sig1 = sk.sign(message);
@@ -59,7 +59,7 @@ contract ECDSAPropertiesTest is Test {
     function testProperty_sign_CreatesNonMalleableSignatures(
         SecretKey sk,
         bytes memory message
-    ) public {
+    ) public view {
         vm.assume(sk.isValid());
 
         Signature memory sig = sk.sign(message);
@@ -72,6 +72,7 @@ contract ECDSAPropertiesTest is Test {
 
     function testProperty_Encoding_SerializationLoop(Signature memory start)
         public
+        pure
     {
         vm.assume(!start.isMalleable());
 
@@ -85,7 +86,7 @@ contract ECDSAPropertiesTest is Test {
     function testProperty_CompactEncoding_SerializationLoop(
         SecretKey sk,
         bytes memory message
-    ) public {
+    ) public view {
         vm.assume(sk.isValid());
 
         Signature memory start = sk.sign(message);

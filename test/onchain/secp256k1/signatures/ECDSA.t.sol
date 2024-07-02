@@ -138,7 +138,7 @@ contract ECDSATest is Test {
 
     // -- Signature::isMalleable
 
-    function testFuzz_Signature_isMalleable(Signature memory sig) public {
+    function testFuzz_Signature_isMalleable(Signature memory sig) public view {
         vm.assume(uint(sig.s) > Secp256k1.Q / 2);
 
         assertTrue(wrapper.isMalleable(sig));
@@ -146,7 +146,7 @@ contract ECDSATest is Test {
 
     function testFuzz_Signature_isMalleable_FailsIf_SignatureNotMalleable(
         Signature memory sig
-    ) public {
+    ) public view {
         vm.assume(uint(sig.s) <= Secp256k1.Q / 2);
 
         assertFalse(wrapper.isMalleable(sig));
@@ -159,7 +159,7 @@ contract ECDSATest is Test {
 
     // TODO: Not a good test, also already implemented as property.
     //       Can we get test vectors?
-    function testFuzz_signatureFromEncoded(Signature memory sig) public {
+    function testFuzz_signatureFromEncoded(Signature memory sig) public view {
         vm.assume(!sig.isMalleable());
 
         bytes memory blob = sig.toEncoded();
@@ -194,7 +194,7 @@ contract ECDSATest is Test {
         wrapper.signatureFromEncoded(blob);
     }
 
-    function testFuzz_Signature_toEncoded(Signature memory sig) public {
+    function testFuzz_Signature_toEncoded(Signature memory sig) public view {
         vm.assume(!sig.isMalleable());
 
         bytes memory got = wrapper.toEncoded(sig);
@@ -214,7 +214,7 @@ contract ECDSATest is Test {
 
     // -- Signature <-> Compact Encoded
 
-    function test_signatureFromCompactEncoded() public {
+    function test_signatureFromCompactEncoded() public view {
         // Note that test cases are taken from EIP-2098.
 
         // Test Case 1:
@@ -266,7 +266,7 @@ contract ECDSATest is Test {
         wrapper.signatureFromCompactEncoded(blob);
     }
 
-    function test_Signature_toCompactEncoded() public {
+    function test_Signature_toCompactEncoded() public view {
         // Note that test cases are taken from EIP-2098.
 
         // Test Case 1:

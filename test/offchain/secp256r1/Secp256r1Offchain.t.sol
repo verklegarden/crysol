@@ -42,7 +42,7 @@ contract Secp256r1OffchainTest is Test {
 
     // -- toPublicKey
 
-    function testFuzz_SecretKey_toPublicKey(SecretKey sk) public {
+    function testFuzz_SecretKey_toPublicKey( /*SecretKey sk*/ ) public {
         vm.skip(true);
         // TODO: Implement once vm has p256 support.
         //vm.assume(sk.isValid());
@@ -65,7 +65,7 @@ contract Secp256r1OffchainTest is Test {
     //--------------------------------------------------------------------------
     // Public Key
 
-    function test_PublicKey_toString(SecretKey sk) public {
+    function test_PublicKey_toString(SecretKey sk) public view {
         vm.assume(sk.isValid());
 
         string memory str = wrapper.toString(sk.toPublicKey());
@@ -89,14 +89,18 @@ contract Secp256r1OffchainWrapper {
         return Secp256r1Offchain.newSecretKey();
     }
 
-    function toPublicKey(SecretKey sk) public returns (PublicKey memory) {
+    function toPublicKey(SecretKey sk) public view returns (PublicKey memory) {
         return sk.toPublicKey();
     }
 
     //--------------------------------------------------------------------------
     // Public Key
 
-    function toString(PublicKey memory pk) public returns (string memory) {
+    function toString(PublicKey memory pk)
+        public
+        view
+        returns (string memory)
+    {
         return pk.toString();
     }
 }

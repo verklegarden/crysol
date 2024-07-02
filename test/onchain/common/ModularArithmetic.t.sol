@@ -22,7 +22,7 @@ contract ModularArithmeticTest is Test {
 
     // -- computeInverse
 
-    function testFuzz_computeInverse(uint x) public {
+    function testFuzz_computeInverse(uint x) public view {
         vm.assume(x != 0);
         vm.assume(x < P);
 
@@ -30,7 +30,7 @@ contract ModularArithmeticTest is Test {
         assertEq(mulmod(x, xInv, P), 1);
     }
 
-    function test_computeInverse_ReturnsIdentity_IfIdentity() public {
+    function test_computeInverse_ReturnsIdentity_IfIdentity() public view {
         assertEq(wrapper.computeInverse(1, P), 1);
     }
 
