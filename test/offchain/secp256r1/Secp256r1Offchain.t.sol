@@ -45,6 +45,9 @@ contract Secp256r1OffchainTest is Test {
     function testFuzz_SecretKey_toPublicKey( /*SecretKey sk*/ ) public {
         vm.skip(true);
         // TODO: Implement once vm has p256 support.
+        //
+        //       Foundry issue: https://github.com/foundry-rs/foundry/issues/7908
+        //
         //vm.assume(sk.isValid());
         //
         //address got = wrapper.toPublicKey(sk).toAddress();
