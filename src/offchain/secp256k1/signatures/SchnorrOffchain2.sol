@@ -24,10 +24,10 @@ import {
 } from "../../../onchain/secp256k1/Secp256k1.sol";
 
 import {
-    Schnorr2,
+    Schnorr,
     Signature,
     SignatureCompressed
-} from "../../../onchain/secp256k1/signatures/Schnorr2.sol";
+} from "../../../onchain/secp256k1/signatures/Schnorr.sol";
 
 /**
  * @title SchnorrOffchain
@@ -40,12 +40,12 @@ import {
  * @author verklegarden
  * @custom:repository github.com/verklegarden/crysol
  */
-library SchnorrOffchain2 {
+library SchnorrOffchain {
     using Secp256k1Offchain for SecretKey;
     using Secp256k1 for SecretKey;
     using Secp256k1 for PublicKey;
 
-    using SchnorrOffchain2 for SecretKey;
+    using SchnorrOffchain for SecretKey;
 
     // ~~~~~~~ Prelude ~~~~~~~
     // forgefmt: disable-start
@@ -89,6 +89,7 @@ library SchnorrOffchain2 {
         // Note that public key derivation fails if secret key is invalid.
         PublicKey memory pk = sk.toPublicKey();
 
+        // TODO: Use same nonce mechanism as in BIP-340.
         // Derive deterministic nonce k ∊ [1, Q).
         //
         // Note that modulo bias is acceptable on secp256k1.

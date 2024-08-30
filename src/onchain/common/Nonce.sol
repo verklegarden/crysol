@@ -46,7 +46,7 @@ library Nonce {
     /// @dev Note that nonce is not bounded to any field.
     ///
     /// @dev Providing a salt adds additional entropy to allow for multiple
-    ///      tries in case returned nonce is not valid for the specific scheme.
+    ///      tries in case returned nonce is not valid for a specific scheme.
     ///
     /// @dev The nonce is derived via H(sk ‖ pk ‖ digest ‖ salt).
     function deriveFrom(uint sk, bytes memory pk, bytes32 digest, bytes32 salt)
