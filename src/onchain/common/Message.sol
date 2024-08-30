@@ -11,6 +11,8 @@
 // SPDX-License-Identifier: MIT OR Apache-2.0
 pragma solidity ^0.8.16;
 
+// TODO: Rename to EthSignedMessage to keep it shorter.
+
 /**
  * @title Message
  *

@@ -32,9 +32,7 @@ struct SignatureCompressed {
 /**
  * @title Schnorr
  *
- * @notice Provides Schnorr signature functionality
- *
- * @dev Provides an Schnorr signature implementation as defined in [ERC-XXX].
+ * @notice Provides Schnorr signature functionality as defined in ERC-XXX
  *
  * @dev Note about Ethereum Schnorr Signed Messages
  *
