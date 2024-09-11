@@ -60,12 +60,6 @@ library SchnorrOffchain {
     // forgefmt: disable-end
     // ~~~~~~~~~~~~~~~~~~~~~~~
 
-    // TODO: For all signatures/:
-    //
-    // - We only sign (keccak256) digests. You need to hash yourself beforehand.
-    // - A user's 32 byte input are the `digest`. The actual message `m` is
-    //   ALWAYS domain separated. For ECDSA eth_call, for Schnorr ERC-XXX.
-
     //--------------------------------------------------------------------------
     // Signature Creation
 
@@ -199,7 +193,7 @@ library SchnorrOffchain {
         vmed
         returns (string memory)
     {
-        string memory str = "Schnorr::CompressedSignature({";
+        string memory str = "Schnorr::SignatureCompressed({";
         str = string.concat(str, " s: ", vm.toString(sig.s), ",");
         str = string.concat(str, " rAddr: ", vm.toString(sig.rAddr));
         str = string.concat(str, " })");

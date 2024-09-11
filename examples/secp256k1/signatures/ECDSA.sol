@@ -38,21 +38,43 @@ contract ECDSAExample is Script {
     using ECDSA for Signature;
 
     function run() public {
-        bytes memory message = bytes("crysol <3");
-
-        // Create new cryptographically sound secret key.
+        // Create new cryptographically sound secret key and respective
+        // public key and address.
         SecretKey sk = Secp256k1Offchain.newSecretKey();
-        // assert(sk.isValid());
+        PublicKey memory pk = sk.toPublicKey();
+        address addr = pk.toAddress();
 
-        // Sign message via ECDSA.
-        Signature memory sig = sk.sign(message);
+        // Create digest of the message to sign.
+        //
+        // crysol's sign() functions only accept bytes32 digests to enforce
+        // static payload size.
+        bytes32 digest = keccak256(bytes("crysol <3"));
+
+        // Note that crysol's sign() function domain separates input digests.
+        // The actual message being signed can be constructed via:
+        bytes32 m = ECDSA.constructMessageHash(digest);
+
+        // Sign digest via ECDSA.
+        Signature memory sig = sk.sign(digest);
         console.log("Signed message via ECDSA, signature:");
         console.log(sig.toString());
         console.log("");
 
+        // It's also possible to use the low-level signRaw() function to not
+        // domain separate the input digest.
+        // However, usage is discouraged.
+        Signature memory sig2 = sk.signRaw(m);
+
+        // Note that crysol uses RFC-6979 to construct deterministic ECDSA
+        // nonces and thereby signatures. Therefore, the two signatures are
+        // expected to be equal.
+        assert(sig.v == sig2.v);
+        assert(sig.r == sig2.r);
+        assert(sig.s == sig2.s);
+
         // Verify signature via public key or address.
-        // assert(sk.toPublicKey().verify(message, sig));
-        // assert(sk.toPublicKey().toAddress().verify(message, sig));
+        assert(pk.verify(m, sig));
+        assert(addr.verify(m, sig));
 
         // Default serialization (65 bytes).
         console.log("Default encoded signature:");
@@ -62,5 +84,6 @@ contract ECDSAExample is Script {
         // EIP-2098 serialization (64 bytes).
         console.log("EIP-2098 (compact) encoded signature:");
         console.logBytes(sig.toCompactEncoded());
+        console.log("");
     }
 }

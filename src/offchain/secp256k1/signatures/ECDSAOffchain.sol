@@ -13,8 +13,6 @@ pragma solidity ^0.8.16;
 
 import {Vm} from "forge-std/Vm.sol";
 
-import {Message} from "../../../onchain/common/Message.sol";
-
 import {Secp256k1Offchain} from "../Secp256k1Offchain.sol";
 import {
     Secp256k1,

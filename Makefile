@@ -62,6 +62,18 @@ examples: ## Run examples
 	@echo "##"
 	@echo "########################################"
 	@forge script examples/secp256r1/Secp256r1.sol:Secp256r1Example -v
+	@echo "########################################"
+	@echo "##"
+	@echo "##   ECDSA on secp56k1"
+	@echo "##"
+	@echo "########################################"
+	@forge script examples/secp256k1/signatures/ECDSA.sol:ECDSAExample -v
+	@echo "########################################"
+	@echo "##"
+	@echo "##   Schnorr (ERC-XXX)"
+	@echo "##"
+	@echo "########################################"
+	@forge script examples/secp256k1/signatures/Schnorr.sol:SchnorrExample -v
 
 .PHONY: fmt
 fmt: ## Format project

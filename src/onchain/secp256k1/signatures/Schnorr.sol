@@ -35,7 +35,7 @@ struct SignatureCompressed {
  * @dev The context string is used to domain separate hash functions and ensures
  *      a Schnorr signed message is never deemed valid in a different context.
  */
-string constant CONTEXT = "ETHEREUM-SCHORR-SECP256K1-KECCAK256";
+string constant CONTEXT = "ETHEREUM-SCHNORR-SECP256K1-KECCAK256";
 
 /**
  * @title Schnorr
