@@ -20,7 +20,6 @@ import {ECDSAUnsafe} from "src/unsafe/secp256k1/signatures/ECDSAUnsafe.sol";
  * @notice ECDSA Unit Tests
  */
 contract ECDSATest is Test {
-    /*
     using Secp256k1Offchain for SecretKey;
     using Secp256k1 for SecretKey;
     using Secp256k1 for PublicKey;
@@ -41,32 +40,28 @@ contract ECDSATest is Test {
     //--------------------------------------------------------------------------
     // Test: Signature Verification
 
-    function testFuzz_verify(SecretKey sk, bytes memory message) public {
-        vm.assume(sk.isValid());
+    // -- verify with public key
 
-        PublicKey memory pk = sk.toPublicKey();
-        bytes32 digest = keccak256(message);
+    function testFuzz_verify_WithPublicKey(SecretKey sk, bytes32 digest) public {
+        vm.assume(sk.isValid());
 
         Signature memory sig = sk.sign(digest);
 
-        assertTrue(wrapper.verify(pk, message, sig));
-        assertTrue(wrapper.verify(pk, digest, sig));
-        assertTrue(wrapper.verify(pk.toAddress(), message, sig));
-        assertTrue(wrapper.verify(pk.toAddress(), digest, sig));
+        bytes32 m = ECDSA.constructMessageHash(digest);
+        PublicKey memory pk = sk.toPublicKey();
+
+        assertTrue(wrapper.verify(pk, m, sig));
     }
 
-    function testFuzz_verify_FailsIf_SignatureInvalid(
+    function testFuzz_verify_WithPublicKey_FailsIf_SignatureInvalid(
         SecretKey sk,
-        bytes memory message,
+        bytes32 digest,
         uint8 vMask,
         uint rMask,
         uint sMask
     ) public {
         vm.assume(sk.isValid());
         vm.assume(vMask != 0 || rMask != 0 || sMask != 0);
-
-        PublicKey memory pk = sk.toPublicKey();
-        bytes32 digest = keccak256(message);
 
         Signature memory sig = sk.sign(digest);
 
@@ -77,65 +72,103 @@ contract ECDSATest is Test {
         // Note that verify() reverts if signature is malleable.
         sig.intoNonMalleable();
 
-        assertFalse(wrapper.verify(pk, message, sig));
-        assertFalse(wrapper.verify(pk, digest, sig));
-        assertFalse(wrapper.verify(pk.toAddress(), message, sig));
-        assertFalse(wrapper.verify(pk.toAddress(), digest, sig));
+        bytes32 m = ECDSA.constructMessageHash(digest);
+        PublicKey memory pk = sk.toPublicKey();
+
+        assertFalse(wrapper.verify(pk, m, sig));
     }
 
-    function testFuzz_verify_RevertsIf_SignatureMalleable(
+    function testFuzz_verify_WithPublicKey_RevertsIf_SignatureMalleable(
         SecretKey sk,
-        bytes memory message
+        bytes32 digest
     ) public {
         vm.assume(sk.isValid());
 
-        PublicKey memory pk = sk.toPublicKey();
-        bytes32 digest = keccak256(message);
-
         Signature memory sig = sk.sign(digest).intoMalleable();
 
-        vm.expectRevert("SignatureMalleable()");
-        wrapper.verify(pk, message, sig);
+        bytes32 m = ECDSA.constructMessageHash(digest);
+        PublicKey memory pk = sk.toPublicKey();
 
         vm.expectRevert("SignatureMalleable()");
-        wrapper.verify(pk, digest, sig);
-
-        vm.expectRevert("SignatureMalleable()");
-        wrapper.verify(pk.toAddress(), message, sig);
-
-        vm.expectRevert("SignatureMalleable()");
-        wrapper.verify(pk.toAddress(), digest, sig);
+        wrapper.verify(pk, m, sig);
     }
 
-    function testFuzz_verify_RevertsIf_PublicKeyInvalid(
+    function testFuzz_verify_WithPublicKey_RevertsIf_PublicKeyInvalid(
         PublicKey memory pk,
-        bytes memory message,
+        bytes32 m,
         Signature memory sig
     ) public {
         vm.assume(!pk.isValid());
 
         vm.expectRevert("PublicKeyInvalid()");
-        wrapper.verify(pk, message, sig);
-
-        vm.expectRevert("PublicKeyInvalid()");
-        wrapper.verify(pk, keccak256(message), sig);
+        wrapper.verify(pk, m, sig);
     }
 
-    function testFuzz_verify_RevertsIf_SignerZeroAddress(
-        bytes memory message,
+    // -- verify with address
+
+    function testFuzz_verify_WithAddress(SecretKey sk, bytes32 digest) public {
+        vm.assume(sk.isValid());
+
+        Signature memory sig = sk.sign(digest);
+
+        bytes32 m = ECDSA.constructMessageHash(digest);
+        address addr = sk.toPublicKey().toAddress();
+
+        assertTrue(wrapper.verify(addr, m, sig));
+    }
+
+    function testFuzz_verify_WithAddress_FailsIf_SignatureInvalid(
+        SecretKey sk,
+        bytes32 digest,
+        uint8 vMask,
+        uint rMask,
+        uint sMask
+    ) public {
+        vm.assume(sk.isValid());
+        vm.assume(vMask != 0 || rMask != 0 || sMask != 0);
+
+        Signature memory sig = sk.sign(digest);
+
+        sig.v ^= vMask;
+        sig.r = bytes32(uint(sig.r) ^ rMask);
+        sig.s = bytes32(uint(sig.s) ^ sMask);
+
+        // Note that verify() reverts if signature is malleable.
+        sig.intoNonMalleable();
+
+        bytes32 m = ECDSA.constructMessageHash(digest);
+        address addr = sk.toPublicKey().toAddress();
+
+        assertFalse(wrapper.verify(addr, m, sig));
+    }
+
+    function testFuzz_verify_WithAddress_RevertsIf_SignatureMalleable(
+        SecretKey sk,
+        bytes32 digest
+    ) public {
+        vm.assume(sk.isValid());
+
+        Signature memory sig = sk.sign(digest).intoMalleable();
+
+        bytes32 m = ECDSA.constructMessageHash(digest);
+        address addr = sk.toPublicKey().toAddress();
+
+        vm.expectRevert("SignatureMalleable()");
+        wrapper.verify(addr, m, sig);
+    }
+
+    function testFuzz_verify_WithAddress_RevertsIf_SignerZeroAddress(
+        bytes32 m,
         Signature memory sig
     ) public {
-        address signer = address(0);
-
         vm.expectRevert("SignerZeroAddress()");
-        wrapper.verify(signer, message, sig);
-
-        vm.expectRevert("SignerZeroAddress()");
-        wrapper.verify(signer, keccak256(message), sig);
+        wrapper.verify(address(0), m, sig);
     }
 
     //--------------------------------------------------------------------------
     // Test: Utils
+
+    // -- TODO: Test ECDSA::constructMessageHash
 
     // -- Signature::isMalleable
 
@@ -305,7 +338,6 @@ contract ECDSATest is Test {
         vm.expectRevert("SignatureMalleable()");
         wrapper.toCompactEncoded(sig);
     }
-    */
 }
 
 /**
@@ -314,7 +346,6 @@ contract ECDSATest is Test {
  * @dev For more info, see https://github.com/foundry-rs/foundry/pull/3128#issuecomment-1241245086.
  */
 contract ECDSAWrapper {
-    /*
     using ECDSA for address;
     using ECDSA for SecretKey;
     using ECDSA for PublicKey;
@@ -323,40 +354,28 @@ contract ECDSAWrapper {
     //--------------------------------------------------------------------------
     // Signature Verification
 
-    function verify(
-        PublicKey memory pk,
-        bytes memory message,
-        Signature memory sig
-    ) public pure returns (bool) {
-        return pk.verify(message, sig);
-    }
-
-    function verify(PublicKey memory pk, bytes32 digest, Signature memory sig)
+    function verify(PublicKey memory pk, bytes32 m, Signature memory sig)
         public
         pure
         returns (bool)
     {
-        return pk.verify(digest, sig);
+        return pk.verify(m, sig);
     }
 
-    function verify(address signer, bytes memory message, Signature memory sig)
+    function verify(address signer, bytes32 m, Signature memory sig)
         public
         pure
         returns (bool)
     {
-        return signer.verify(message, sig);
-    }
-
-    function verify(address signer, bytes32 digest, Signature memory sig)
-        public
-        pure
-        returns (bool)
-    {
-        return signer.verify(digest, sig);
+        return signer.verify(m, sig);
     }
 
     //--------------------------------------------------------------------------
     // Utils
+
+    function constructMessageHash(bytes32 digest) public pure returns (bytes32) {
+        return ECDSA.constructMessageHash(digest);
+    }
 
     function isMalleable(Signature memory sig) public pure returns (bool) {
         return sig.isMalleable();
@@ -396,5 +415,4 @@ contract ECDSAWrapper {
     {
         return sig.toCompactEncoded();
     }
-    */
 }

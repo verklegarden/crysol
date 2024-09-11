@@ -30,7 +30,7 @@ contract ECDSAPropertiesTest is Test {
     //--------------------------------------------------------------------------
     // Properties: (De)Serialization
 
-    // TODO: Reverts if malleable
+    // TODO: Property tests: (de)serialization reverts if malleable
 
     function testProperty_Encoding_SerializationLoop(Signature memory start)
         public
