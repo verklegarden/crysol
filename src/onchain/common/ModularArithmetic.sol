@@ -26,7 +26,7 @@ library ModularArithmetic {
     /// @dev Computes the modular inverse of `x` mod `prime`.
     ///
     ///      The modular inverse of `x` is x⁻¹ such that
-    ///      x * x⁻¹ ≡ 1 (mod prime).
+    ///         x * x⁻¹ ≡ 1 (mod prime)
     ///
     /// @dev Note that `prime` MUST be a prime number!
     ///
@@ -41,6 +41,7 @@ library ModularArithmetic {
         if (x >= prime) {
             revert("ModularInverseOfXGreaterThanPrime()");
         }
+        // assert(prime >= 2);
 
         // Note that while modular inversion is usually performed using the
         // extended Euclidean algorithm this function uses modular
@@ -54,6 +55,14 @@ library ModularArithmetic {
         //
         // For further details, see [Dubois 2023].
         return computeExponentiation(x, addmod(0, prime - 2, prime), prime);
+
+        // TODO: Update ModularArithmetic.computeInverse:
+        //
+        // uint primeMinus2;
+        // unchecked {
+        //     primeMinus2 = prime - 2;
+        // }
+        // return computeExponentiation(x, primeMinus2, prime);
     }
 
     /// @dev Computes base^{exponent} mod `prime`.

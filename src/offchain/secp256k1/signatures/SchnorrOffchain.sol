@@ -13,8 +13,7 @@ pragma solidity ^0.8.16;
 
 import {Vm} from "forge-std/Vm.sol";
 
-import {Message} from "../../../onchain/common/Message.sol";
-import {Nonce} from "../../../onchain/common/Nonce.sol";
+import {RandomOffchain} from "../../../offchain/common/RandomOffchain.sol";
 
 import {Secp256k1Offchain} from "../Secp256k1Offchain.sol";
 import {
@@ -25,7 +24,9 @@ import {
 
 import {
     Schnorr,
-    Signature
+    Signature,
+    SignatureCompressed,
+    CONTEXT
 } from "../../../onchain/secp256k1/signatures/Schnorr.sol";
 
 /**
@@ -33,13 +34,17 @@ import {
  *
  * @notice Provides offchain Schnorr signature functionality
  *
- * @custom:docs docs/signatures/Schnorr.md
+ * @dev
+ *
+ * @custom:references
+ *      - [ERC-XXX]: ...
  *
  * @author verklegarden
  * @custom:repository github.com/verklegarden/crysol
  */
 library SchnorrOffchain {
     using Secp256k1Offchain for SecretKey;
+    using Secp256k1Offchain for PublicKey;
     using Secp256k1 for SecretKey;
     using Secp256k1 for PublicKey;
 
@@ -55,68 +60,105 @@ library SchnorrOffchain {
     // forgefmt: disable-end
     // ~~~~~~~~~~~~~~~~~~~~~~~
 
+    // TODO: For all signatures/:
+    //
+    // - We only sign (keccak256) digests. You need to hash yourself beforehand.
+    // - A user's 32 byte input are the `digest`. The actual message `m` is
+    //   ALWAYS domain separated. For ECDSA eth_call, for Schnorr ERC-XXX.
+
     //--------------------------------------------------------------------------
     // Signature Creation
 
-    /// @dev Returns a Schnorr signature signed by secret key `sk` signing
-    ///      message `message`.
+    /// @dev Returns an [ERC-XXX] compatible Schnorr signature signed by secret
+    ///      key `sk` signing hash digest `digest`.
     ///
-    /// @dev Reverts if:
-    ///        Secret key invalid
+    /// @dev Note that the actual message being signed is a domain separated
+    ///      hash digest as specified in [ERC-XXX]. This ensures a signed
+    ///      message is never deemed valid in a different context.
     ///
-    /// @custom:vm sign(SecretKey, bytes32)
-    function sign(SecretKey sk, bytes memory message)
+    /// @custom:vm signRaw(SecretKey,bytes32)(Signature)
+    function sign(SecretKey sk, bytes32 digest)
         internal
         vmed
         returns (Signature memory)
     {
-        bytes32 digest = keccak256(message);
+        bytes32 m = Schnorr.constructMessageHash(digest);
 
-        return sk.sign(digest);
+        return sk.signRaw(m);
     }
 
     /// @dev Returns a Schnorr signature signed by secret key `sk` signing
-    ///      hash digest `digest`.
+    ///      message `m`.
+    ///
+    /// @dev Note that this is a low-level function and SHOULD NOT be used
+    ///      directly! Instead, use `sign(SecretKey,bytes32)(Signature)` to
+    ///      ensure the produced signature is [ERC-XXX] compatible and the
+    ///      message domain separated.
     ///
     /// @dev Reverts if:
     ///        Secret key invalid
     ///
-    /// @custom:vm curves/Secp256k1::toPublicKey(SecretKey)(PublicKey)
-    function sign(SecretKey sk, bytes32 digest)
+    /// @custom:vm RandomOffchain.readBytes32()(bytes32)
+    /// @custom:vm signRaw(SecretKey,bytes32,bytes32)(Signature)
+    function signRaw(SecretKey sk, bytes32 m)
+        internal
+        vmed
+        returns (Signature memory)
+    {
+        // Source 32 bytes of randomness from CSPRNG.
+        bytes32 rand = RandomOffchain.readBytes32();
+
+        return sk.signRaw(m, rand);
+    }
+
+    /// @dev Returns a Schnorr signature signed by secret key `sk` signing
+    ///      message `m` using auxiliary random data `rand`.
+    ///
+    /// @dev Note that this is a low-level function and SHOULD NOT be used
+    ///      directly! Instead, use `sign(SecretKey,bytes32)(Signature)` to
+    ///      ensure the produced signature is [ERC-XXX] compatible and the
+    ///      message domain separated.
+    ///
+    /// @dev The auxiliary random data SHOULD be fresh randomness and MUST NOT
+    ///      be used more than once.
+    ///
+    /// @dev Reverts if:
+    ///        Secret key invalid
+    ///
+    /// @custom:vm Secp256k1Offchain::toPublicKey(SecretKey)(PublicKey)
+    function signRaw(SecretKey sk, bytes32 m, bytes32 rand)
         internal
         vmed
         returns (Signature memory)
     {
         // Note that public key derivation fails if secret key is invalid.
         PublicKey memory pk = sk.toPublicKey();
+        // assert(sk.isValid());
 
-        // Derive deterministic nonce ∊ [1, Q).
-        //
-        // Note that modulo bias is acceptable on secp256k1.
-        uint nonce =
-            Nonce.deriveFrom(sk.asUint(), pk.toBytes(), digest) % Secp256k1.Q;
-        // assert(nonce != 0);
+        // Derive nonce = H₃(rand ‖ sk) (mod Q)
+        uint nonce = uint(
+            keccak256(abi.encodePacked(CONTEXT, "nonce", rand, sk.asUint()))
+        ) % Secp256k1.Q;
 
-        // Compute nonce's public key.
-        PublicKey memory noncePk =
-            Secp256k1.secretKeyFromUint(nonce).toPublicKey();
+        // Compute nonce's public key R.
+        PublicKey memory r = Secp256k1.secretKeyFromUint(nonce).toPublicKey();
 
-        // Derive commitment from nonce's public key.
-        address commitment = noncePk.toAddress();
-
-        // Construct challenge = H(Pkₓ ‖ Pkₚ ‖ m ‖ Rₑ) (mod Q)
-        bytes32 challenge = bytes32(
-            uint(
-                keccak256(
-                    abi.encodePacked(
-                        pk.x, uint8(pk.yParity()), digest, commitment
-                    )
+        // Construct challenge = H₂(Pkₓ ‖ Pkₚ ‖ m ‖ Rₑ) (mod Q)
+        uint challenge = uint(
+            keccak256(
+                abi.encodePacked(
+                    CONTEXT,
+                    "challenge",
+                    pk.x,
+                    uint8(pk.yParity()),
+                    m,
+                    r.toAddress()
                 )
-            ) % Secp256k1.Q
-        );
+            )
+        ) % Secp256k1.Q;
 
-        // Compute signature = k + (e * sk) (mod Q)
-        bytes32 signature = bytes32(
+        // Compute s = k + (e * sk) (mod Q).
+        bytes32 s = bytes32(
             addmod(
                 nonce,
                 mulmod(uint(challenge), sk.asUint(), Secp256k1.Q),
@@ -124,84 +166,43 @@ library SchnorrOffchain {
             )
         );
 
-        return Signature(signature, commitment);
-    }
-
-    /// @dev Returns a Schnorr signature signed by secret key `sk` singing
-    ///      message `message`'s keccak256 digest as Ethereum Schnorr Signed
-    ///      Message.
-    ///
-    /// @dev For more info regarding Ethereum Signed Messages, see {Message.sol}.
-    ///
-    /// @dev Reverts if:
-    ///        Secret key invalid
-    ///
-    /// @custom:vm sign(SecretKey,bytes32)
-    function signEthereumSchnorrSignedMessageHash(
-        SecretKey sk,
-        bytes memory message
-    ) internal vmed returns (Signature memory) {
-        bytes32 digest = Message.deriveEthereumSchnorrSignedMessageHash(message);
-
-        return sk.sign(digest);
-    }
-
-    /// @dev Returns a Schnorr signature signed by secret key `sk` singing
-    ///      hash digest `digest` as Ethereum Schnorr Signed Message.
-    ///
-    /// @dev For more info regarding Ethereum Signed Messages, see {Message.sol}.
-    ///
-    /// @dev Reverts if:
-    ///        Secret key invalid
-    ///
-    /// @custom:vm sign(SecretKey,bytes32)
-    function signEthereumSchnorrSignedMessageHash(SecretKey sk, bytes32 digest)
-        internal
-        vmed
-        returns (Signature memory)
-    {
-        bytes32 digest2 = Message.deriveEthereumSchnorrSignedMessageHash(digest);
-
-        return sk.sign(digest2);
+        return Signature(s, r);
     }
 
     //--------------------------------------------------------------------------
     // Utils
 
-    /// @dev Returns a string representation of Schnorr signature `sig`.
+    /// @dev Returns a string representation of signature `sig`.
     ///
-    /// @custom:vm vm.toString(uint)
+    /// @custom:vm vm.toString(uint)(string)
+    /// @custom:vm Secp256k1Offchain::toString(PublicKey)(string)
     function toString(Signature memory sig)
         internal
         view
         vmed
         returns (string memory)
     {
-        // forgefmt: disable-start
         string memory str = "Schnorr::Signature({";
         str = string.concat(str, " s: ", vm.toString(sig.s), ",");
         str = string.concat(str, " r: ", sig.r.toString());
         str = string.concat(str, " })");
         return str;
-        // forgefmt: disable-end
     }
 
-    /// @dev Returns a string representation of compressed Schnorr signature
-    ///      `sig`.
+    /// @dev Returns a string representation of compressed signature `sig`.
     ///
-    /// @custom:vm vm.toString(uint)
-    function toString(Signature memory sig)
+    /// @custom:vm vm.toString(uint)(string)
+    /// @custom:vm vm.toString(address)(string)
+    function toString(SignatureCompressed memory sig)
         internal
         view
         vmed
         returns (string memory)
     {
-        // forgefmt: disable-start
         string memory str = "Schnorr::CompressedSignature({";
         str = string.concat(str, " s: ", vm.toString(sig.s), ",");
-        str = string.concat(str, " r: ", vm.toString(sig.rAddr));
+        str = string.concat(str, " rAddr: ", vm.toString(sig.rAddr));
         str = string.concat(str, " })");
         return str;
-        // forgefmt: disable-end
     }
 }

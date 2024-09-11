@@ -34,6 +34,13 @@ library RandomOffchain {
     // forgefmt: disable-end
     // ~~~~~~~~~~~~~~~~~~~~~~~
 
+    /// @dev Returns 32 bytes of cryptographically sound randomness.
+    ///
+    /// @custom:vm readUint()(uint)
+    function readBytes32() internal vmed returns (bytes32) {
+        return bytes32(readUint());
+    }
+
     /// @dev Returns 256 bit of cryptographically sound randomness.
     ///
     /// @custom:vm ffi `cast wallet new`

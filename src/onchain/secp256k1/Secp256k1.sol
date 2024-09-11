@@ -172,6 +172,7 @@ library Secp256k1 {
 
         address addr;
         assembly ("memory-safe") {
+            // Note to clean dirty upper bits.
             addr := and(digest, _ADDRESS_MASK)
         }
         return addr;

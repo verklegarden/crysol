@@ -232,6 +232,8 @@ contract Secp256k1ArithmeticTest is Test {
         for (uint i; i < vectors.length; i++) {
             p = wrapper.add(p, g);
 
+            console.logBytes(vectors[i].toEncoded());
+
             assertTrue(p.toPoint().eq(vectors[i]));
         }
     }

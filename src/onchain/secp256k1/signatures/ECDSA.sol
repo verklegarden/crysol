@@ -52,6 +52,7 @@ struct Signature {
  *      - [SEC-1 v2]: https://www.secg.org/sec1-v2.pdf
  *      - [EIP-2]: https://eips.ethereum.org/EIPS/eip-2
  *      - [EIP-2098]: https://eips.ethereum.org/EIPS/eip-2098
+ *      - [eth_sign]: https://ethereum.org/en/developers/docs/apis/json-rpc/#eth_sign
  *
  * @author verklegarden
  * @custom:repository github.com/verklegarden/crysol
@@ -85,38 +86,12 @@ library ECDSA {
     // Signature Verification
 
     /// @dev Returns whether public key `pk` signs via ECDSA signature `sig`
-    ///      message `message`.
+    ///      message `m`.
     ///
     /// @dev Reverts if:
     ///        Public key invalid
     ///      ∨ Signature malleable
-    ///
-    /// @custom:invariant No valid public key's address is zero.
-    ///     ∀ pk ∊ PublicKey: pk.isValid() → pk.toAddress() != address(0)
-    function verify(
-        PublicKey memory pk,
-        bytes memory message,
-        Signature memory sig
-    ) internal pure returns (bool) {
-        if (!pk.isValid()) {
-            revert("PublicKeyInvalid()");
-        }
-
-        bytes32 digest = keccak256(message);
-
-        return pk.toAddress().verify(digest, sig);
-    }
-
-    /// @dev Returns whether public key `pk` signs via ECDSA signature `sig`
-    ///      hash digest `digest`.
-    ///
-    /// @dev Reverts if:
-    ///        Public key invalid
-    ///      ∨ Signature malleable
-    ///
-    /// @custom:invariant No valid public key's address is zero.
-    ///     ∀ pk ∊ PublicKey: pk.isValid() → pk.toAddress() != address(0)
-    function verify(PublicKey memory pk, bytes32 digest, Signature memory sig)
+    function verify(PublicKey memory pk, bytes32 m, Signature memory sig)
         internal
         pure
         returns (bool)
@@ -125,32 +100,16 @@ library ECDSA {
             revert("PublicKeyInvalid()");
         }
 
-        return pk.toAddress().verify(digest, sig);
+        return pk.toAddress().verify(m, sig);
     }
 
     /// @dev Returns whether address `signer` signs via ECDSA signature `sig`
-    ///      message `message`.
+    ///      message `m`.
     ///
     /// @dev Reverts if:
     ///        Signer zero address
     ///      ∨ Signature malleable
-    function verify(address signer, bytes memory message, Signature memory sig)
-        internal
-        pure
-        returns (bool)
-    {
-        bytes32 digest = keccak256(message);
-
-        return signer.verify(digest, sig);
-    }
-
-    /// @dev Returns whether address `signer` signs via ECDSA signature `sig`
-    ///      hash digest `digest`.
-    ///
-    /// @dev Reverts if:
-    ///        Signer zero address
-    ///      ∨ Signature malleable
-    function verify(address signer, bytes32 digest, Signature memory sig)
+    function verify(address signer, bytes32 m, Signature memory sig)
         internal
         pure
         returns (bool)
@@ -166,13 +125,31 @@ library ECDSA {
         // Note that checking whether v ∊ {27, 28} is waived.
         // For more info, see https://github.com/ethereum/yellowpaper/pull/860.
 
-        return signer == ecrecover(digest, sig.v, sig.r, sig.s);
+        return signer == ecrecover(m, sig.v, sig.r, sig.s);
     }
 
     //--------------------------------------------------------------------------
     // Utils
 
-    /// @dev Returns whether signature `sig` is malleable.
+    /// @dev Returns an [eth_sign] "Ethereum Signed Message" message hash from
+    ///      digest `digest`.
+    function constructMessageHash(bytes32 digest)
+        internal
+        pure
+        returns (bytes32)
+    {
+        bytes32 m;
+        assembly ("memory-safe") {
+            // Note that the prefix's length is 0x1c, leading to a total length
+            // of 0x1c + 0x20 = 0x3c.
+            mstore(0x00, "\x19Ethereum Signed Message:\n32")
+            mstore(0x1c, digest)
+            m := keccak256(0x00, 0x3c)
+        }
+        return m;
+    }
+
+    /// @dev Returns whether ECDSA signature `sig` is malleable.
     ///
     /// @dev A signature is malleable if `sig.s > Secp256k1.Q / 2`.
     function isMalleable(Signature memory sig) internal pure returns (bool) {
@@ -181,8 +158,6 @@ library ECDSA {
 
     //--------------------------------------------------------------------------
     // (De)Serialization
-
-    // TODO: Revert if malleable!
 
     /// @dev Decodes ECDSA signature from ABI-encoded bytes `blob`.
     ///

@@ -8,11 +8,6 @@
 
 */
 
-// TODO: Formulate project-wide rule:
-//       - De/Serialization functions ALWAYS revert if object is invalid/insane/etc
-//       - Type Conversion function DO NOT revert if object is invalid/insane/etc
-
-
 // SPDX-License-Identifier: MIT OR Apache-2.0
 pragma solidity ^0.8.16;
 
@@ -35,17 +30,17 @@ struct SignatureCompressed {
 }
 
 /**
+ * @dev CONTEXT contains the [ERC-XXX] scheme and ciphersuite
+ *
+ * @dev The context string is used to domain separate hash functions and ensures
+ *      a Schnorr signed message is never deemed valid in a different context.
+ */
+string constant CONTEXT = "ETHEREUM-SCHORR-SECP256K1-KECCAK256";
+
+/**
  * @title Schnorr
  *
- * @notice Provides Schnorr signature functionality as defined in ERC-XXX
- *
- * @dev Note about Ethereum Schnorr Signed Messages
- *
- *      Note that [ERC-XXX] defines a message tag for Schnorr signed messages to
- *      prevent digests created in one context to be reinterpreted in another
- *      context.
- *
- *      For more information, see [ERC-XXX] and {Message.sol}.
+ * @notice Provides [ERC-XXX] compatible Schnorr signature functionality
  *
  * @custom:references
  *      - [ERC-XXX]: ...
@@ -64,34 +59,21 @@ library Schnorr {
     using Schnorr for PublicKey;
 
     //--------------------------------------------------------------------------
+    // Private Constants
+
+    uint private constant _ADDRESS_MASK =
+        0x000000000000000000000000FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF;
+
+    //--------------------------------------------------------------------------
     // Signature Verification
 
     /// @dev Returns whether public key `pk` signs via Schnorr signature `sig`
-    ///      message `message`.
+    ///      message `m`.
     ///
     /// @dev Reverts if:
     ///        Public key invalid
-    ///      ∨ Schnorr signature insane
-    function verify(
-        PublicKey memory pk,
-        bytes memory message,
-        Signature memory sig
-    ) internal pure returns (bool) {
-        // Note that checking whether signature's r value is a valid public key
-        // is waived. Exploiting this behaviour would require knowledge of a
-        // preimage non-equal to pk for the signer's Ethereum address.
-        SignatureCompressed memory sigCompressed = sig.toCompressed();
-
-        return pk.verifyCompressed(message, sigCompressed);
-    }
-
-    /// @dev Returns whether public key `pk` signs via Schnorr signature `sig`
-    ///      hash digest `digest`.
-    ///
-    /// @dev Reverts if:
-    ///        Public key invalid
-    ///      ∨ Schnorr signature insane
-    function verify(PublicKey memory pk, bytes32 digest, Signature memory sig)
+    ///      ∨ Signature insane
+    function verify(PublicKey memory pk, bytes32 m, Signature memory sig)
         internal
         pure
         returns (bool)
@@ -101,34 +83,18 @@ library Schnorr {
         // preimage non-equal to pk for the signer's Ethereum address.
         SignatureCompressed memory sigCompressed = sig.toCompressed();
 
-        return pk.verifyCompressed(digest, sigCompressed);
+        return pk.verify(m, sigCompressed);
     }
 
     /// @dev Returns whether public key `pk` signs via compressed Schnorr
-    ///      signature `sig` message `message`.
+    ///      signature `sig` message `m`.
     ///
     /// @dev Reverts if:
     ///        Public key invalid
-    ///      ∨ Schnorr signature insane
-    function verifyCompressed(
+    ///      ∨ Signature insane
+    function verify(
         PublicKey memory pk,
-        bytes memory message,
-        SignatureCompressed memory sig
-    ) internal pure returns (bool) {
-        bytes32 digest = keccak256(message);
-
-        return pk.verifyCompressed(digest, sig);
-    }
-
-    /// @dev Returns whether public key `pk` signs via compressed Schnorr
-    ///      signature `sig` hash digest `digest`.
-    ///
-    /// @dev Reverts if:
-    ///        Public key invalid
-    ///      ∨ Schnorr signature insane
-    function verifyCompressed(
-        PublicKey memory pk,
-        bytes32 digest,
+        bytes32 m,
         SignatureCompressed memory sig
     ) internal pure returns (bool) {
         if (!pk.isValid()) {
@@ -139,10 +105,17 @@ library Schnorr {
             revert("SignatureInsane()");
         }
 
-        // Construct challenge = H(Pkₓ ‖ Pkₚ ‖ m ‖ Rₑ) (mod Q)
+        // Construct challenge = H₂(Pkₓ ‖ Pkₚ ‖ m ‖ Rₑ) (mod Q)
         uint challenge = uint(
             keccak256(
-                abi.encodePacked(pk.x, uint8(pk.yParity()), digest, sig.rAddr)
+                abi.encodePacked(
+                    CONTEXT,
+                    "challenge",
+                    pk.x,
+                    uint8(pk.yParity()),
+                    m,
+                    sig.rAddr
+                )
             )
         ) % Secp256k1.Q;
 
@@ -197,6 +170,16 @@ library Schnorr {
     //--------------------------------------------------------------------------
     // Utils
 
+    /// @dev Returns an [ERC-XXX] compatible Schnorr message hash from digest
+    ///      `digest`.
+    function constructMessageHash(bytes32 digest)
+        internal
+        pure
+        returns (bytes32)
+    {
+        return keccak256(abi.encodePacked(CONTEXT, "message", digest));
+    }
+
     /// @dev Returns whether Schnorr signature `sig` is sane.
     ///
     /// @dev A Schnorr signature is deemed insane for any of:
@@ -211,6 +194,8 @@ library Schnorr {
         return true;
     }
 
+    /// @dev Returns whether compressed Schnorr signature `sig` is sane.
+    ///
     /// @dev A compressed Schnorr signature is deemed insane for any of:
     ///      - Schnorr signature's s value is zero
     ///      - Schnorr signature's s value is not a field element
@@ -243,9 +228,8 @@ library Schnorr {
 
         assembly ("memory-safe") {
             // Store r's address in r's x coordinate slot.
-            // Note to clean dirty upper bits.
-            mstore(add(sig, 0x20), and(rAddr, 0x000000000000000000000000ffffffffffffffffffffffffffffffffffffffff))
-            // Clean r's y coordinate slot.
+            // Note to clean dirty upper bits and r's y coordinate slot.
+            mstore(add(sig, 0x20), and(rAddr, _ADDRESS_MASK))
             mstore(add(sig, 0x40), 0x00)
 
             sigCompressed := sig
@@ -268,7 +252,7 @@ library Schnorr {
     //--------------------------------------------------------------------------
     // (De)Serialization
 
-    /// @dev Decodes signature from bytes `blob`.
+    /// @dev Decodes signature from [ERC-XXX] encoded bytes `blob`.
     ///
     /// @dev Reverts if:
     ///        Length not 96 bytes
