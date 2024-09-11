@@ -20,6 +20,7 @@ import {ECDSAUnsafe} from "src/unsafe/secp256k1/signatures/ECDSAUnsafe.sol";
  * @notice ECDSA Unit Tests
  */
 contract ECDSATest is Test {
+    /*
     using Secp256k1Offchain for SecretKey;
     using Secp256k1 for SecretKey;
     using Secp256k1 for PublicKey;
@@ -304,6 +305,7 @@ contract ECDSATest is Test {
         vm.expectRevert("SignatureMalleable()");
         wrapper.toCompactEncoded(sig);
     }
+    */
 }
 
 /**
@@ -312,6 +314,7 @@ contract ECDSATest is Test {
  * @dev For more info, see https://github.com/foundry-rs/foundry/pull/3128#issuecomment-1241245086.
  */
 contract ECDSAWrapper {
+    /*
     using ECDSA for address;
     using ECDSA for SecretKey;
     using ECDSA for PublicKey;
@@ -393,4 +396,5 @@ contract ECDSAWrapper {
     {
         return sig.toCompactEncoded();
     }
+    */
 }

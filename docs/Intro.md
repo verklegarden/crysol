@@ -44,6 +44,11 @@ modifier vmed() {
     - Usage is discouraged
 - User input is called `digest`, which is domain separated to message `m`, wich is signed
 
+- Terminology:
+    - A user wants to sign byte string `message`
+    - The `message` is hashed via keccak256 to `digest`
+    - The `digest` is domain separated to `m`
+
 ## TODO: Sanity Check Rules
 
 - De/Serialization functions MUST revert if object is invalid/insane

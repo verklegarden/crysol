@@ -16,6 +16,15 @@ contract RandomOffchainTest is Test {
         wrapper = new RandomOffchainWrapper();
     }
 
+    function test_readBytes32() public {
+        bytes32 a = wrapper.readBytes32();
+        bytes32 b = wrapper.readBytes32();
+
+        // A: Are you sure these numbers are random?
+        // B: Thats the issue... you can never be sure.
+        assertNotEq(a, b);
+    }
+
     function test_readUint() public {
         uint a = wrapper.readUint();
         uint b = wrapper.readUint();
@@ -32,6 +41,10 @@ contract RandomOffchainTest is Test {
  * @dev For more info, see https://github.com/foundry-rs/foundry/pull/3128#issuecomment-1241245086.
  */
 contract RandomOffchainWrapper {
+    function readBytes32() public returns (bytes32) {
+        return RandomOffchain.readBytes32();
+    }
+
     function readUint() public returns (uint) {
         return RandomOffchain.readUint();
     }

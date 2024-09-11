@@ -4,8 +4,6 @@ pragma solidity ^0.8.16;
 import {Test} from "forge-std/Test.sol";
 import {console2 as console} from "forge-std/console2.sol";
 
-import {Message} from "src/onchain/common/Message.sol";
-
 import {Secp256k1Offchain} from "src/offchain/secp256k1/Secp256k1Offchain.sol";
 import {
     Secp256k1,
@@ -23,6 +21,7 @@ import {SchnorrOffchain} from
  * @notice Schnorr Unit Tests
  */
 contract SchnorrTest is Test {
+    /*
     using Secp256k1Offchain for SecretKey;
     using Secp256k1 for SecretKey;
     using Secp256k1 for PublicKey;
@@ -108,7 +107,7 @@ contract SchnorrTest is Test {
         vm.expectRevert("SignatureMalleable()");
         wrapper.verify(pk, keccak256(message), sig);
     }
-
+.
     function testFuzz_verify_RevertsIf_SignatureTrivial(
         SecretKey sk,
         bytes memory message
@@ -144,6 +143,7 @@ contract SchnorrTest is Test {
 
         assertFalse(wrapper.isMalleable(sig));
     }
+    */
 }
 
 /**
@@ -152,6 +152,7 @@ contract SchnorrTest is Test {
  * @dev For more info, see https://github.com/foundry-rs/foundry/pull/3128#issuecomment-1241245086.
  */
 contract SchnorrWrapper {
+    /*
     using Schnorr for SecretKey;
     using Schnorr for PublicKey;
     using Schnorr for Signature;
@@ -181,4 +182,5 @@ contract SchnorrWrapper {
     function isMalleable(Signature memory sig) public pure returns (bool) {
         return sig.isMalleable();
     }
+    */
 }

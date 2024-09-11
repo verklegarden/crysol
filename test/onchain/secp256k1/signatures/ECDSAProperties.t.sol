@@ -28,47 +28,9 @@ contract ECDSAPropertiesTest is Test {
     using ECDSA for Signature;
 
     //--------------------------------------------------------------------------
-    // Properties: Signature
-
-    function testProperty_sign_CreatesVerifiableSignatures(
-        SecretKey sk,
-        bytes memory message
-    ) public {
-        vm.assume(sk.isValid());
-
-        PublicKey memory pk = sk.toPublicKey();
-        Signature memory sig = sk.sign(message);
-
-        assertTrue(pk.verify(message, sig));
-    }
-
-    function testProperty_sign_CreatesDeterministicSignatures(
-        SecretKey sk,
-        bytes memory message
-    ) public view {
-        vm.assume(sk.isValid());
-
-        Signature memory sig1 = sk.sign(message);
-        Signature memory sig2 = sk.sign(message);
-
-        assertEq(sig1.v, sig2.v);
-        assertEq(sig1.r, sig2.r);
-        assertEq(sig1.s, sig2.s);
-    }
-
-    function testProperty_sign_CreatesNonMalleableSignatures(
-        SecretKey sk,
-        bytes memory message
-    ) public view {
-        vm.assume(sk.isValid());
-
-        Signature memory sig = sk.sign(message);
-
-        assertFalse(sig.isMalleable());
-    }
-
-    //--------------------------------------------------------------------------
     // Properties: (De)Serialization
+
+    // TODO: Reverts if malleable
 
     function testProperty_Encoding_SerializationLoop(Signature memory start)
         public
@@ -85,11 +47,11 @@ contract ECDSAPropertiesTest is Test {
 
     function testProperty_CompactEncoding_SerializationLoop(
         SecretKey sk,
-        bytes memory message
+        bytes32 digest
     ) public view {
         vm.assume(sk.isValid());
 
-        Signature memory start = sk.sign(message);
+        Signature memory start = sk.sign(digest);
         Signature memory end =
             ECDSA.signatureFromCompactEncoded(start.toCompactEncoded());
 

@@ -98,6 +98,8 @@ library ECDSAOffchain {
             revert("SecretKeyInvalid()");
         }
 
+        // Note that foundry's vm uses RFC-6979 for nonce derivation, ie
+        // signatures are deterministic.
         uint8 v;
         bytes32 r;
         bytes32 s;

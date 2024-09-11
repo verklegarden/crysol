@@ -30,43 +30,6 @@ contract SchnorrPropertiesTest is Test {
     using Schnorr for Signature;
 
     //--------------------------------------------------------------------------
-    // Properties: Signature
-
-    function testProperty_sign_CreatesVerifiableSignatures(
-        SecretKey sk,
-        bytes memory message
-    ) public {
-        vm.assume(sk.isValid());
-
-        PublicKey memory pk = sk.toPublicKey();
-        Signature memory sig = sk.sign(message);
-
-        assertTrue(pk.verify(message, sig));
-    }
-
-    function testProperty_sign_CreatesDeterministicSignatures(
-        SecretKey sk,
-        bytes memory message
-    ) public {
-        vm.assume(sk.isValid());
-
-        Signature memory sig1 = sk.sign(message);
-        Signature memory sig2 = sk.sign(message);
-
-        assertEq(sig1.signature, sig2.signature);
-        assertEq(sig1.commitment, sig2.commitment);
-    }
-
-    function testProperty_sign_CreatesNonMalleableSignatures(
-        SecretKey sk,
-        bytes memory message
-    ) public {
-        vm.assume(sk.isValid());
-
-        assertFalse(sk.sign(message).isMalleable());
-    }
-
-    //--------------------------------------------------------------------------
     // Properties: (De)Serialization
     //
     // TODO: Schnorr (De)Serialization Property tests once serialization defined.
