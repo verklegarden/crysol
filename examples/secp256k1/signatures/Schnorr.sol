@@ -14,7 +14,9 @@ import {
 import {SchnorrOffchain} from
     "src/offchain/secp256k1/signatures/SchnorrOffchain.sol";
 import {
-    Schnorr, Signature, SignatureCompressed
+    Schnorr,
+    Signature,
+    SignatureCompressed
 } from "src/onchain/secp256k1/signatures/Schnorr.sol";
 
 /**
@@ -91,6 +93,5 @@ contract SchnorrExample is Script {
         console.log("Compressed Schnorr signature:");
         console.logBytes(sig.toCompressedEncoded());
         console.log("");
-
     }
 }

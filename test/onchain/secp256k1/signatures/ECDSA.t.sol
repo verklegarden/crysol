@@ -211,7 +211,8 @@ contract ECDSATest is Test {
             hex"0000000000000000000000000000000000000000000000000000000000000002"
             hex"1b"
         );
-        Signature memory want1 = Signature({v: uint8(27), r: bytes32(uint(1)), s: bytes32(uint(2))});
+        Signature memory want1 =
+            Signature({v: uint8(27), r: bytes32(uint(1)), s: bytes32(uint(2))});
         Signature memory got1 = wrapper.signatureFromEncoded(blob1);
         assertEq(want1.v, got1.v);
         assertEq(want1.r, got1.r);
@@ -223,7 +224,8 @@ contract ECDSATest is Test {
             hex"0000000000000000000000000000000000000000000000000000000000000002"
             hex"1c"
         );
-        Signature memory want2 = Signature({v: uint8(28), r: bytes32(uint(1)), s: bytes32(uint(2))});
+        Signature memory want2 =
+            Signature({v: uint8(28), r: bytes32(uint(1)), s: bytes32(uint(2))});
         Signature memory got2 = wrapper.signatureFromEncoded(blob2);
         assertEq(want2.v, got2.v);
         assertEq(want2.r, got2.r);
