@@ -18,7 +18,9 @@ import {
 import {SchnorrOffchain} from
     "src/offchain/secp256k1/signatures/SchnorrOffchain.sol";
 import {
-    Schnorr, Signature, SignatureCompressed
+    Schnorr,
+    Signature,
+    SignatureCompressed
 } from "src/onchain/secp256k1/signatures/Schnorr.sol";
 
 /**
@@ -100,10 +102,9 @@ contract SchnorrOffchainPropertiesTest is Test {
         assertFalse(sig1.r.eq(sig2.r));
     }
 
-    function testProperty_signRaw_CreatesSaneSignatures(
-        SecretKey sk,
-        bytes32 m
-    ) public {
+    function testProperty_signRaw_CreatesSaneSignatures(SecretKey sk, bytes32 m)
+        public
+    {
         vm.assume(sk.isValid());
 
         assertTrue(sk.signRaw(m).isSane());

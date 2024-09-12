@@ -12,7 +12,9 @@ import {
 } from "src/onchain/secp256k1/Secp256k1.sol";
 
 import {
-    Schnorr, Signature, SignatureCompressed
+    Schnorr,
+    Signature,
+    SignatureCompressed
 } from "src/onchain/secp256k1/signatures/Schnorr.sol";
 import {SchnorrOffchain} from
     "src/offchain/secp256k1/signatures/SchnorrOffchain.sol";
@@ -231,7 +233,9 @@ contract SchnorrTest is Test {
     function test_constructMessageHash() public pure {
         bytes32 digest = keccak256(bytes("crysol <3"));
 
-        bytes32 want = bytes32(0x3337f39d830c322fca415bae221f3c5c8b07bbb107e35a66d9252325ed567156);
+        bytes32 want = bytes32(
+            0x3337f39d830c322fca415bae221f3c5c8b07bbb107e35a66d9252325ed567156
+        );
         bytes32 got = Schnorr.constructMessageHash(digest);
 
         assertEq(want, got);
@@ -251,19 +255,28 @@ contract SchnorrTest is Test {
         assertTrue(sig.isSane());
     }
 
-    function testFuzz_isSane_FailsIf_SIsZero(Signature memory sig) public pure {
+    function testFuzz_isSane_FailsIf_SIsZero(Signature memory sig)
+        public
+        pure
+    {
         sig.s = 0;
 
         assertFalse(sig.isSane());
     }
 
-    function testFuzz_isSane_FailsIf_SNotAFieldElement(Signature memory sig) public pure {
+    function testFuzz_isSane_FailsIf_SNotAFieldElement(Signature memory sig)
+        public
+        pure
+    {
         sig.s = bytes32(_bound(uint(sig.s), Secp256k1.Q, type(uint).max));
 
         assertFalse(sig.isSane());
     }
 
-    function testFuzz_isSane_FailsIf_RNotAValidPublicKey(Signature memory sig) public pure {
+    function testFuzz_isSane_FailsIf_RNotAValidPublicKey(Signature memory sig)
+        public
+        pure
+    {
         vm.assume(!sig.r.isValid());
 
         assertFalse(sig.isSane());
@@ -271,7 +284,10 @@ contract SchnorrTest is Test {
 
     // -- isSane compressed
 
-    function testFuzz_isSane_Compressed(SignatureCompressed memory sig) public pure {
+    function testFuzz_isSane_Compressed(SignatureCompressed memory sig)
+        public
+        pure
+    {
         vm.assume(sig.s != 0);
         vm.assume(uint(sig.s) < Secp256k1.Q);
         vm.assume(sig.rAddr != address(0));
@@ -279,19 +295,25 @@ contract SchnorrTest is Test {
         assertTrue(sig.isSane());
     }
 
-    function testFuzz_isSane_Compressed_FailsIf_SIsZero(SignatureCompressed memory sig) public pure  {
+    function testFuzz_isSane_Compressed_FailsIf_SIsZero(
+        SignatureCompressed memory sig
+    ) public pure {
         sig.s = 0;
 
         assertFalse(sig.isSane());
     }
 
-    function testFuzz_isSane_Compressed_FailsIf_SNotAFieldElement(SignatureCompressed memory sig) public pure {
+    function testFuzz_isSane_Compressed_FailsIf_SNotAFieldElement(
+        SignatureCompressed memory sig
+    ) public pure {
         sig.s = bytes32(_bound(uint(sig.s), Secp256k1.Q, type(uint).max));
 
         assertFalse(sig.isSane());
     }
 
-    function testFuzz_isSane_Compressed_FailsIf_RAddrIsZero(SignatureCompressed memory sig) public pure {
+    function testFuzz_isSane_Compressed_FailsIf_RAddrIsZero(
+        SignatureCompressed memory sig
+    ) public pure {
         sig.rAddr = address(0);
 
         assertFalse(sig.isSane());
@@ -340,18 +362,22 @@ contract SchnorrWrapper {
         return pk.verify(digest, sig);
     }
 
-    function verify(PublicKey memory pk, bytes32 digest, SignatureCompressed memory sig)
-        public
-        pure
-        returns (bool)
-    {
+    function verify(
+        PublicKey memory pk,
+        bytes32 digest,
+        SignatureCompressed memory sig
+    ) public pure returns (bool) {
         return pk.verify(digest, sig);
     }
 
     //--------------------------------------------------------------------------
     // Utils
 
-    function constructMessageHash(bytes32 digest) public pure returns (bytes32) {
+    function constructMessageHash(bytes32 digest)
+        public
+        pure
+        returns (bytes32)
+    {
         return Schnorr.constructMessageHash(digest);
     }
 
@@ -359,18 +385,30 @@ contract SchnorrWrapper {
         return sig.isSane();
     }
 
-    function isSane(SignatureCompressed memory sig) public pure returns (bool) {
+    function isSane(SignatureCompressed memory sig)
+        public
+        pure
+        returns (bool)
+    {
         return sig.isSane();
     }
 
     //--------------------------------------------------------------------------
     // Type Conversions
 
-    function intoCompressed(Signature memory sig) public pure returns (SignatureCompressed memory) {
+    function intoCompressed(Signature memory sig)
+        public
+        pure
+        returns (SignatureCompressed memory)
+    {
         return sig.intoCompressed();
     }
 
-    function toCompressed(Signature memory sig) public pure returns (SignatureCompressed memory) {
+    function toCompressed(Signature memory sig)
+        public
+        pure
+        returns (SignatureCompressed memory)
+    {
         return sig.toCompressed();
     }
 

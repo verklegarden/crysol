@@ -18,7 +18,9 @@ import {
 import {SchnorrOffchain} from
     "src/offchain/secp256k1/signatures/SchnorrOffchain.sol";
 import {
-    Schnorr, Signature, SignatureCompressed
+    Schnorr,
+    Signature,
+    SignatureCompressed
 } from "src/onchain/secp256k1/signatures/Schnorr.sol";
 
 /**
@@ -85,7 +87,9 @@ contract SchnorrOffchainTest is Test {
 
     // -- signRaw with rand
 
-    function testFuzz_signRaw_WithRand(SecretKey sk, bytes32 m, bytes32 rand) public {
+    function testFuzz_signRaw_WithRand(SecretKey sk, bytes32 m, bytes32 rand)
+        public
+    {
         vm.assume(sk.isValid());
 
         Signature memory sig = wrapper.signRaw(sk, m, rand);

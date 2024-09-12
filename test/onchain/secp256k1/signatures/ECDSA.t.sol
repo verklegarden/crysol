@@ -42,7 +42,9 @@ contract ECDSATest is Test {
 
     // -- verify with public key
 
-    function testFuzz_verify_WithPublicKey(SecretKey sk, bytes32 digest) public {
+    function testFuzz_verify_WithPublicKey(SecretKey sk, bytes32 digest)
+        public
+    {
         vm.assume(sk.isValid());
 
         Signature memory sig = sk.sign(digest);
@@ -373,7 +375,11 @@ contract ECDSAWrapper {
     //--------------------------------------------------------------------------
     // Utils
 
-    function constructMessageHash(bytes32 digest) public pure returns (bytes32) {
+    function constructMessageHash(bytes32 digest)
+        public
+        pure
+        returns (bytes32)
+    {
         return ECDSA.constructMessageHash(digest);
     }
 
