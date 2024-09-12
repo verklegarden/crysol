@@ -29,6 +29,7 @@ contract SchnorrTest is Test {
     using Schnorr for SecretKey;
     using Schnorr for PublicKey;
     using Schnorr for Signature;
+    using Schnorr for SignatureCompressed;
 
     SchnorrWrapper wrapper;
 
@@ -38,6 +39,8 @@ contract SchnorrTest is Test {
 
     //--------------------------------------------------------------------------
     // Test: Signature Verification
+
+    // -- verify
 
     function testFuzz_verify(SecretKey sk, bytes32 digest) public {
         vm.assume(sk.isValid());
@@ -53,23 +56,35 @@ contract SchnorrTest is Test {
     function testFuzz_verify_FailsIf_SignatureInvalid(
         SecretKey sk,
         bytes32 digest,
-        uint sMask,
-        uint rxMask,
-        uint ryMask
+        uint sMask
     ) public {
         vm.assume(sk.isValid());
-        vm.assume(sMask != 0 || rxMask != 0 || ryMask != 0);
+        vm.assume(sMask != 0);
 
         Signature memory sig = sk.sign(digest);
 
         sig.s = bytes32(uint(sig.s) ^ sMask);
-        sig.r.x = sig.r.x ^ rxMask;
-        sig.r.y = sig.r.y ^ rxMask;
 
         // Note that verify reverts if signature is insane.
-        vm.assume(!sig.isSane());
+        vm.assume(sig.isSane());
 
         bytes32 m = Schnorr.constructMessageHash(digest);
+        PublicKey memory pk = sk.toPublicKey();
+
+        assertFalse(wrapper.verify(pk, m, sig));
+    }
+
+    function testFuzz_verify_FailsIf_SignatureInsane_RNotAValidPublicKey(
+        SecretKey sk,
+        bytes32 m,
+        Signature memory sig
+    ) public {
+        vm.assume(sk.isValid());
+        vm.assume(sig.s != 0);
+        vm.assume(uint(sig.s) < Secp256k1.Q);
+
+        vm.assume(!sig.r.isValid());
+
         PublicKey memory pk = sk.toPublicKey();
 
         assertFalse(wrapper.verify(pk, m, sig));
@@ -86,62 +101,221 @@ contract SchnorrTest is Test {
         wrapper.verify(pk, m, sig);
     }
 
-    /*
-    function testFuzz_verify_RevertsIf_SignatureInsane(
+    function testFuzz_verify_RevertsIf_SignatureInsane_SIsZero(
         SecretKey sk,
-        bytes memory message,
+        bytes32 m,
         Signature memory sig
     ) public {
         vm.assume(sk.isValid());
-        vm.assume(sig.commitment != address(0));
 
-        sig.signature =
-            bytes32(_bound(uint(sig.signature), Secp256k1.Q, type(uint).max));
+        sig.s = 0;
 
         PublicKey memory pk = sk.toPublicKey();
 
-        vm.expectRevert("SignatureMalleable()");
-        wrapper.verify(pk, message, sig);
-        vm.expectRevert("SignatureMalleable()");
-        wrapper.verify(pk, keccak256(message), sig);
+        vm.expectRevert("SignatureInsane()");
+        wrapper.verify(pk, m, sig);
     }
 
-    function testFuzz_verify_RevertsIf_SignatureTrivial(
+    function testFuzz_verify_RevertsIf_SignatureInsane_SNotAFieldElement(
         SecretKey sk,
-        bytes memory message
+        bytes32 m,
+        Signature memory sig
     ) public {
         vm.assume(sk.isValid());
 
-        Signature memory sig = Signature(0, address(0));
+        sig.s = bytes32(_bound(uint(sig.s), Secp256k1.Q, type(uint).max));
 
         PublicKey memory pk = sk.toPublicKey();
 
-        vm.expectRevert("SignatureTrivial()");
-        wrapper.verify(pk, message, sig);
-        vm.expectRevert("SignatureTrivial()");
-        wrapper.verify(pk, keccak256(message), sig);
+        vm.expectRevert("SignatureInsane()");
+        wrapper.verify(pk, m, sig);
+    }
+
+    // -- verify compressed
+
+    function testFuzz_verify_Compressed(SecretKey sk, bytes32 digest) public {
+        vm.assume(sk.isValid());
+
+        SignatureCompressed memory sig = sk.sign(digest).intoCompressed();
+
+        bytes32 m = Schnorr.constructMessageHash(digest);
+        PublicKey memory pk = sk.toPublicKey();
+
+        assertTrue(wrapper.verify(pk, m, sig));
+    }
+
+    function testFuzz_verify_Compressed_FailsIf_SignatureInvalid(
+        SecretKey sk,
+        bytes32 digest,
+        uint sMask,
+        uint160 rAddrMask
+    ) public {
+        vm.assume(sk.isValid());
+        vm.assume(sMask != 0 || rAddrMask != 0);
+
+        SignatureCompressed memory sig = sk.sign(digest).intoCompressed();
+
+        sig.s = bytes32(uint(sig.s) ^ sMask);
+        sig.rAddr = address(uint160(sig.rAddr) ^ rAddrMask);
+
+        // Note that verify reverts if signature is insane.
+        vm.assume(sig.isSane());
+
+        bytes32 m = Schnorr.constructMessageHash(digest);
+        PublicKey memory pk = sk.toPublicKey();
+
+        assertFalse(wrapper.verify(pk, m, sig));
+    }
+
+    function testFuzz_verify_Compressed_RevertsIf_PublicKeyInvalid(
+        PublicKey memory pk,
+        bytes32 m,
+        SignatureCompressed memory sig
+    ) public {
+        vm.assume(!pk.isValid());
+
+        vm.expectRevert("PublicKeyInvalid()");
+        wrapper.verify(pk, m, sig);
+    }
+
+    function testFuzz_verify_Compressed_RevertsIf_SignatureInsane_SIsZero(
+        SecretKey sk,
+        bytes32 m,
+        SignatureCompressed memory sig
+    ) public {
+        vm.assume(sk.isValid());
+
+        sig.s = 0;
+
+        PublicKey memory pk = sk.toPublicKey();
+
+        vm.expectRevert("SignatureInsane()");
+        wrapper.verify(pk, m, sig);
+    }
+
+    function testFuzz_verify_Compressed_RevertsIf_SignatureInsane_SNotAFieldElement(
+        SecretKey sk,
+        bytes32 m,
+        SignatureCompressed memory sig
+    ) public {
+        vm.assume(sk.isValid());
+
+        sig.s = bytes32(_bound(uint(sig.s), Secp256k1.Q, type(uint).max));
+
+        PublicKey memory pk = sk.toPublicKey();
+
+        vm.expectRevert("SignatureInsane()");
+        wrapper.verify(pk, m, sig);
+    }
+
+    function testFuzz_verify_Compressed_RevertsIf_SignatureInsane_RAddrIsZero(
+        SecretKey sk,
+        bytes32 m,
+        SignatureCompressed memory sig
+    ) public {
+        vm.assume(sk.isValid());
+
+        sig.rAddr = address(0);
+
+        PublicKey memory pk = sk.toPublicKey();
+
+        vm.expectRevert("SignatureInsane()");
+        wrapper.verify(pk, m, sig);
     }
 
     //--------------------------------------------------------------------------
     // Test: Utils
 
-    // -- Signature::isMalleable
+    // -- constructMessageHash
 
-    function testFuzz_Signature_isMalleable(Signature memory sig) public view {
-        sig.signature =
-            bytes32(_bound(uint(sig.signature), Secp256k1.Q, type(uint).max));
+    function test_constructMessageHash() public pure {
+        bytes32 digest = keccak256(bytes("crysol <3"));
 
-        assertTrue(wrapper.isMalleable(sig));
+        bytes32 want = bytes32(0x3337f39d830c322fca415bae221f3c5c8b07bbb107e35a66d9252325ed567156);
+        bytes32 got = Schnorr.constructMessageHash(digest);
+
+        assertEq(want, got);
     }
 
-    function testFuzz_Signature_isMalleable_FailsIf_SignatureNotMalleable(
-        Signature memory sig
-    ) public view {
-        vm.assume(uint(sig.signature) < Secp256k1.Q);
+    // -- isSane
 
-        assertFalse(wrapper.isMalleable(sig));
+    function testFuzz_isSane(SecretKey sk, Signature memory sig) public {
+        vm.assume(sig.s != 0);
+        vm.assume(uint(sig.s) < Secp256k1.Q);
+
+        // Note to not assume random input is valid public key.
+        // vm.assume(sig.r.isValid());
+        vm.assume(sk.isValid());
+        sig.r = sk.toPublicKey();
+
+        assertTrue(sig.isSane());
     }
-    */
+
+    function testFuzz_isSane_FailsIf_SIsZero(Signature memory sig) public pure {
+        sig.s = 0;
+
+        assertFalse(sig.isSane());
+    }
+
+    function testFuzz_isSane_FailsIf_SNotAFieldElement(Signature memory sig) public pure {
+        sig.s = bytes32(_bound(uint(sig.s), Secp256k1.Q, type(uint).max));
+
+        assertFalse(sig.isSane());
+    }
+
+    function testFuzz_isSane_FailsIf_RNotAValidPublicKey(Signature memory sig) public pure {
+        vm.assume(!sig.r.isValid());
+
+        assertFalse(sig.isSane());
+    }
+
+    // -- isSane compressed
+
+    function testFuzz_isSane_Compressed(SignatureCompressed memory sig) public pure {
+        vm.assume(sig.s != 0);
+        vm.assume(uint(sig.s) < Secp256k1.Q);
+        vm.assume(sig.rAddr != address(0));
+
+        assertTrue(sig.isSane());
+    }
+
+    function testFuzz_isSane_Compressed_FailsIf_SIsZero(SignatureCompressed memory sig) public pure  {
+        sig.s = 0;
+
+        assertFalse(sig.isSane());
+    }
+
+    function testFuzz_isSane_Compressed_FailsIf_SNotAFieldElement(SignatureCompressed memory sig) public pure {
+        sig.s = bytes32(_bound(uint(sig.s), Secp256k1.Q, type(uint).max));
+
+        assertFalse(sig.isSane());
+    }
+
+    function testFuzz_isSane_Compressed_FailsIf_RAddrIsZero(SignatureCompressed memory sig) public pure {
+        sig.rAddr = address(0);
+
+        assertFalse(sig.isSane());
+    }
+
+    //--------------------------------------------------------------------------
+    // TODO: Test: Type Conversions
+
+    // -- intoCompressed
+
+    // -- toCompressed
+
+    //--------------------------------------------------------------------------
+    // TODO: Test: (De)Serialization
+
+    // -- signatureFromEncoded
+
+    // -- toEncoded
+
+    // -- toCompressedEncoded
+
+    // -- fromCompressedEncoded
+
+    // -- toCompressedEncoded
 }
 
 /**

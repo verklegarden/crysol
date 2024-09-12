@@ -19,15 +19,15 @@ clean: ## Clean build artifacts
 
 .PHONY: test
 test: ## Run full test suite
-	@forge test
+	@forge test --show-progress
 
 .PHONY: test-intense
 test-intense: ## Run full test suite with intense fuzzing
-	@FOUNDRY_PROFILE=intense forge test
+	@FOUNDRY_PROFILE=intense forge test --show-progress
 
 .PHONY: test-summary
 test-summary: ## Print summary of test suite
-	@forge test --summary
+	@forge test --summary --show-progress
 
 .PHONY: coverage
 coverage: ## Update coverage report and open lcov web interface

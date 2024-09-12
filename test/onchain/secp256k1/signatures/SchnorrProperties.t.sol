@@ -31,6 +31,9 @@ contract SchnorrPropertiesTest is Test {
 
     //--------------------------------------------------------------------------
     // Properties: (De)Serialization
-    //
+
+
+    // TODO: Property tests: (de)serialization reverts if malleable
+
     // TODO: Schnorr (De)Serialization Property tests once serialization defined.
 }

@@ -19,17 +19,14 @@ number_underscore = "preserve"
 [doc]
 out = "docs_generated" # Note to not overwrite own docs
 
-# Profile to compile with --via-ir and optimizations
-# Run via `FOUNDRY_PROFILE=release forge ...`
-[profile.release]
-via_ir = true
-optimizer = true
-optimizer_runs = 100_000
-
 # Profile for intense testing
 # Run via `FOUNDRY_PROFILE=intense forge t`
+[profile.intense]
+via_ir = false
+optimizer = false
 [profile.intense.fuzz]
 runs = 10_000
+max_test_rejects = 4_294_967_295
 
 # Profile for ci testing
 # Run via `FOUNDRY_PROFILE=ci forge t`
@@ -40,5 +37,3 @@ optimizer_runs = 100_000
 [profile.ci.fuzz]
 runs = 10_000
 max_test_rejects = 4_294_967_295
-[profile.ci.invariant]
-runs = 10_000
