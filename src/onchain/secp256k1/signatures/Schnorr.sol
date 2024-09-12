@@ -280,7 +280,7 @@ library Schnorr {
 
         Signature memory sig = Signature(s, PublicKey(rx, ry));
 
-        if (sig.isSane()) {
+        if (!sig.isSane()) {
             revert("SignatureInsane()");
         }
 
@@ -334,7 +334,7 @@ library Schnorr {
     ///         [32 bytes s value][20 bytes r's address]
     ///
     ///      See [ERC-XXX].
-    function fromCompressedEncoded(bytes memory blob)
+    function signatureFromCompressedEncoded(bytes memory blob)
         internal
         pure
         returns (SignatureCompressed memory)
@@ -347,7 +347,7 @@ library Schnorr {
         address rAddr;
         assembly ("memory-safe") {
             s := mload(add(blob, 0x20))
-            rAddr := mload(add(blob, 0x40))
+            rAddr := shr(96, mload(add(blob, 0x40)))
         }
 
         SignatureCompressed memory sig = SignatureCompressed(s, rAddr);

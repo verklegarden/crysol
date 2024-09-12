@@ -118,7 +118,7 @@ contract SchnorrTest is Test {
         wrapper.verify(pk, m, sig);
     }
 
-    function testFuzz_verify_RevertsIf_SignatureInsane_SNotAFieldElement(
+    function testFuzz_verify_RevertsIf_SignatureInsane_SGreaterOrEqualToQ(
         SecretKey sk,
         bytes32 m,
         Signature memory sig
@@ -195,7 +195,7 @@ contract SchnorrTest is Test {
         wrapper.verify(pk, m, sig);
     }
 
-    function testFuzz_verify_Compressed_RevertsIf_SignatureInsane_SNotAFieldElement(
+    function testFuzz_verify_Compressed_RevertsIf_SignatureInsane_SGreaterOrEqualToQ(
         SecretKey sk,
         bytes32 m,
         SignatureCompressed memory sig
@@ -264,7 +264,7 @@ contract SchnorrTest is Test {
         assertFalse(sig.isSane());
     }
 
-    function testFuzz_isSane_FailsIf_SNotAFieldElement(Signature memory sig)
+    function testFuzz_isSane_FailsIf_SGreaterOrEqualToQ(Signature memory sig)
         public
         pure
     {
@@ -303,7 +303,7 @@ contract SchnorrTest is Test {
         assertFalse(sig.isSane());
     }
 
-    function testFuzz_isSane_Compressed_FailsIf_SNotAFieldElement(
+    function testFuzz_isSane_Compressed_FailsIf_SGreaterOrEqualToQ(
         SignatureCompressed memory sig
     ) public pure {
         sig.s = bytes32(_bound(uint(sig.s), Secp256k1.Q, type(uint).max));
@@ -327,17 +327,161 @@ contract SchnorrTest is Test {
     // -- toCompressed
 
     //--------------------------------------------------------------------------
-    // TODO: Test: (De)Serialization
+    // Test: (De)Serialization
 
-    // -- signatureFromEncoded
+    // -- Signature <-> Encoded
 
-    // -- toEncoded
+    function test_signatureFromEncoded() public view {
+        bytes memory blob = (
+            hex"0000000000000000000000000000000000000000000000000000000000000001"
+            hex"79be667ef9dcbbac55a06295ce870b07029bfcdb2dce28d959f2815b16f81798"
+            hex"483ada7726a3c4655da4fbfc0e1108a8fd17b448a68554199c47d08ffb10d4b8"
+        );
 
-    // -- toCompressedEncoded
+        Signature memory want =
+            Signature({s: bytes32(uint(1)), r: Secp256k1.G()});
+        Signature memory got = wrapper.signatureFromEncoded(blob);
 
-    // -- fromCompressedEncoded
+        assertEq(want.s, got.s);
+        assertTrue(want.r.eq(got.r));
+    }
 
-    // -- toCompressedEncoded
+    function testFuzz_signatureFromEncoded_RevertsIf_LengthInvalid(
+        bytes memory blob
+    ) public {
+        vm.assume(blob.length != 96);
+
+        vm.expectRevert("LengthInvalid()");
+        wrapper.signatureFromEncoded(blob);
+    }
+
+    function testFuzz_signatureFromEncoded_RevertsIf_SignatureInsane(
+        uint s,
+        PublicKey memory r
+    ) public {
+        vm.assume(s == 0 || s >= Secp256k1.Q || !r.isValid());
+
+        bytes memory blob = abi.encodePacked(s, r.x, r.y);
+
+        vm.expectRevert("SignatureInsane()");
+        wrapper.signatureFromEncoded(blob);
+    }
+
+    function test_Signature_toEncoded() public view {
+        Signature memory sig =
+            Signature({s: bytes32(uint(1)), r: Secp256k1.G()});
+
+        bytes memory want = (
+            hex"0000000000000000000000000000000000000000000000000000000000000001"
+            hex"79be667ef9dcbbac55a06295ce870b07029bfcdb2dce28d959f2815b16f81798"
+            hex"483ada7726a3c4655da4fbfc0e1108a8fd17b448a68554199c47d08ffb10d4b8"
+        );
+        bytes memory got = wrapper.toEncoded(sig);
+
+        assertEq(want, got);
+    }
+
+    function testFuzz_Signature_toEncoded_RevertsIf_SignatureInsane(
+        uint s,
+        PublicKey memory r
+    ) public {
+        vm.assume(s == 0 || s >= Secp256k1.Q || !r.isValid());
+
+        Signature memory sig = Signature(bytes32(s), r);
+
+        vm.expectRevert("SignatureInsane()");
+        wrapper.toEncoded(sig);
+    }
+
+    // Signature <-> compressed encoded
+
+    function test_Signature_toCompressedEncoded() public view {
+        Signature memory sig =
+            Signature({s: bytes32(uint(1)), r: Secp256k1.G()});
+
+        bytes memory want =
+            abi.encodePacked(bytes32(uint(1)), Secp256k1.G().toAddress());
+        bytes memory got = wrapper.toCompressedEncoded(sig);
+
+        assertEq(want, got);
+    }
+
+    function testFuzz_Signature_toCompressedEncoded_RevertsIf_SignatureInsane(
+        uint s,
+        PublicKey memory r
+    ) public {
+        // Note to in order to compress a signature the public key r's address
+        // is computed, ie ensure signature is insane due to their s value.
+        vm.assume(s == 0 || s > Secp256k1.Q);
+
+        Signature memory sig = Signature(bytes32(s), r);
+
+        vm.expectRevert("SignatureInsane()");
+        wrapper.toCompressedEncoded(sig);
+    }
+
+    // -- SignatureCompressed <-> compressed encoded
+
+    function test_signatureFromCompressedEncoded() public view {
+        bytes memory blob = (
+            hex"0000000000000000000000000000000000000000000000000000000000000001"
+            hex"0000000000000000000000000000000000000001"
+        );
+
+        SignatureCompressed memory want =
+            SignatureCompressed({s: bytes32(uint(1)), rAddr: address(1)});
+        SignatureCompressed memory got =
+            wrapper.signatureFromCompressedEncoded(blob);
+
+        assertEq(want.s, got.s);
+        assertEq(want.rAddr, got.rAddr);
+    }
+
+    function testFuzz_signatureFromCompressedEncoded_RevertsIf_LengthInvalid(
+        bytes memory blob
+    ) public {
+        vm.assume(blob.length != 52);
+
+        vm.expectRevert("LengthInvalid()");
+        wrapper.signatureFromCompressedEncoded(blob);
+    }
+
+    function testFuzz_signatureFromCompressedEncoded_RevertsIf_SignatureInsane(
+        uint s,
+        address rAddr
+    ) public {
+        vm.assume(s == 0 || s >= Secp256k1.Q || rAddr == address(0));
+
+        bytes memory blob = abi.encodePacked(s, rAddr);
+
+        vm.expectRevert("SignatureInsane()");
+        wrapper.signatureFromCompressedEncoded(blob);
+    }
+
+    function test_SignatureCompressed_toCompressedEncoded() public view {
+        SignatureCompressed memory sig =
+            SignatureCompressed({s: bytes32(uint(1)), rAddr: address(1)});
+
+        bytes memory want = (
+            hex"0000000000000000000000000000000000000000000000000000000000000001"
+            hex"0000000000000000000000000000000000000001"
+        );
+        bytes memory got = wrapper.toCompressedEncoded(sig);
+
+        assertEq(want, got);
+    }
+
+    function testFuzz_Signature_toEncoded_RevertsIf_SignatureInsane(
+        uint s,
+        address rAddr
+    ) public {
+        vm.assume(s == 0 || s >= Secp256k1.Q || rAddr == address(0));
+
+        SignatureCompressed memory sig = SignatureCompressed(bytes32(s), rAddr);
+
+        vm.expectRevert("SignatureInsane()");
+        wrapper.toCompressedEncoded(sig);
+    }
 }
 
 /**
@@ -439,12 +583,12 @@ contract SchnorrWrapper {
         return sig.toCompressedEncoded();
     }
 
-    function fromCompressedEncoded(bytes memory blob)
+    function signatureFromCompressedEncoded(bytes memory blob)
         public
         pure
         returns (SignatureCompressed memory)
     {
-        return Schnorr.fromCompressedEncoded(blob);
+        return Schnorr.signatureFromCompressedEncoded(blob);
     }
 
     function toCompressedEncoded(SignatureCompressed memory sig)

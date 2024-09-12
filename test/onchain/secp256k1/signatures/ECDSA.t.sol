@@ -170,9 +170,20 @@ contract ECDSATest is Test {
     //--------------------------------------------------------------------------
     // Test: Utils
 
-    // -- TODO: Test ECDSA::constructMessageHash
+    // -- constructMessageHash
 
-    // -- Signature::isMalleable
+    function test_constructMessageHash() public {
+        bytes32 digest = keccak256(bytes("crysol <3"));
+
+        bytes32 want = bytes32(
+            0xf0d01579d47c5b662330453e5709f9c1e75de1f1b741f00e20c3c381ab997664
+        );
+        bytes32 got = wrapper.constructMessageHash(digest);
+
+        assertEq(want, got);
+    }
+
+    // -- isMalleable
 
     function testFuzz_Signature_isMalleable(Signature memory sig) public view {
         vm.assume(uint(sig.s) > Secp256k1.Q / 2);
@@ -193,18 +204,30 @@ contract ECDSATest is Test {
 
     // -- Signature <-> Encoded
 
-    // TODO: Not a good test, also already implemented as property.
-    //       Can we get test vectors?
-    function testFuzz_signatureFromEncoded(Signature memory sig) public view {
-        vm.assume(!sig.isMalleable());
+    function test_signatureFromEncoded() public view {
+        // Test Case 1: v = 27
+        bytes memory blob1 = (
+            hex"0000000000000000000000000000000000000000000000000000000000000001"
+            hex"0000000000000000000000000000000000000000000000000000000000000002"
+            hex"1b"
+        );
+        Signature memory want1 = Signature({v: uint8(27), r: bytes32(uint(1)), s: bytes32(uint(2))});
+        Signature memory got1 = wrapper.signatureFromEncoded(blob1);
+        assertEq(want1.v, got1.v);
+        assertEq(want1.r, got1.r);
+        assertEq(want1.s, got1.s);
 
-        bytes memory blob = sig.toEncoded();
-
-        Signature memory got = wrapper.signatureFromEncoded(blob);
-
-        assertEq(got.v, sig.v);
-        assertEq(got.r, sig.r);
-        assertEq(got.s, sig.s);
+        // Test Case 1: v = 28
+        bytes memory blob2 = (
+            hex"0000000000000000000000000000000000000000000000000000000000000001"
+            hex"0000000000000000000000000000000000000000000000000000000000000002"
+            hex"1c"
+        );
+        Signature memory want2 = Signature({v: uint8(28), r: bytes32(uint(1)), s: bytes32(uint(2))});
+        Signature memory got2 = wrapper.signatureFromEncoded(blob2);
+        assertEq(want2.v, got2.v);
+        assertEq(want2.r, got2.r);
+        assertEq(want2.s, got2.s);
     }
 
     function testFuzz_signatureFromEncoded_RevertsIf_LengthInvalid(
@@ -230,13 +253,18 @@ contract ECDSATest is Test {
         wrapper.signatureFromEncoded(blob);
     }
 
-    function testFuzz_Signature_toEncoded(Signature memory sig) public view {
-        vm.assume(!sig.isMalleable());
+    function test_Signature_toEncoded() public view {
+        Signature memory sig =
+            Signature({v: uint8(27), r: bytes32(uint(1)), s: bytes32(uint(2))});
 
+        bytes memory want = (
+            hex"0000000000000000000000000000000000000000000000000000000000000001"
+            hex"0000000000000000000000000000000000000000000000000000000000000002"
+            hex"1b"
+        );
         bytes memory got = wrapper.toEncoded(sig);
-        bytes memory want = abi.encodePacked(sig.r, sig.s, sig.v);
 
-        assertEq(got, want);
+        assertEq(want, got);
     }
 
     function testFuzz_Signature_toEncoded_RevertsIf_SignatureMalleable(
