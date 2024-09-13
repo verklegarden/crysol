@@ -172,7 +172,7 @@ contract ECDSATest is Test {
 
     // -- constructMessageHash
 
-    function test_constructMessageHash() public {
+    function test_constructMessageHash() public view {
         bytes32 digest = keccak256(bytes("crysol <3"));
 
         bytes32 want = bytes32(

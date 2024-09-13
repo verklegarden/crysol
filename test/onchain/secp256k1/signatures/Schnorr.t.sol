@@ -320,11 +320,25 @@ contract SchnorrTest is Test {
     }
 
     //--------------------------------------------------------------------------
-    // TODO: Test: Type Conversions
+    // Test: Type Conversions
 
     // -- intoCompressed
 
+    function testFuzz_intoCompressed(Signature memory sig) public view {
+        SignatureCompressed memory sigComp = wrapper.intoCompressed(sig);
+
+        assertEq(sig.s, sigComp.s);
+        assertEq(sig.r.toAddress(), sigComp.rAddr);
+    }
+
     // -- toCompressed
+
+    function testFuzz_toCompressed(Signature memory sig) public view {
+        SignatureCompressed memory sigComp = wrapper.toCompressed(sig);
+
+        assertEq(sig.s, sigComp.s);
+        assertEq(sig.r.toAddress(), sigComp.rAddr);
+    }
 
     //--------------------------------------------------------------------------
     // Test: (De)Serialization
