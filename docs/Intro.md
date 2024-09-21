@@ -38,7 +38,7 @@ modifier vmed() {
 - Only 32 byte digests are signed, never byte strings
     - It is always assumed that the digest is a keccak256 hash digest
 - The default `sign` function MUST only sign domain separated messages
-    - For ECDSA using "Ethereum Signed Message" as defined via `eth_call`
+    - For ECDSA using "Ethereum Signed Message" as defined via `eth_sign`
     - For Schnorr its part of ERC-XXX
 - There are `signRaw` functions that MUST NOT domain separate user input digests
     - Usage is discouraged
