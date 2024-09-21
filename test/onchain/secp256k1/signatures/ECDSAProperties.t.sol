@@ -32,10 +32,9 @@ contract ECDSAPropertiesTest is Test {
 
     // TODO: Property tests: (de)serialization reverts if malleable
 
-    function testProperty_Encoding_SerializationLoop(Signature memory start)
-        public
-        pure
-    {
+    function testProperty_Signature_Encoding_SerializationLoop(
+        Signature memory start
+    ) public pure {
         vm.assume(!start.isMalleable());
 
         Signature memory end = ECDSA.signatureFromEncoded(start.toEncoded());
@@ -45,7 +44,7 @@ contract ECDSAPropertiesTest is Test {
         assertEq(start.s, end.s);
     }
 
-    function testProperty_CompactEncoding_SerializationLoop(
+    function testProperty_Signature_CompactEncoding_SerializationLoop(
         SecretKey sk,
         bytes32 digest
     ) public view {

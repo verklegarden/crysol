@@ -30,14 +30,6 @@ struct SignatureCompressed {
 }
 
 /**
- * @dev CONTEXT contains the [ERC-XXX] scheme and ciphersuite
- *
- * @dev The context string is used to domain separate hash functions and ensures
- *      a Schnorr signed message is never deemed valid in a different context.
- */
-string constant CONTEXT = "ETHEREUM-SCHNORR-SECP256K1-KECCAK256";
-
-/**
  * @title Schnorr
  *
  * @notice Provides [ERC-XXX] compatible Schnorr signature functionality
@@ -63,6 +55,16 @@ library Schnorr {
 
     uint private constant _ADDRESS_MASK =
         0x000000000000000000000000FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF;
+
+    //--------------------------------------------------------------------------
+    // ERC-XXX Constants
+
+    /// @dev The context string containing the scheme and ciphersuite.
+    ///
+    /// @dev The context string is used to domain separate hash functions and
+    ///      ensures a Schnorr signed message is never deemed valid in a
+    ///      different context.
+    string constant CONTEXT = "ETHEREUM-SCHNORR-SECP256K1-KECCAK256";
 
     //--------------------------------------------------------------------------
     // Signature Verification
@@ -216,6 +218,7 @@ library Schnorr {
     //--------------------------------------------------------------------------
     // Type Conversions
 
+    /// @dev Mutates signature `sig` to a compressed signature.
     function intoCompressed(Signature memory sig)
         internal
         pure
@@ -238,6 +241,7 @@ library Schnorr {
         return sigCompressed;
     }
 
+    /// @dev Returns a compressed signature from signature `sig`.
     function toCompressed(Signature memory sig)
         internal
         pure

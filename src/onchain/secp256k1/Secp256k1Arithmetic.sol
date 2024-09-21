@@ -308,7 +308,7 @@ library Secp256k1Arithmetic {
     /// @dev Returns the product of projective point `point` and scalar `scalar`
     ///      as projective point.
     ///
-    /// @dev Uses the repeated square-and-multiply algorithm.
+    /// @dev Uses the repeated add-and-double algorithm.
     function mul(ProjectivePoint memory point, uint scalar)
         internal
         pure

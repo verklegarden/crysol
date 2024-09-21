@@ -25,8 +25,7 @@ import {
 import {
     Schnorr,
     Signature,
-    SignatureCompressed,
-    CONTEXT
+    SignatureCompressed
 } from "../../../onchain/secp256k1/signatures/Schnorr.sol";
 
 /**
@@ -66,9 +65,9 @@ library SchnorrOffchain {
     /// @dev Returns an [ERC-XXX] compatible Schnorr signature signed by secret
     ///      key `sk` signing hash digest `digest`.
     ///
-    /// @dev Note that the actual message being signed is a domain separated
-    ///      hash digest as specified in [ERC-XXX]. This ensures a signed
-    ///      message is never deemed valid in a different context.
+    /// @dev Note that the actual message being signed is the domain separated
+    ///      hash digest of `digest` as specified in [ERC-XXX]. This ensures a
+    ///      signed message is never deemed valid in a different context.
     ///
     /// @custom:vm signRaw(SecretKey,bytes32)(Signature)
     function sign(SecretKey sk, bytes32 digest)
@@ -131,7 +130,9 @@ library SchnorrOffchain {
 
         // Derive nonce = H₃(rand ‖ sk) (mod Q)
         uint nonce = uint(
-            keccak256(abi.encodePacked(CONTEXT, "nonce", rand, sk.asUint()))
+            keccak256(
+                abi.encodePacked(Schnorr.CONTEXT, "nonce", rand, sk.asUint())
+            )
         ) % Secp256k1.Q;
 
         // Compute nonce's public key R.
@@ -141,7 +142,7 @@ library SchnorrOffchain {
         uint challenge = uint(
             keccak256(
                 abi.encodePacked(
-                    CONTEXT,
+                    Schnorr.CONTEXT,
                     "challenge",
                     pk.x,
                     uint8(pk.yParity()),

@@ -230,13 +230,13 @@ contract SchnorrTest is Test {
 
     // -- constructMessageHash
 
-    function test_constructMessageHash() public pure {
+    function test_constructMessageHash() public view {
         bytes32 digest = keccak256(bytes("crysol <3"));
 
         bytes32 want = bytes32(
             0x3337f39d830c322fca415bae221f3c5c8b07bbb107e35a66d9252325ed567156
         );
-        bytes32 got = Schnorr.constructMessageHash(digest);
+        bytes32 got = wrapper.constructMessageHash(digest);
 
         assertEq(want, got);
     }
@@ -252,71 +252,71 @@ contract SchnorrTest is Test {
         vm.assume(sk.isValid());
         sig.r = sk.toPublicKey();
 
-        assertTrue(sig.isSane());
+        assertTrue(wrapper.isSane(sig));
     }
 
     function testFuzz_isSane_FailsIf_SIsZero(Signature memory sig)
         public
-        pure
+        view
     {
         sig.s = 0;
 
-        assertFalse(sig.isSane());
+        assertFalse(wrapper.isSane(sig));
     }
 
     function testFuzz_isSane_FailsIf_SGreaterOrEqualToQ(Signature memory sig)
         public
-        pure
+        view
     {
         sig.s = bytes32(_bound(uint(sig.s), Secp256k1.Q, type(uint).max));
 
-        assertFalse(sig.isSane());
+        assertFalse(wrapper.isSane(sig));
     }
 
     function testFuzz_isSane_FailsIf_RNotAValidPublicKey(Signature memory sig)
         public
-        pure
+        view
     {
         vm.assume(!sig.r.isValid());
 
-        assertFalse(sig.isSane());
+        assertFalse(wrapper.isSane(sig));
     }
 
     // -- isSane compressed
 
     function testFuzz_isSane_Compressed(SignatureCompressed memory sig)
         public
-        pure
+        view
     {
         vm.assume(sig.s != 0);
         vm.assume(uint(sig.s) < Secp256k1.Q);
         vm.assume(sig.rAddr != address(0));
 
-        assertTrue(sig.isSane());
+        assertTrue(wrapper.isSane(sig));
     }
 
     function testFuzz_isSane_Compressed_FailsIf_SIsZero(
         SignatureCompressed memory sig
-    ) public pure {
+    ) public view {
         sig.s = 0;
 
-        assertFalse(sig.isSane());
+        assertFalse(wrapper.isSane(sig));
     }
 
     function testFuzz_isSane_Compressed_FailsIf_SGreaterOrEqualToQ(
         SignatureCompressed memory sig
-    ) public pure {
+    ) public view {
         sig.s = bytes32(_bound(uint(sig.s), Secp256k1.Q, type(uint).max));
 
-        assertFalse(sig.isSane());
+        assertFalse(wrapper.isSane(sig));
     }
 
     function testFuzz_isSane_Compressed_FailsIf_RAddrIsZero(
         SignatureCompressed memory sig
-    ) public pure {
+    ) public view {
         sig.rAddr = address(0);
 
-        assertFalse(sig.isSane());
+        assertFalse(wrapper.isSane(sig));
     }
 
     //--------------------------------------------------------------------------
