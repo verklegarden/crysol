@@ -30,3 +30,30 @@ modifier vmed() {
 // forgefmt: disable-end
 // ~~~~~~~~~~~~~~~~~~~~~~~
 ```
+
+## TODO: Signature Rules
+
+- Malleable signatures are deemed invalid
+    - For ECDSA malleable signature if `s > Q/2` which is in sync with ecosystem
+- Only 32 byte digests are signed, never byte strings
+    - It is always assumed that the digest is a keccak256 hash digest
+- The default `sign` function MUST only sign domain separated messages
+    - For ECDSA using "Ethereum Signed Message" as defined via `eth_sign`
+    - For Schnorr its part of ERC-XXX
+- There are `signRaw` functions that MUST NOT domain separate user input digests
+    - Usage is discouraged
+- User input is called `digest`, which is domain separated to message `m`, wich is signed
+
+- Terminology:
+    - A user wants to sign byte string `message`
+    - The `message` is hashed via keccak256 to `digest`
+    - The `digest` is domain separated to `m`
+
+## TODO: Sanity Check Rules
+
+- De/Serialization functions MUST revert if object is invalid/insane
+    - Example: It MUST NOT be possible to serialize an invalid public key
+    - Example: It MUST NOT be possible to deserialize a malleable ECDSA signature
+- Type conversion functions MUST NOT revert if object is invalid/insane
+    - Example: It MUST be possible to transform an invalid public key to an point
+    - Example: It MUST be possible to transform an insance Schnorr signature to a compressed Schnorr signature

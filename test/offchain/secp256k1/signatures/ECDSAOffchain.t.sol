@@ -4,8 +4,6 @@ pragma solidity ^0.8.16;
 import {Test} from "forge-std/Test.sol";
 import {console2 as console} from "forge-std/console2.sol";
 
-import {Message} from "src/onchain/common/Message.sol";
-
 import {Secp256k1Offchain} from "src/offchain/secp256k1/Secp256k1Offchain.sol";
 import {
     Secp256k1,
@@ -16,7 +14,6 @@ import {
 import {ECDSAOffchain} from
     "src/offchain/secp256k1/signatures/ECDSAOffchain.sol";
 import {ECDSA, Signature} from "src/onchain/secp256k1/signatures/ECDSA.sol";
-import {ECDSAUnsafe} from "src/unsafe/secp256k1/signatures/ECDSAUnsafe.sol";
 
 /**
  * @notice ECDSAOffchain Unit Tests
@@ -24,7 +21,6 @@ import {ECDSAUnsafe} from "src/unsafe/secp256k1/signatures/ECDSAUnsafe.sol";
 contract ECDSAOffchainTest is Test {
     using Secp256k1Offchain for SecretKey;
     using Secp256k1 for SecretKey;
-    using Secp256k1 for PublicKey;
 
     using ECDSA for PublicKey;
 
@@ -37,72 +33,46 @@ contract ECDSAOffchainTest is Test {
     //--------------------------------------------------------------------------
     // Test: Signature Creation
 
-    function testFuzz_sign(SecretKey sk, bytes memory message) public {
+    // -- sign
+
+    function testFuzz_sign(SecretKey sk, bytes32 digest) public {
         vm.assume(sk.isValid());
 
-        Signature memory sig1 = wrapper.sign(sk, message);
-        Signature memory sig2 = wrapper.sign(sk, keccak256(message));
+        bytes32 m = ECDSA.constructMessageHash(digest);
 
-        assertEq(sig1.v, sig2.v);
-        assertEq(sig1.r, sig2.r);
-        assertEq(sig1.s, sig2.s);
+        Signature memory sig = wrapper.sign(sk, digest);
 
-        PublicKey memory pk = sk.toPublicKey();
-        assertTrue(pk.verify(message, sig1));
-        assertTrue(pk.verify(message, sig2));
+        assertTrue(sk.toPublicKey().verify(m, sig));
     }
 
     function testFuzz_sign_RevertsIf_SecretKeyInvalid(
         SecretKey sk,
-        bytes memory message
+        bytes32 digest
     ) public {
         vm.assume(!sk.isValid());
 
         vm.expectRevert("SecretKeyInvalid()");
-        wrapper.sign(sk, message);
-
-        vm.expectRevert("SecretKeyInvalid()");
-        wrapper.sign(sk, keccak256(message));
+        wrapper.sign(sk, digest);
     }
 
-    function testFuzz_signEthereumSignedMessageHash(
-        SecretKey sk,
-        bytes memory message
-    ) public {
+    // -- signRaw
+
+    function testFuzz_signRaw(SecretKey sk, bytes32 m) public {
         vm.assume(sk.isValid());
 
-        Signature memory sig1 =
-            wrapper.signEthereumSignedMessageHash(sk, message);
-        Signature memory sig2 =
-            wrapper.signEthereumSignedMessageHash(sk, keccak256(message));
+        Signature memory sig = wrapper.signRaw(sk, m);
 
-        assertEq(sig1.v, sig2.v);
-        assertEq(sig1.r, sig2.r);
-        assertEq(sig1.s, sig2.s);
-
-        PublicKey memory pk = sk.toPublicKey();
-        assertTrue(
-            pk.verify(Message.deriveEthereumSignedMessageHash(message), sig1)
-        );
-        assertTrue(
-            pk.verify(
-                Message.deriveEthereumSignedMessageHash(keccak256(message)),
-                sig2
-            )
-        );
+        assertTrue(sk.toPublicKey().verify(m, sig));
     }
 
-    function testFuzz_signEthereumSignedMessageHash_RevertsIf_SecretKeyInvalid(
+    function testFuzz_signRaw_RevertsIf_SecretKeyInvalid(
         SecretKey sk,
-        bytes memory message
+        bytes32 m
     ) public {
         vm.assume(!sk.isValid());
 
         vm.expectRevert("SecretKeyInvalid()");
-        wrapper.signEthereumSignedMessageHash(sk, message);
-
-        vm.expectRevert("SecretKeyInvalid()");
-        wrapper.signEthereumSignedMessageHash(sk, keccak256(message));
+        wrapper.signRaw(sk, m);
     }
 
     //--------------------------------------------------------------------------
@@ -137,14 +107,6 @@ contract ECDSAOffchainWrapper {
     //--------------------------------------------------------------------------
     // Signature Creation
 
-    function sign(SecretKey sk, bytes memory message)
-        public
-        view
-        returns (Signature memory)
-    {
-        return sk.sign(message);
-    }
-
     function sign(SecretKey sk, bytes32 digest)
         public
         view
@@ -153,20 +115,12 @@ contract ECDSAOffchainWrapper {
         return sk.sign(digest);
     }
 
-    function signEthereumSignedMessageHash(SecretKey sk, bytes memory message)
+    function signRaw(SecretKey sk, bytes32 m)
         public
         view
         returns (Signature memory)
     {
-        return sk.signEthereumSignedMessageHash(message);
-    }
-
-    function signEthereumSignedMessageHash(SecretKey sk, bytes32 digest)
-        public
-        view
-        returns (Signature memory)
-    {
-        return sk.signEthereumSignedMessageHash(digest);
+        return sk.signRaw(m);
     }
 
     //--------------------------------------------------------------------------

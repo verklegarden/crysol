@@ -53,7 +53,7 @@ $ forge install verklegarden/crysol
 ## Examples
 
 Several examples are provided in [`examples/`](./examples), such as:
-- secure key pair and Ethereum address creation
+- secure key pair and Ethereum address generation
 - secp256k1 point arithmetic
 - Schnorr and ECDSA signature creation and verification
 

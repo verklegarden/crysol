@@ -54,7 +54,6 @@ struct ProjectivePoint {
  *
  * @author verklegarden
  * @custom:repository github.com/verklegarden/crysol
- * @author Inspired by Chronicle Protocol's Scribe (https://github.com/chronicleprotocol/scribe)
  */
 library Secp256k1Arithmetic {
     using Secp256k1Arithmetic for Point;
@@ -308,6 +307,8 @@ library Secp256k1Arithmetic {
 
     /// @dev Returns the product of projective point `point` and scalar `scalar`
     ///      as projective point.
+    ///
+    /// @dev Uses the repeated add-and-double algorithm.
     function mul(ProjectivePoint memory point, uint scalar)
         internal
         pure
@@ -324,6 +325,9 @@ library Secp256k1Arithmetic {
         ProjectivePoint memory copy = point;
         ProjectivePoint memory result = ProjectiveIdentity();
 
+        // TODO: Can endomorphism be used?
+        //       See Faster Point Multiplication on Elliptic Curves with
+        //       Efficient Endomorphism from GLV.
         while (scalar != 0) {
             if (scalar & 1 == 1) {
                 result = result.add(copy);

@@ -13,8 +13,6 @@ pragma solidity ^0.8.16;
 
 import {Vm} from "forge-std/Vm.sol";
 
-import {Message} from "../../../onchain/common/Message.sol";
-
 import {Secp256k1Offchain} from "../Secp256k1Offchain.sol";
 import {
     Secp256k1,
@@ -30,6 +28,9 @@ import {
  * @title ECDSAOffchain
  *
  * @notice Provides offchain ECDSA signature functionality
+ *
+ * @custom:references
+ *      - [eth_sign]: https://ethereum.org/en/developers/docs/apis/json-rpc/#eth_sign
  *
  * @author verklegarden
  * @custom:repository github.com/verklegarden/crysol
@@ -53,26 +54,11 @@ library ECDSAOffchain {
     // Signature Creation
 
     /// @dev Returns an ECDSA signature signed by secret key `sk` signing
-    ///      message `message`.
+    ///      hash digest `digest`.
     ///
-    /// @dev Reverts if:
-    ///        Secret key invalid
-    ///
-    /// @custom:vm vm.sign(uint,bytes32)
-    /// @custom:invariant Created signature is non-malleable.
-    function sign(SecretKey sk, bytes memory message)
-        internal
-        view
-        vmed
-        returns (Signature memory)
-    {
-        bytes32 digest = keccak256(message);
-
-        return sk.sign(digest);
-    }
-
-    /// @dev Returns an ECDSA signature signed by secret key `sk` signing hash
-    ///      digest `digest`.
+    /// @dev Note that the actual message being signed is a domain separated
+    ///      "Ethereum Signed Message" as specified via [eth_sign]. This ensures
+    ///      a signed message is never deemed valid in a different context.
     ///
     /// @dev Reverts if:
     ///        Secret key invalid
@@ -85,61 +71,44 @@ library ECDSAOffchain {
         vmed
         returns (Signature memory)
     {
+        bytes32 m = ECDSA.constructMessageHash(digest);
+
+        return sk.signRaw(m);
+    }
+
+    /// @dev Returns an ECDSA signature signed by secret key `sk` signing
+    ///      message `m`.
+    ///
+    /// @dev Note that this is a low-level function and SHOULD NOT be used
+    ///      directly! Instead, use `sign(SecretKey,bytes32)(Signature)` to
+    ///      ensure the message is domain separated.
+    ///
+    /// @dev Reverts if:
+    ///        Secret key invalid
+    ///
+    /// @custom:vm vm.sign(uint,bytes32)
+    /// @custom:invariant Created signature is non-malleable.
+    function signRaw(SecretKey sk, bytes32 m)
+        internal
+        view
+        vmed
+        returns (Signature memory)
+    {
         if (!sk.isValid()) {
             revert("SecretKeyInvalid()");
         }
 
+        // Note that foundry's vm uses RFC-6979 for nonce derivation, ie
+        // signatures are deterministic.
         uint8 v;
         bytes32 r;
         bytes32 s;
-        (v, r, s) = vm.sign(sk.asUint(), digest);
+        (v, r, s) = vm.sign(sk.asUint(), m);
 
         Signature memory sig = Signature(v, r, s);
         // assert(!sig.isMalleable());
 
         return sig;
-    }
-
-    /// @dev Returns an ECDSA signature signed by secret key `sk` singing
-    ///      message `message`'s keccak256 digest as Ethereum Signed Message.
-    ///
-    /// @dev For more info regarding Ethereum Signed Messages, see {Message.sol}.
-    ///
-    /// @dev Reverts if:
-    ///        Secret key invalid
-    ///
-    /// @custom:vm vm.sign(uint,bytes32)
-    /// @custom:invariant Created signature is non-malleable.
-    function signEthereumSignedMessageHash(SecretKey sk, bytes memory message)
-        internal
-        view
-        vmed
-        returns (Signature memory)
-    {
-        bytes32 digest = Message.deriveEthereumSignedMessageHash(message);
-
-        return sk.sign(digest);
-    }
-
-    /// @dev Returns an ECDSA signature signed by secret key `sk` singing hash
-    ///      digest `digest` as Ethereum Signed Message.
-    ///
-    /// @dev For more info regarding Ethereum Signed Messages, see {Message.sol}.
-    ///
-    /// @dev Reverts if:
-    ///        Secret key invalid
-    ///
-    /// @custom:vm vm.sign(uint,bytes32)
-    /// @custom:invariant Created signature is non-malleable.
-    function signEthereumSignedMessageHash(SecretKey sk, bytes32 digest)
-        internal
-        view
-        vmed
-        returns (Signature memory)
-    {
-        bytes32 digest2 = Message.deriveEthereumSignedMessageHash(digest);
-
-        return sk.sign(digest2);
     }
 
     //--------------------------------------------------------------------------

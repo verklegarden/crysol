@@ -21,4 +21,4 @@ jobs:
       - name: Run forge tests against lowest and highest supported solc version
         run: >
           forge test --use 0.8.16 &&
-          forge test --use 0.8.26
+          forge test --use 0.8.27

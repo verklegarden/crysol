@@ -40,32 +40,30 @@ contract ECDSATest is Test {
     //--------------------------------------------------------------------------
     // Test: Signature Verification
 
-    function testFuzz_verify(SecretKey sk, bytes memory message) public {
-        vm.assume(sk.isValid());
+    // -- verify with public key
 
-        PublicKey memory pk = sk.toPublicKey();
-        bytes32 digest = keccak256(message);
+    function testFuzz_verify_WithPublicKey(SecretKey sk, bytes32 digest)
+        public
+    {
+        vm.assume(sk.isValid());
 
         Signature memory sig = sk.sign(digest);
 
-        assertTrue(wrapper.verify(pk, message, sig));
-        assertTrue(wrapper.verify(pk, digest, sig));
-        assertTrue(wrapper.verify(pk.toAddress(), message, sig));
-        assertTrue(wrapper.verify(pk.toAddress(), digest, sig));
+        bytes32 m = ECDSA.constructMessageHash(digest);
+        PublicKey memory pk = sk.toPublicKey();
+
+        assertTrue(wrapper.verify(pk, m, sig));
     }
 
-    function testFuzz_verify_FailsIf_SignatureInvalid(
+    function testFuzz_verify_WithPublicKey_FailsIf_SignatureInvalid(
         SecretKey sk,
-        bytes memory message,
+        bytes32 digest,
         uint8 vMask,
         uint rMask,
         uint sMask
     ) public {
         vm.assume(sk.isValid());
         vm.assume(vMask != 0 || rMask != 0 || sMask != 0);
-
-        PublicKey memory pk = sk.toPublicKey();
-        bytes32 digest = keccak256(message);
 
         Signature memory sig = sk.sign(digest);
 
@@ -76,67 +74,116 @@ contract ECDSATest is Test {
         // Note that verify() reverts if signature is malleable.
         sig.intoNonMalleable();
 
-        assertFalse(wrapper.verify(pk, message, sig));
-        assertFalse(wrapper.verify(pk, digest, sig));
-        assertFalse(wrapper.verify(pk.toAddress(), message, sig));
-        assertFalse(wrapper.verify(pk.toAddress(), digest, sig));
+        bytes32 m = ECDSA.constructMessageHash(digest);
+        PublicKey memory pk = sk.toPublicKey();
+
+        assertFalse(wrapper.verify(pk, m, sig));
     }
 
-    function testFuzz_verify_RevertsIf_SignatureMalleable(
+    function testFuzz_verify_WithPublicKey_RevertsIf_SignatureMalleable(
         SecretKey sk,
-        bytes memory message
+        bytes32 digest
     ) public {
         vm.assume(sk.isValid());
 
-        PublicKey memory pk = sk.toPublicKey();
-        bytes32 digest = keccak256(message);
-
         Signature memory sig = sk.sign(digest).intoMalleable();
 
-        vm.expectRevert("SignatureMalleable()");
-        wrapper.verify(pk, message, sig);
+        bytes32 m = ECDSA.constructMessageHash(digest);
+        PublicKey memory pk = sk.toPublicKey();
 
         vm.expectRevert("SignatureMalleable()");
-        wrapper.verify(pk, digest, sig);
-
-        vm.expectRevert("SignatureMalleable()");
-        wrapper.verify(pk.toAddress(), message, sig);
-
-        vm.expectRevert("SignatureMalleable()");
-        wrapper.verify(pk.toAddress(), digest, sig);
+        wrapper.verify(pk, m, sig);
     }
 
-    function testFuzz_verify_RevertsIf_PublicKeyInvalid(
+    function testFuzz_verify_WithPublicKey_RevertsIf_PublicKeyInvalid(
         PublicKey memory pk,
-        bytes memory message,
+        bytes32 m,
         Signature memory sig
     ) public {
         vm.assume(!pk.isValid());
 
         vm.expectRevert("PublicKeyInvalid()");
-        wrapper.verify(pk, message, sig);
-
-        vm.expectRevert("PublicKeyInvalid()");
-        wrapper.verify(pk, keccak256(message), sig);
+        wrapper.verify(pk, m, sig);
     }
 
-    function testFuzz_verify_RevertsIf_SignerZeroAddress(
-        bytes memory message,
+    // -- verify with address
+
+    function testFuzz_verify_WithAddress(SecretKey sk, bytes32 digest) public {
+        vm.assume(sk.isValid());
+
+        Signature memory sig = sk.sign(digest);
+
+        bytes32 m = ECDSA.constructMessageHash(digest);
+        address addr = sk.toPublicKey().toAddress();
+
+        assertTrue(wrapper.verify(addr, m, sig));
+    }
+
+    function testFuzz_verify_WithAddress_FailsIf_SignatureInvalid(
+        SecretKey sk,
+        bytes32 digest,
+        uint8 vMask,
+        uint rMask,
+        uint sMask
+    ) public {
+        vm.assume(sk.isValid());
+        vm.assume(vMask != 0 || rMask != 0 || sMask != 0);
+
+        Signature memory sig = sk.sign(digest);
+
+        sig.v ^= vMask;
+        sig.r = bytes32(uint(sig.r) ^ rMask);
+        sig.s = bytes32(uint(sig.s) ^ sMask);
+
+        // Note that verify() reverts if signature is malleable.
+        sig.intoNonMalleable();
+
+        bytes32 m = ECDSA.constructMessageHash(digest);
+        address addr = sk.toPublicKey().toAddress();
+
+        assertFalse(wrapper.verify(addr, m, sig));
+    }
+
+    function testFuzz_verify_WithAddress_RevertsIf_SignatureMalleable(
+        SecretKey sk,
+        bytes32 digest
+    ) public {
+        vm.assume(sk.isValid());
+
+        Signature memory sig = sk.sign(digest).intoMalleable();
+
+        bytes32 m = ECDSA.constructMessageHash(digest);
+        address addr = sk.toPublicKey().toAddress();
+
+        vm.expectRevert("SignatureMalleable()");
+        wrapper.verify(addr, m, sig);
+    }
+
+    function testFuzz_verify_WithAddress_RevertsIf_SignerZeroAddress(
+        bytes32 m,
         Signature memory sig
     ) public {
-        address signer = address(0);
-
         vm.expectRevert("SignerZeroAddress()");
-        wrapper.verify(signer, message, sig);
-
-        vm.expectRevert("SignerZeroAddress()");
-        wrapper.verify(signer, keccak256(message), sig);
+        wrapper.verify(address(0), m, sig);
     }
 
     //--------------------------------------------------------------------------
     // Test: Utils
 
-    // -- Signature::isMalleable
+    // -- constructMessageHash
+
+    function test_constructMessageHash() public view {
+        bytes32 digest = keccak256(bytes("crysol <3"));
+
+        bytes32 want = bytes32(
+            0xf0d01579d47c5b662330453e5709f9c1e75de1f1b741f00e20c3c381ab997664
+        );
+        bytes32 got = wrapper.constructMessageHash(digest);
+
+        assertEq(want, got);
+    }
+
+    // -- isMalleable
 
     function testFuzz_Signature_isMalleable(Signature memory sig) public view {
         vm.assume(uint(sig.s) > Secp256k1.Q / 2);
@@ -157,18 +204,32 @@ contract ECDSATest is Test {
 
     // -- Signature <-> Encoded
 
-    // TODO: Not a good test, also already implemented as property.
-    //       Can we get test vectors?
-    function testFuzz_signatureFromEncoded(Signature memory sig) public view {
-        vm.assume(!sig.isMalleable());
+    function test_signatureFromEncoded() public view {
+        // Test Case 1: v = 27
+        bytes memory blob1 = (
+            hex"0000000000000000000000000000000000000000000000000000000000000001"
+            hex"0000000000000000000000000000000000000000000000000000000000000002"
+            hex"1b"
+        );
+        Signature memory want1 =
+            Signature({v: uint8(27), r: bytes32(uint(1)), s: bytes32(uint(2))});
+        Signature memory got1 = wrapper.signatureFromEncoded(blob1);
+        assertEq(want1.v, got1.v);
+        assertEq(want1.r, got1.r);
+        assertEq(want1.s, got1.s);
 
-        bytes memory blob = sig.toEncoded();
-
-        Signature memory got = wrapper.signatureFromEncoded(blob);
-
-        assertEq(got.v, sig.v);
-        assertEq(got.r, sig.r);
-        assertEq(got.s, sig.s);
+        // Test Case 1: v = 28
+        bytes memory blob2 = (
+            hex"0000000000000000000000000000000000000000000000000000000000000001"
+            hex"0000000000000000000000000000000000000000000000000000000000000002"
+            hex"1c"
+        );
+        Signature memory want2 =
+            Signature({v: uint8(28), r: bytes32(uint(1)), s: bytes32(uint(2))});
+        Signature memory got2 = wrapper.signatureFromEncoded(blob2);
+        assertEq(want2.v, got2.v);
+        assertEq(want2.r, got2.r);
+        assertEq(want2.s, got2.s);
     }
 
     function testFuzz_signatureFromEncoded_RevertsIf_LengthInvalid(
@@ -194,13 +255,18 @@ contract ECDSATest is Test {
         wrapper.signatureFromEncoded(blob);
     }
 
-    function testFuzz_Signature_toEncoded(Signature memory sig) public view {
-        vm.assume(!sig.isMalleable());
+    function test_Signature_toEncoded() public view {
+        Signature memory sig =
+            Signature({v: uint8(27), r: bytes32(uint(1)), s: bytes32(uint(2))});
 
+        bytes memory want = (
+            hex"0000000000000000000000000000000000000000000000000000000000000001"
+            hex"0000000000000000000000000000000000000000000000000000000000000002"
+            hex"1b"
+        );
         bytes memory got = wrapper.toEncoded(sig);
-        bytes memory want = abi.encodePacked(sig.r, sig.s, sig.v);
 
-        assertEq(got, want);
+        assertEq(want, got);
     }
 
     function testFuzz_Signature_toEncoded_RevertsIf_SignatureMalleable(
@@ -320,40 +386,32 @@ contract ECDSAWrapper {
     //--------------------------------------------------------------------------
     // Signature Verification
 
-    function verify(
-        PublicKey memory pk,
-        bytes memory message,
-        Signature memory sig
-    ) public pure returns (bool) {
-        return pk.verify(message, sig);
-    }
-
-    function verify(PublicKey memory pk, bytes32 digest, Signature memory sig)
+    function verify(PublicKey memory pk, bytes32 m, Signature memory sig)
         public
         pure
         returns (bool)
     {
-        return pk.verify(digest, sig);
+        return pk.verify(m, sig);
     }
 
-    function verify(address signer, bytes memory message, Signature memory sig)
+    function verify(address signer, bytes32 m, Signature memory sig)
         public
         pure
         returns (bool)
     {
-        return signer.verify(message, sig);
-    }
-
-    function verify(address signer, bytes32 digest, Signature memory sig)
-        public
-        pure
-        returns (bool)
-    {
-        return signer.verify(digest, sig);
+        return signer.verify(m, sig);
     }
 
     //--------------------------------------------------------------------------
     // Utils
+
+    function constructMessageHash(bytes32 digest)
+        public
+        pure
+        returns (bytes32)
+    {
+        return ECDSA.constructMessageHash(digest);
+    }
 
     function isMalleable(Signature memory sig) public pure returns (bool) {
         return sig.isMalleable();
