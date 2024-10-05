@@ -100,6 +100,19 @@ library Secp256k1 {
         0x000000000000000000000000FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF;
 
     //--------------------------------------------------------------------------
+    // UNDEFINED Constants
+
+    SecretKey private constant _UNDEFINED_SECRET_KEY =
+        SecretKey.wrap(type(uint).max);
+
+    function _UNDEFINED_PUBLIC_KEY() private pure returns (PublicKey memory) {
+        return PublicKey(
+            FieldArithmetic.unsafeFeltFromUint(type(uint).max),
+            FieldArithmetic.unsafeFeltFromUint(type(uint).max)
+        );
+    }
+
+    //--------------------------------------------------------------------------
     // Secp256k1 Constants
     //
     // Secp256k1 is a Koblitz curve specified as:
@@ -137,8 +150,6 @@ library Secp256k1 {
     //--------------------------------------------------------------------------
     // Secret Key
 
-    SecretKey private constant ZERO = SecretKey.wrap(0);
-
     /// @dev Returns whether secret key `sk` is valid.
     ///
     /// @dev Note that a secret key MUST be a field element in order to be valid,
@@ -168,7 +179,7 @@ library Secp256k1 {
         returns (SecretKey, bool)
     {
         if (scalar == 0 || scalar >= Q) {
-            return (ZERO, false);
+            return (_UNDEFINED_SECRET_KEY, false);
         }
 
         return (SecretKey.wrap(scalar), true);
@@ -217,7 +228,7 @@ library Secp256k1 {
     {
         (Point memory p, bool ok) = PointArithmetic.tryPointFromUints(x, y);
         if (!ok) {
-            return (PointArithmetic.Identity().intoPublicKey(), false);
+            return (_UNDEFINED_PUBLIC_KEY(), false);
         }
 
         return (p.intoPublicKey(), true);

@@ -65,31 +65,36 @@ library PointArithmetic {
     // Optimization Constants
 
     /// @dev Used during projective point addition.
-    uint private constant B3 = mulmod(B, 3, P);
+    uint private constant _B3 = mulmod(_B, 3, _P);
 
     /// @dev Used during compressed point decoding.
     ///
     /// @dev Note that the square root of an secp256k1 field element x can be
-    ///      computed via x^{SQUARE_ROOT_EXPONENT} (mod p).
-    uint private constant SQUARE_ROOT_EXPONENT = (P + 1) / 4;
+    ///      computed via x^{_SQUARE_ROOT_EXPONENT} (mod p).
+    uint private constant _SQUARE_ROOT_EXPONENT = (_P + 1) / 4;
 
     /// @dev Used as substitute for `Identity().intoPublicKey().toAddress()`.
-    address private constant IDENTITY_ADDRESS =
+    address private constant _IDENTITY_ADDRESS =
         0x3f17f1962B36e491b30A40b2405849e597Ba5FB5;
+
+    //--------------------------------------------------------------------------
+    // UNDEFINED Constants
+
+    function _UNDEFINED_POINT() private pure returns (Point memory) {
+        return Point(
+            FieldArithmetic.unsafeFeltFromUint(type(uint).max),
+            FieldArithmetic.unsafeFeltFromUint(type(uint).max)
+        );
+    }
 
     //--------------------------------------------------------------------------
     // Secp256k1 Constants
     //
     // Reimported from Secp256k1.
-    uint private constant A = Secp256k1.A;
-    uint private constant B = Secp256k1.B;
-    uint private constant P = Secp256k1.P;
 
-    function G() private pure returns (Point memory) {
-        return Secp256k1.G();
-    }
-
-    uint private constant Q = Secp256k1.Q;
+    uint private constant _B = Secp256k1.B;
+    uint private constant _P = Secp256k1.P;
+    uint private constant _Q = Secp256k1.Q;
 
     //--------------------------------------------------------------------------
     // Point
@@ -118,17 +123,17 @@ library PointArithmetic {
 
         (x_, ok) = FieldArithmetic.tryFeltFromUint(x);
         if (!ok) {
-            return (Identity(), false);
+            return (_UNDEFINED_POINT(), false);
         }
 
         (y_, ok) = FieldArithmetic.tryFeltFromUint(y);
         if (!ok) {
-            return (Identity(), false);
+            return (_UNDEFINED_POINT(), false);
         }
 
         Point memory p = Point(x_, y_);
         if (!p.isOnCurve()) {
-            return (Identity(), false);
+            return (_UNDEFINED_POINT(), false);
         }
 
         return (p, true);
@@ -173,7 +178,7 @@ library PointArithmetic {
         Felt right = point.x
                         .mul(point.x)
                         .mul(point.x)
-                        .add(FieldArithmetic.unsafeFeltFromUint(B));
+                        .add(FieldArithmetic.unsafeFeltFromUint(_B));
         // forgefmt: disable-end
 
         return left.asUint() == right.asUint();
@@ -210,12 +215,12 @@ library PointArithmetic {
         pure
         returns (address)
     {
-        if (scalar >= Q) {
+        if (scalar >= _Q) {
             revert("ScalarTooBig()");
         }
 
         if (scalar == 0 || point.isIdentity()) {
-            return IDENTITY_ADDRESS;
+            return _IDENTITY_ADDRESS;
         }
 
         // Note that ecrecover can be abused to perform an elliptic curve
@@ -232,7 +237,7 @@ library PointArithmetic {
             v = uint8(point.yParity() + 27);
         }
         uint r = point.x.asUint();
-        uint s = mulmod(r, scalar, Q);
+        uint s = mulmod(r, scalar, _Q);
 
         return ecrecover(0, v, bytes32(r), bytes32(s));
     }
@@ -299,7 +304,7 @@ library PointArithmetic {
         Felt z3;
 
         // Constants:
-        Felt b3 = FieldArithmetic.unsafeFeltFromUint(B3);
+        Felt b3 = FieldArithmetic.unsafeFeltFromUint(_B3);
 
         // Variables:
         Felt t0;
@@ -355,8 +360,8 @@ library PointArithmetic {
         pure
         returns (ProjectivePoint memory)
     {
-        if (scalar >= Q) {
-            revert("ScalarMustBeFelt()");
+        if (scalar >= _Q) {
+            revert("ScalarTooBig()");
         }
 
         if (scalar == 0) {
@@ -637,12 +642,12 @@ library PointArithmetic {
         // forgefmt: disable-next-item
         Felt alpha = x.mul(x)
                       .mul(x)
-                      .add(FieldArithmetic.unsafeFeltFromUint(B));
+                      .add(FieldArithmetic.unsafeFeltFromUint(_B));
 
         // Compute β = √α              (mod p)
         //           = α^{(p + 1) / 4} (mod p)
         Felt beta =
-            alpha.exp(FieldArithmetic.unsafeFeltFromUint(SQUARE_ROOT_EXPONENT));
+            alpha.exp(FieldArithmetic.unsafeFeltFromUint(_SQUARE_ROOT_EXPONENT));
 
         // Compute y coordinate.
         //
@@ -651,7 +656,7 @@ library PointArithmetic {
         unchecked {
             yRaw = beta.asUint() & 1 == prefix & 1
                 ? beta.asUint()
-                : P - beta.asUint();
+                : _P - beta.asUint();
         }
 
         // Construct field element.

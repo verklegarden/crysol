@@ -46,34 +46,28 @@ todos: ## Grep TODO's in src/ and test/
 examples: ## Run examples
 	@echo "########################################"
 	@echo "##"
-	@echo "##   Random"
+	@echo "##   CSPRNG"
 	@echo "##"
 	@echo "########################################"
-	@forge script examples/common/Random.sol:RandomExample -v
+	@forge script examples/CSPRNG.sol:CSPRNGExample -v
 	@echo "########################################"
 	@echo "##"
 	@echo "##   Secp256k1"
 	@echo "##"
 	@echo "########################################"
-	@forge script examples/secp256k1/Secp256k1.sol:Secp256k1Example -v
-	@echo "########################################"
-	@echo "##"
-	@echo "##   Secp256r1"
-	@echo "##"
-	@echo "########################################"
-	@forge script examples/secp256r1/Secp256r1.sol:Secp256r1Example -v
+	@forge script examples/Secp256k1.sol:Secp256k1Example -v
 	@echo "########################################"
 	@echo "##"
 	@echo "##   ECDSA on secp56k1"
 	@echo "##"
 	@echo "########################################"
-	@forge script examples/secp256k1/signatures/ECDSA.sol:ECDSAExample -v
+	@forge script examples/signatures/ECDSA.sol:ECDSAExample -v
 	@echo "########################################"
 	@echo "##"
 	@echo "##   Schnorr (ERC-XXX)"
 	@echo "##"
 	@echo "########################################"
-	@forge script examples/secp256k1/signatures/Schnorr.sol:SchnorrExample -v
+	@forge script examples/signatures/Schnorr.sol:SchnorrExample -v
 
 .PHONY: fmt
 fmt: ## Format project
