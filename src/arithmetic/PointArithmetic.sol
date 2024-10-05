@@ -11,7 +11,8 @@
 // SPDX-License-Identifier: MIT OR Apache-2.0
 pragma solidity ^0.8.16;
 
-import {ModularArithmetic} from "../common/ModularArithmetic.sol";
+import {Secp256k1} from "../Secp256k1.sol";
+import {FieldArithmetic, Felt} from "./FieldArithmetic.sol";
 
 /**
  * @notice Point is a secp256k1 point in affine coordinates
@@ -20,8 +21,8 @@ import {ModularArithmetic} from "../common/ModularArithmetic.sol";
  *          x = y = 0
  */
 struct Point {
-    uint x;
-    uint y;
+    Felt x;
+    Felt y;
 }
 
 /**
@@ -33,15 +34,15 @@ struct Point {
  *          y = Y / Z
  */
 struct ProjectivePoint {
-    uint x;
-    uint y;
-    uint z;
+    Felt x;
+    Felt y;
+    Felt z;
 }
 
 /**
- * @title Secp256r1Arithmetic
+ * @title Secp256k1Arithmetic
  *
- * @notice Provides common arithmetic-related functionality for the secp256r1
+ * @notice Provides common arithmetic-related functionality for the secp256k1
  *         elliptic curve
  *
  * @custom:references
@@ -49,13 +50,16 @@ struct ProjectivePoint {
  *      - [SEC-2 v2]: https://www.secg.org/sec2-v2.pdf
  *      - [Yellow Paper]: https://github.com/ethereum/yellowpaper
  *      - [Renes-Costello-Batina 2015]: https://eprint.iacr.org/2015/1060.pdf
+ *      - [Dubois 2023]: https://eprint.iacr.org/2023/939.pdf
+ *      - [Vitalik 2018]: https://ethresear.ch/t/you-can-kinda-abuse-ecrecover-to-do-ecmul-in-secp256k1-today/2384
  *
  * @author verklegarden
  * @custom:repository github.com/verklegarden/crysol
  */
-library Secp256r1Arithmetic {
-    using Secp256r1Arithmetic for Point;
-    using Secp256r1Arithmetic for ProjectivePoint;
+library PointArithmetic {
+    using FieldArithmetic for Felt;
+    using PointArithmetic for Point;
+    using PointArithmetic for ProjectivePoint;
 
     //--------------------------------------------------------------------------
     // Optimization Constants
@@ -65,45 +69,70 @@ library Secp256r1Arithmetic {
 
     /// @dev Used during compressed point decoding.
     ///
-    /// @dev Note that the square root of an secp256r1 field element x can be
+    /// @dev Note that the square root of an secp256k1 field element x can be
     ///      computed via x^{SQUARE_ROOT_EXPONENT} (mod p).
     uint private constant SQUARE_ROOT_EXPONENT = (P + 1) / 4;
 
-    //--------------------------------------------------------------------------
-    // Secp256r1 Constants
-    //
-    // Secp256r1 is a "random" Weierstrass curve specified as:
-    //      y² ≡ x³ + ax + b (mod p)
-    //
-    // where:
-    uint internal constant A =
-        0xFFFFFFFF00000001000000000000000000000000FFFFFFFFFFFFFFFFFFFFFFFC;
-    uint internal constant B =
-        0x5AC635D8AA3A93E7B3EBBD55769886BC651D06B0CC53B0F63BCE3C3E27D2604B;
-    uint internal constant P =
-        0xFFFFFFFF00000001000000000000000000000000FFFFFFFFFFFFFFFFFFFFFFFF;
+    /// @dev Used as substitute for `Identity().intoPublicKey().toAddress()`.
+    address private constant IDENTITY_ADDRESS =
+        0x3f17f1962B36e491b30A40b2405849e597Ba5FB5;
 
-    /// @dev The generator G as Point.
-    ///
-    /// @dev Note that the generator is also called base point.
-    function G() internal pure returns (Point memory) {
-        // Gₓ = 6B17D1F2 E12C4247 F8BCE6E5 63A440F2 77037D81 2DEB33A0 F4A13945 D898C296
-        // Gᵧ = 4FE342E2 FE1A7F9B 8EE7EB4A 7C0F9E16 2BCE3357 6B315ECE CBB64068 37BF51F5
-        return Point(
-            0x6B17D1F2E12C4247F8BCE6E563A440F277037D812DEB33A0F4A13945D898C296,
-            0x4FE342E2FE1A7F9B8EE7EB4A7C0F9E162BCE33576B315ECECBB6406837BF51F5
-        );
+    //--------------------------------------------------------------------------
+    // Secp256k1 Constants
+    //
+    // Reimported from Secp256k1.
+    uint private constant A = Secp256k1.A;
+    uint private constant B = Secp256k1.B;
+    uint private constant P = Secp256k1.P;
+
+    function G() private pure returns (Point memory) {
+        return Secp256k1.G();
     }
 
-    /// @dev The order of the group generated via G.
-    uint internal constant Q =
-        0xFFFFFFFF00000000FFFFFFFFFFFFFFFFBCE6FAADA7179E84F3B9CAC2FC632551;
-
-    // Taken from [SEC-2 v2] section 2.4.2 "Recommended Parameters secp256r1".
-    //--------------------------------------------------------------------------
+    uint private constant Q = Secp256k1.Q;
 
     //--------------------------------------------------------------------------
     // Point
+
+    function pointFromUints(uint x, uint y)
+        internal
+        pure
+        returns (Point memory)
+    {
+        (Point memory p, bool ok) = tryPointFromUints(x, y);
+        if (!ok) {
+            revert("PointInvalid()");
+        }
+
+        return p;
+    }
+
+    function tryPointFromUints(uint x, uint y)
+        internal
+        pure
+        returns (Point memory, bool)
+    {
+        bool ok;
+        Felt x_;
+        Felt y_;
+
+        (x_, ok) = FieldArithmetic.tryFeltFromUint(x);
+        if (!ok) {
+            return (Identity(), false);
+        }
+
+        (y_, ok) = FieldArithmetic.tryFeltFromUint(y);
+        if (!ok) {
+            return (Identity(), false);
+        }
+
+        Point memory p = Point(x_, y_);
+        if (!p.isOnCurve()) {
+            return (Identity(), false);
+        }
+
+        return (p, true);
+    }
 
     /// @dev Returns the additive identity.
     ///
@@ -116,35 +145,38 @@ library Secp256r1Arithmetic {
     ///
     /// @dev Note that the identity is also called point at infinity.
     function Identity() internal pure returns (Point memory) {
-        return Point(0, 0);
+        return Point(FieldArithmetic.ZERO, FieldArithmetic.ZERO);
     }
 
     /// @dev Returns whether point `point` is the identity.
     function isIdentity(Point memory point) internal pure returns (bool) {
-        return (point.x | point.y) == 0;
+        return (point.x.asUint() | point.y.asUint()) == 0;
     }
 
     /// @dev Returns whether point `point` is on the curve.
     ///
     /// @dev Note that the identity is on the curve.
     function isOnCurve(Point memory point) internal pure returns (bool) {
+        if (point.x >= P || point.y >= P) {
+            return false;
+        }
+
         if (point.isIdentity()) {
             return true;
         }
 
         // Verify whether y² ≡ x³ + ax + b (mod p).
-        uint left = mulmod(point.y, point.y, P);
-        uint right = addmod(
-            addmod(
-                mulmod(point.x, mulmod(point.x, point.x, P), P),
-                mulmod(point.x, A, P),
-                P
-            ),
-            B,
-            P
-        );
+        // Note that adding a * x can be waived as ∀x: a * x = 0.
+        // forgefmt: disable-start
+        Felt left = point.y
+                        .mul(point.y);
+        Felt right = point.x
+                        .mul(point.x)
+                        .mul(point.x)
+                        .add(FieldArithmetic.unsafeFeltFromUint(B));
+        // forgefmt: disable-end
 
-        return left == right;
+        return left.asUint() == right.asUint();
     }
 
     /// @dev Returns the parity of point `point`'s y coordinate.
@@ -154,7 +186,7 @@ library Secp256r1Arithmetic {
     ///
     ///      See "Appendix F: Signing Transactions" in [Yellow Paper].
     function yParity(Point memory point) internal pure returns (uint) {
-        return point.y & 1;
+        return point.y.parity();
     }
 
     /// @dev Returns whether point `point` equals point `other`.
@@ -163,7 +195,46 @@ library Secp256r1Arithmetic {
         pure
         returns (bool)
     {
-        return (point.x == other.x) && (point.y == other.y);
+        return point.x.asUint() == other.x.asUint()
+            && point.y.asUint() == other.y.asUint();
+    }
+
+    /// @dev Returns the product of point `point` and scalar `scalar` as
+    ///      address.
+    ///
+    /// @dev Note that this function is substantially cheaper than
+    ///      `mul(ProjectivePoint,uint)(ProjectivePoint)` with the caveat that
+    ///      only the point's address is returned instead of the point itself.
+    function mulToAddress(Point memory point, uint scalar)
+        internal
+        pure
+        returns (address)
+    {
+        if (scalar >= Q) {
+            revert("ScalarTooBig()");
+        }
+
+        if (scalar == 0 || point.isIdentity()) {
+            return IDENTITY_ADDRESS;
+        }
+
+        // Note that ecrecover can be abused to perform an elliptic curve
+        // multiplication with the caveat that the point's address is returned
+        // instead of the point itself.
+        //
+        // For further details, see [Vitalik 2018] and [SEC-1 v2] section 4.1.6
+        // "Public Key Recovery Operation".
+
+        uint8 v;
+        // Unchecked because point.yParity() ∊ {0, 1} which cannot overflow by
+        // adding 27.
+        unchecked {
+            v = uint8(point.yParity() + 27);
+        }
+        uint r = point.x.asUint();
+        uint s = mulmod(r, scalar, Q);
+
+        return ecrecover(0, v, bytes32(r), bytes32(s));
     }
 
     //--------------------------------------------------------------------------
@@ -177,7 +248,9 @@ library Secp256r1Arithmetic {
         pure
         returns (ProjectivePoint memory)
     {
-        return ProjectivePoint(0, 1, 0);
+        return ProjectivePoint(
+            FieldArithmetic.ZERO, FieldArithmetic.ONE, FieldArithmetic.ZERO
+        );
     }
 
     /// @dev Returns whether projective point `point` is the identity.
@@ -188,30 +261,14 @@ library Secp256r1Arithmetic {
         pure
         returns (bool)
     {
-        return (point.x | point.z == 0);
-    }
-
-    /// @dev DO NOT IMPORT!
-    ///
-    /// @dev This is an internal struct to circumvent stack-too-deep errors in
-    ///      ProjectivePoint::add() during non --via-ir compilation.
-    ///
-    /// @dev Tracking issue: TODO: Create issue.
-    struct __addTempVars {
-        uint t0;
-        uint t1;
-        uint t2;
-        uint t3;
-        uint t4;
-        uint t5;
+        return (point.x.asUint() | point.z.asUint()) == 0;
     }
 
     /// @dev Returns the sum of projective points `point` and `other` as
     ///      projective point.
     ///
-    /// @dev Uses algorithm 1 from [Renes-Costello-Batina 2015] based on a
-    ///      complete addition formula for arbitrary prime order short
-    ///      Weierstrass curves.
+    /// @dev Uses algorithm 7 from [Renes-Costello-Batina 2015] based on a
+    ///      complete addition formula for Weierstrass curves with a = 0.
     function add(ProjectivePoint memory point, ProjectivePoint memory other)
         internal
         pure
@@ -224,80 +281,75 @@ library Secp256r1Arithmetic {
         if (other.isIdentity()) {
             return point;
         }
-        // forgefmt: disable-start
 
         // Inputs:
         // - P = (x1, y1, z1)
-        uint x1 = point.x; uint y1 = point.y; uint z1 = point.z;
+        Felt x1 = point.x;
+        Felt y1 = point.y;
+        Felt z1 = point.z;
         // - Q = (x2, y2, z2)
-        uint x2 = other.x; uint y2 = other.y; uint z2 = other.z;
+        Felt x2 = other.x;
+        Felt y2 = other.y;
+        Felt z2 = other.z;
 
         // Output:
         // - (x3, y3, z3) = P + Q
-        uint x3; uint y3; uint z3;
+        Felt x3;
+        Felt y3;
+        Felt z3;
 
         // Constants:
-        // - B3 = mulmod(B, 3, P)
+        Felt b3 = FieldArithmetic.unsafeFeltFromUint(B3);
 
         // Variables:
-        __addTempVars memory tmp = __addTempVars({
-            t0: 0,
-            t1: 0,
-            t2: 0,
-            t3: 0,
-            t4: 0,
-            t5: 0
-        });
+        Felt t0;
+        Felt t1;
+        Felt t2;
+        Felt t3;
+        Felt t4;
 
         // Computations:
-        // Note that x - y = x + (P - y) (mod P)
-        tmp.t0 = mulmod(x1, x2, P);
-        tmp.t1 = mulmod(y1, y2, P);
-        tmp.t2 = mulmod(z1, z2, P);
-        tmp.t3 = addmod(x1, y1, P);
-        tmp.t4 = addmod(x2, y2, P);
-        tmp.t3 = mulmod(tmp.t3, tmp.t4, P);
-        tmp.t4 = addmod(tmp.t0, tmp.t1, P);
-        unchecked { tmp.t3 = addmod(tmp.t3, P - tmp.t4, P); }
-        tmp.t4 = addmod(x1, z1, P);
-        tmp.t5 = addmod(x2, z2, P);
-        tmp.t4 = mulmod(tmp.t4, tmp.t5, P);
-        tmp.t5 = addmod(tmp.t0, tmp.t2, P);
-        unchecked { tmp.t4 = addmod(tmp.t4, P - tmp.t5, P); }
-        tmp.t5 = addmod(y1, z1, P);
-        x3 = addmod(y2, z2, P);
-        tmp.t5 = mulmod(tmp.t5, x3, P);
-        x3 = addmod(tmp.t1, tmp.t2, P);
-        unchecked { tmp.t5 = addmod(tmp.t5, P - x3, P); }
-        z3 = mulmod(A, tmp.t4, P);
-        x3 = mulmod(B3, tmp.t2, P);
-        z3 = addmod(x3, z3, P);
-        unchecked { x3 = addmod(tmp.t1, P - z3, P); }
-        z3 = addmod(tmp.t1, z3, P);
-        y3 = mulmod(x3, z3, P);
-        tmp.t1 = addmod(tmp.t0, tmp.t0, P);
-        tmp.t1 = addmod(tmp.t1, tmp.t0, P);
-        tmp.t2 = mulmod(A, tmp.t2, P);
-        tmp.t4 = mulmod(B3, tmp.t4, P);
-        tmp.t1 = addmod(tmp.t1, tmp.t2, P);
-        unchecked { tmp.t2 = addmod(tmp.t0, P - tmp.t2, P); }
-        tmp.t2 = mulmod(A, tmp.t2, P);
-        tmp.t4 = addmod(tmp.t4, tmp.t2, P);
-        tmp.t0 = mulmod(tmp.t1, tmp.t4, P);
-        y3 = addmod(y3, tmp.t0, P);
-        tmp.t0 = mulmod(tmp.t5, tmp.t4, P);
-        x3 = mulmod(tmp.t3, x3, P);
-        unchecked { x3 = addmod(x3, P - tmp.t0, P); }
-        tmp.t0 = mulmod(tmp.t3, tmp.t1, P);
-        z3 = mulmod(tmp.t5, z3, P);
-        z3 = addmod(z3, tmp.t0, P);
-        // forgefmt: disable-end
+        t0 = x1.mul(x2);
+        t1 = y1.mul(y2);
+        t2 = z1.mul(z2);
+        t3 = x1.add(y1);
+        t4 = x2.add(y2);
+        t3 = t3.mul(t4);
+        t4 = t0.add(t1);
+        t3 = t3.sub(t4);
+        t4 = y1.add(z1);
+        x3 = y2.add(z2);
+        t4 = t4.mul(x3);
+        x3 = t1.add(t2);
+        t4 = t4.sub(x3);
+        x3 = x1.add(z1);
+        y3 = x2.add(z1);
+        x3 = x3.mul(y3);
+        y3 = t0.add(t2);
+        y3 = x2.sub(y3);
+        x3 = t0.add(t0);
+        t0 = x3.add(t0);
+        t2 = b3.mul(t2);
+        z3 = t1.add(t2);
+        t1 = t1.sub(t2);
+        y3 = b3.mul(y3);
+        x3 = t4.mul(y3);
+        t2 = t3.mul(t1);
+        x3 = t2.sub(x3);
+        y3 = y3.mul(t0);
+        t1 = t1.mul(z3);
+        y3 = t1.add(y3);
+        t0 = t0.mul(t3);
+        z3 = z3.mul(t4);
+        z3 = z3.add(t0);
 
         return ProjectivePoint(x3, y3, z3);
     }
 
     /// @dev Returns the product of projective point `point` and scalar `scalar`
     ///      as projective point.
+    ///
+    /// @dev Uses the repeated add-and-double algorithm.
     function mul(ProjectivePoint memory point, uint scalar)
         internal
         pure
@@ -314,6 +366,9 @@ library Secp256r1Arithmetic {
         ProjectivePoint memory copy = point;
         ProjectivePoint memory result = ProjectiveIdentity();
 
+        // TODO: Can endomorphism be used?
+        //       See Faster Point Multiplication on Elliptic Curves with
+        //       Efficient Endomorphism from GLV.
         while (scalar != 0) {
             if (scalar & 1 == 1) {
                 result = result.add(copy);
@@ -341,7 +396,7 @@ library Secp256r1Arithmetic {
             return ProjectiveIdentity();
         }
 
-        return ProjectivePoint(point.x, point.y, 1);
+        return ProjectivePoint(point.x, point.y, FieldArithmetic.ONE);
     }
 
     //----------------------------------
@@ -356,20 +411,24 @@ library Secp256r1Arithmetic {
         Point memory p;
 
         if (point.isIdentity()) {
+            // Note to clean dirty p.z memory.
+            point.z = FieldArithmetic.ZERO;
+
             assembly ("memory-safe") {
                 p := point
             }
-            p.x = 0;
-            p.y = 0;
+            p.x = FieldArithmetic.ZERO;
+            p.y = FieldArithmetic.ZERO;
+
             return p;
         }
 
         // Compute z⁻¹, i.e. the modular inverse of point.z.
-        uint zInv = ModularArithmetic.computeInverse(point.z, P);
+        Felt zInv = point.z.inv();
 
         // Compute affine coordinates being x * z⁻¹ and y * z⁻¹, respectively.
-        uint x = mulmod(point.x, zInv, P);
-        uint y = mulmod(point.y, zInv, P);
+        Felt x = point.x.mul(zInv);
+        Felt y = point.y.mul(zInv);
 
         // Store x and y in point.
         assembly ("memory-safe") {
@@ -378,11 +437,12 @@ library Secp256r1Arithmetic {
         }
 
         // Return as Point(point.x, point.y).
-        // Note that from this moment, point.z is dirty memory!
-        // TODO: Clean dirty memory.
+        // Note to clean dirty p.z memory.
+        point.z = FieldArithmetic.ZERO;
         assembly ("memory-safe") {
             p := point
         }
+
         return p;
     }
 
@@ -397,11 +457,11 @@ library Secp256r1Arithmetic {
         }
 
         // Compute z⁻¹, i.e. the modular inverse of point.z.
-        uint zInv = ModularArithmetic.computeInverse(point.z, P);
+        Felt zInv = point.z.inv();
 
         // Compute affine coordinates being x * z⁻¹ and y * z⁻¹, respectively.
-        uint x = mulmod(point.x, zInv, P);
-        uint y = mulmod(point.y, zInv, P);
+        Felt x = point.x.mul(zInv);
+        Felt y = point.y.mul(zInv);
 
         // Return newly allocated point.
         return Point(x, y);
@@ -452,12 +512,17 @@ library Secp256r1Arithmetic {
         }
 
         // Read x and y coordinates.
-        uint x;
-        uint y;
+        uint xRaw;
+        uint yRaw;
         assembly ("memory-safe") {
-            x := mload(add(blob, 0x21))
-            y := mload(add(blob, 0x41))
+            xRaw := mload(add(blob, 0x21))
+            yRaw := mload(add(blob, 0x41))
         }
+
+        // Construct coordinates to field elements.
+        // Note that function reverts if not a field element.
+        Felt x = FieldArithmetic.feltFromUint(xRaw);
+        Felt y = FieldArithmetic.feltFromUint(yRaw);
 
         // Make point.
         Point memory point = Point(x, y);
@@ -503,7 +568,8 @@ library Secp256r1Arithmetic {
             return bytes(hex"00");
         }
 
-        return abi.encodePacked(bytes1(0x04), point.x, point.y);
+        return
+            abi.encodePacked(bytes1(0x04), point.x.asUint(), point.y.asUint());
     }
 
     /// @dev Decodes point from [SEC-1 v2] compressed encoded bytes `blob`.
@@ -548,35 +614,49 @@ library Secp256r1Arithmetic {
         }
 
         // Read x coordinate.
-        uint x;
+        uint xRaw;
         assembly ("memory-safe") {
-            x := mload(add(blob, 0x21))
+            xRaw := mload(add(blob, 0x21))
         }
 
         // Revert if identity not 1 byte encoded.
         // TODO: Should have own error for identity not 1 byte encoded?
-        if (x == 0) {
+        //
+        // Note that identity is explicitly enforced to be 1 byte encoded,
+        // eventhough for x = 0 the resulting point is not on the curve anyway.
+        if (xRaw == 0) {
             revert("PointNotOnCurve()");
         }
 
+        // Construct field element from x coordinate.
+        // Note that function reverts if not a field element.
+        Felt x = FieldArithmetic.feltFromUint(xRaw);
+
         // Compute α = x³ + ax + b (mod p).
-        uint alpha = addmod(
-            addmod(mulmod(x, mulmod(x, x, P), P), mulmod(A, x, P), P), B, P
-        );
+        // Note that adding a * x can be waived as ∀x: a * x = 0.
+        // forgefmt: disable-next-item
+        Felt alpha = x.mul(x)
+                      .mul(x)
+                      .add(FieldArithmetic.unsafeFeltFromUint(B));
 
         // Compute β = √α              (mod p)
         //           = α^{(p + 1) / 4} (mod p)
-        uint beta = ModularArithmetic.computeExponentiation(
-            alpha, SQUARE_ROOT_EXPONENT, P
-        );
+        Felt beta =
+            alpha.exp(FieldArithmetic.unsafeFeltFromUint(SQUARE_ROOT_EXPONENT));
 
         // Compute y coordinate.
         //
         // Note that y = β if β ≡ prefix (mod 2) else p - β.
-        uint y;
+        uint yRaw;
         unchecked {
-            y = beta & 1 == prefix & 1 ? beta : P - beta;
+            yRaw = beta.asUint() & 1 == prefix & 1
+                ? beta.asUint()
+                : P - beta.asUint();
         }
+
+        // Construct field element.
+        // Note that y coordinate is guaranteed to be a field element.
+        Felt y = FieldArithmetic.unsafeFeltFromUint(yRaw);
 
         // Make point.
         Point memory point = Point(x, y);
@@ -618,6 +698,6 @@ library Secp256r1Arithmetic {
 
         bytes1 prefix = point.yParity() == 0 ? bytes1(0x02) : bytes1(0x03);
 
-        return abi.encodePacked(prefix, point.x);
+        return abi.encodePacked(prefix, point.x.asUint());
     }
 }

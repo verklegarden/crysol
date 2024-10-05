@@ -14,15 +14,9 @@ pragma solidity ^0.8.16;
 import {Vm} from "forge-std/Vm.sol";
 
 import {Secp256k1Offchain} from "../Secp256k1Offchain.sol";
-import {
-    Secp256k1,
-    SecretKey,
-    PublicKey
-} from "../../../onchain/secp256k1/Secp256k1.sol";
+import {Secp256k1, SecretKey, PublicKey} from "../../onchain/Secp256k1.sol";
 
-import {
-    ECDSA, Signature
-} from "../../..//onchain/secp256k1/signatures/ECDSA.sol";
+import {ECDSA, Signature} from "../../onchain/signatures/ECDSA.sol";
 
 /**
  * @title ECDSAOffchain
