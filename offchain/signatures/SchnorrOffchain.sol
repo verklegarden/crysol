@@ -13,20 +13,16 @@ pragma solidity ^0.8.16;
 
 import {Vm} from "forge-std/Vm.sol";
 
-import {RandomOffchain} from "../../../offchain/common/RandomOffchain.sol";
+import {RandomOffchain} from "../../offchain/common/RandomOffchain.sol";
 
 import {Secp256k1Offchain} from "../Secp256k1Offchain.sol";
-import {
-    Secp256k1,
-    SecretKey,
-    PublicKey
-} from "../../../onchain/secp256k1/Secp256k1.sol";
+import {Secp256k1, SecretKey, PublicKey} from "../../onchain/Secp256k1.sol";
 
 import {
     Schnorr,
     Signature,
     SignatureCompressed
-} from "../../../onchain/secp256k1/signatures/Schnorr.sol";
+} from "../../onchain/signatures/Schnorr.sol";
 
 /**
  * @title SchnorrOffchain

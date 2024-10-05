@@ -13,35 +13,30 @@ pragma solidity ^0.8.16;
 
 import {Vm} from "forge-std/Vm.sol";
 
-import {RandomOffchain} from "../common/RandomOffchain.sol";
+import {CSPRNG} from "./CSPRNG.sol";
 
+import {Secp256k1, SecretKey, PublicKey} from "../src/Secp256k1.sol";
 import {
-    Secp256r1,
-    SecretKey,
-    PublicKey
-} from "../../onchain/secp256r1/Secp256r1.sol";
-import {
-    Secp256r1Arithmetic,
+    Secp256k1Arithmetic,
     Point,
     ProjectivePoint
-} from "../../onchain/secp256r1/Secp256r1Arithmetic.sol";
+} from "../src/arithmetic/PointArithmetic.sol";
 
 /**
- * @title Secp256r1Offchain
+ * @title Secp256k1Offchain
  *
- * @notice Providing offchain cryptography-related functionality for the secp256r1
+ * @notice Providing offchain cryptography-related functionality for the secp256k1
  *         elliptic curve
  *
  * @author verklegarden
  * @custom:repository github.com/verklegarden/crysol
  */
-library Secp256r1Offchain {
-    using Secp256r1Offchain for SecretKey;
-    using Secp256r1 for SecretKey;
-    using Secp256r1 for PublicKey;
-    using Secp256r1 for Point;
-    using Secp256r1Arithmetic for Point;
-    using Secp256r1Arithmetic for ProjectivePoint;
+library Secp256k1Offchain {
+    using Secp256k1Offchain for SecretKey;
+    using Secp256k1 for SecretKey;
+    using Secp256k1 for PublicKey;
+    using Secp256k1 for Point;
+    using Secp256k1Arithmetic for Point;
 
     // ~~~~~~~ Prelude ~~~~~~~
     // forgefmt: disable-start
@@ -63,10 +58,10 @@ library Secp256r1Offchain {
         // Note to not introduce potential bias via bounding operation.
         uint scalar;
         do {
-            scalar = RandomOffchain.readUint();
-        } while (scalar == 0 || scalar >= Secp256r1Arithmetic.Q);
+            scalar = CSPRNG.readUint();
+        } while (scalar == 0 || scalar >= Secp256k1Arithmetic.Q);
 
-        return Secp256r1.secretKeyFromUint(scalar);
+        return Secp256k1.secretKeyFromUint(scalar);
     }
 
     /// @dev Returns the public key of secret key `sk`.
@@ -77,7 +72,6 @@ library Secp256r1Offchain {
     /// @custom:vm vm.createWallet(uint)
     function toPublicKey(SecretKey sk)
         internal
-        view
         vmed
         returns (PublicKey memory)
     {
@@ -85,19 +79,9 @@ library Secp256r1Offchain {
             revert("SecretKeyInvalid()");
         }
 
-        // TODO: Need vm support for p256 public key derivation.
-        //       Note that this function, in its current form, does not actually
-        //       depend on vm. However, for performance an issue in foundry will
-        //       be created to provide vm functionality for secp256r1 public key
-        //       derivation.
-        //       Note that this function should for obvious reasons not be
-        //       executed onchain anyway.
-        // forgefmt: disable-next-item
-        Point memory p = Secp256r1.G().toProjectivePoint()
-                                      .mul(sk.asUint())
-                                      .intoPoint();
-
-        return p.intoPublicKey();
+        // Use vm to compute pk = [sk]G.
+        Vm.Wallet memory wallet = vm.createWallet(sk.asUint());
+        return PublicKey(wallet.publicKeyX, wallet.publicKeyY);
     }
 
     //--------------------------------------------------------------------------
@@ -112,7 +96,7 @@ library Secp256r1Offchain {
         vmed
         returns (string memory)
     {
-        string memory str = "Secp256r1::PublicKey({";
+        string memory str = "Secp256k1::PublicKey({";
         str = string.concat(str, " x: ", vm.toString(pk.x), ",");
         str = string.concat(str, " y: ", vm.toString(pk.y));
         str = string.concat(str, " })");

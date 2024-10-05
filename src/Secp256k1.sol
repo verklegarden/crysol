@@ -12,10 +12,11 @@
 pragma solidity ^0.8.16;
 
 import {
-    Secp256k1Arithmetic,
+    PointArithmetic,
     Point,
     ProjectivePoint
-} from "./Secp256k1Arithmetic.sol";
+} from "./arithmetic/PointArithmetic.sol";
+import {FieldArithmetic, Felt} from "./arithmetic/FieldArithmetic.sol";
 
 /**
  * @notice SecretKey is an secp256k1 secret key
@@ -65,8 +66,8 @@ type SecretKey is uint;
  *      ```
  */
 struct PublicKey {
-    uint x;
-    uint y;
+    Felt x;
+    Felt y;
 }
 
 /**
@@ -89,7 +90,8 @@ library Secp256k1 {
     using Secp256k1 for PublicKey;
     using Secp256k1 for Point;
 
-    using Secp256k1Arithmetic for Point;
+    using PointArithmetic for Point;
+    using FieldArithmetic for Felt;
 
     //--------------------------------------------------------------------------
     // Private Constants
@@ -100,20 +102,42 @@ library Secp256k1 {
     //--------------------------------------------------------------------------
     // Secp256k1 Constants
     //
-    // Reimported from Secp256k1Arithmetic.
+    // Secp256k1 is a Koblitz curve specified as:
+    //      y² ≡ x³ + ax + b (mod p)
+    //
+    // where:
+    uint internal constant A = 0;
+    uint internal constant B = 7;
+    uint internal constant P =
+        0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFEFFFFFC2F;
 
-    /// @dev The generator G as PublicKey.
-    function G() internal pure returns (PublicKey memory) {
-        Point memory g = Secp256k1Arithmetic.G();
-
-        return PublicKey(g.x, g.y);
+    /// @dev The generator G as Point.
+    ///
+    /// @dev Note that the generator is also called base point.
+    function G() internal pure returns (Point memory) {
+        // Gₓ = 79be667e f9dcbbac 55a06295 ce870b07 029bfcdb 2dce28d9 59f2815b 16f81798
+        // Gᵧ = 483ada77 26a3c465 5da4fbfc 0e1108a8 fd17b448 a6855419 9c47d08f fb10d4b8
+        return Point(
+            FieldArithmetic.unsafeFeltFromUint(
+                0x79be667ef9dcbbac55a06295ce870b07029bfcdb2dce28d959f2815b16f81798
+            ),
+            FieldArithmetic.unsafeFeltFromUint(
+                0x483ada7726a3c4655da4fbfc0e1108a8fd17b448a68554199c47d08ffb10d4b8
+            )
+        );
     }
 
-    /// @dev The order of the group generated via generator G.
-    uint internal constant Q = Secp256k1Arithmetic.Q;
+    /// @dev The order of the group generated via G.
+    uint internal constant Q =
+        0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFEBAAEDCE6AF48A03BBFD25E8CD0364141;
+
+    // Taken from [SEC-2 v2] section 2.4.1 "Recommended Parameters secp256k1".
+    //--------------------------------------------------------------------------
 
     //--------------------------------------------------------------------------
     // Secret Key
+
+    SecretKey private constant ZERO = SecretKey.wrap(0);
 
     /// @dev Returns whether secret key `sk` is valid.
     ///
@@ -130,11 +154,24 @@ library Secp256k1 {
     /// @dev Reverts if:
     ///        Scalar not in [1, Q)
     function secretKeyFromUint(uint scalar) internal pure returns (SecretKey) {
-        if (scalar == 0 || scalar >= Q) {
+        (SecretKey sk, bool ok) = trySecretKeyFromUint(scalar);
+        if (!ok) {
             revert("ScalarInvalid()");
         }
 
-        return SecretKey.wrap(scalar);
+        return sk;
+    }
+
+    function trySecretKeyFromUint(uint scalar)
+        internal
+        pure
+        returns (SecretKey, bool)
+    {
+        if (scalar == 0 || scalar >= Q) {
+            return (ZERO, false);
+        }
+
+        return (SecretKey.wrap(scalar), true);
     }
 
     /// @dev Returns secret key `sk` as uint.
@@ -154,11 +191,37 @@ library Secp256k1 {
             revert("SecretKeyInvalid()");
         }
 
-        return Secp256k1Arithmetic.G().mulToAddress(sk.asUint());
+        return G().mulToAddress(sk.asUint());
     }
 
     //--------------------------------------------------------------------------
     // Public Key
+
+    function publicKeyFromUints(uint x, uint y)
+        internal
+        pure
+        returns (PublicKey memory)
+    {
+        (PublicKey memory pk, bool ok) = tryPublicKeyFromUints(x, y);
+        if (!ok) {
+            revert("PublicKeyInvalid()");
+        }
+
+        return pk;
+    }
+
+    function tryPublicKeyFromUints(uint x, uint y)
+        internal
+        pure
+        returns (PublicKey memory, bool)
+    {
+        (Point memory p, bool ok) = PointArithmetic.tryPointFromUints(x, y);
+        if (!ok) {
+            return (PointArithmetic.Identity().intoPublicKey(), false);
+        }
+
+        return (p.intoPublicKey(), true);
+    }
 
     /// @dev Returns the address of public key `pk`.
     ///
@@ -275,11 +338,9 @@ library Secp256k1 {
             scalar := mload(add(blob, 0x20))
         }
 
-        // Make secret key.
-        SecretKey sk = SecretKey.wrap(scalar);
-
-        // Revert if secret key invalid.
-        if (!sk.isValid()) {
+        // Try to make secret key.
+        (SecretKey sk, bool ok) = trySecretKeyFromUint(scalar);
+        if (!ok) {
             revert("SecretKeyInvalid()");
         }
 
@@ -327,15 +388,13 @@ library Secp256k1 {
             y := mload(add(blob, 0x40))
         }
 
-        // Make public key.
-        PublicKey memory pk = PublicKey(x, y);
-
-        // Revert if public key invalid.
-        if (!pk.isValid()) {
+        // Try to construct point from coordinates.
+        (Point memory p, bool ok) = PointArithmetic.tryPointFromUints(x, y);
+        if (!ok) {
             revert("PublicKeyInvalid()");
         }
 
-        return pk;
+        return p.intoPublicKey();
     }
 
     /// @dev Encodes public key `pk` as ABI-encoded bytes.
@@ -354,6 +413,6 @@ library Secp256k1 {
             revert("PublicKeyInvalid()");
         }
 
-        return abi.encodePacked(pk.x, pk.y);
+        return abi.encodePacked(pk.x.asUint(), pk.y.asUint());
     }
 }
