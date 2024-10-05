@@ -14,9 +14,9 @@ pragma solidity ^0.8.16;
 import {Vm} from "forge-std/Vm.sol";
 
 import {Secp256k1Offchain} from "../Secp256k1Offchain.sol";
-import {Secp256k1, SecretKey, PublicKey} from "../../onchain/Secp256k1.sol";
+import {Secp256k1, SecretKey, PublicKey} from "src/Secp256k1.sol";
 
-import {ECDSA, Signature} from "../../onchain/signatures/ECDSA.sol";
+import {ECDSA, Signature} from "src/signatures/ECDSA.sol";
 
 /**
  * @title ECDSAOffchain
@@ -34,15 +34,8 @@ library ECDSAOffchain {
 
     using ECDSAOffchain for SecretKey;
 
-    // ~~~~~~~ Prelude ~~~~~~~
-    // forgefmt: disable-start
+    // forgefmt: disable-next-item
     Vm private constant vm = Vm(address(uint160(uint(keccak256("hevm cheat code")))));
-    modifier vmed() {
-        if (block.chainid != 31337) revert("requireVm");
-        _;
-    }
-    // forgefmt: disable-end
-    // ~~~~~~~~~~~~~~~~~~~~~~~
 
     //--------------------------------------------------------------------------
     // Signature Creation
@@ -56,13 +49,9 @@ library ECDSAOffchain {
     ///
     /// @dev Reverts if:
     ///        Secret key invalid
-    ///
-    /// @custom:vm vm.sign(uint,bytes32)
-    /// @custom:invariant Created signature is non-malleable.
     function sign(SecretKey sk, bytes32 digest)
         internal
-        view
-        vmed
+        pure
         returns (Signature memory)
     {
         bytes32 m = ECDSA.constructMessageHash(digest);
@@ -79,13 +68,9 @@ library ECDSAOffchain {
     ///
     /// @dev Reverts if:
     ///        Secret key invalid
-    ///
-    /// @custom:vm vm.sign(uint,bytes32)
-    /// @custom:invariant Created signature is non-malleable.
     function signRaw(SecretKey sk, bytes32 m)
         internal
-        view
-        vmed
+        pure
         returns (Signature memory)
     {
         if (!sk.isValid()) {
@@ -109,15 +94,12 @@ library ECDSAOffchain {
     // Utils
 
     /// @dev Returns a string representation of signature `sig`.
-    ///
-    /// @custom:vm vm.toString(uint)
     function toString(Signature memory sig)
         internal
-        view
-        vmed
+        pure
         returns (string memory)
     {
-        string memory str = "ECDSA::Signature({";
+        string memory str = "ECDSA({";
         str = string.concat(str, " v: ", vm.toString(sig.v), ",");
         str = string.concat(str, " r: ", vm.toString(sig.r), ",");
         str = string.concat(str, " s: ", vm.toString(sig.s));

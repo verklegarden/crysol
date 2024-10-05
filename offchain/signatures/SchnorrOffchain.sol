@@ -13,16 +13,16 @@ pragma solidity ^0.8.16;
 
 import {Vm} from "forge-std/Vm.sol";
 
-import {RandomOffchain} from "../../offchain/common/RandomOffchain.sol";
+import {CSPRNG} from "offchain/CSPRNG.sol";
 
 import {Secp256k1Offchain} from "../Secp256k1Offchain.sol";
-import {Secp256k1, SecretKey, PublicKey} from "../../onchain/Secp256k1.sol";
+import {Secp256k1, SecretKey, PublicKey} from "src/Secp256k1.sol";
 
 import {
     Schnorr,
     Signature,
     SignatureCompressed
-} from "../../onchain/signatures/Schnorr.sol";
+} from "src/signatures/Schnorr.sol";
 
 /**
  * @title SchnorrOffchain
@@ -45,15 +45,8 @@ library SchnorrOffchain {
 
     using SchnorrOffchain for SecretKey;
 
-    // ~~~~~~~ Prelude ~~~~~~~
-    // forgefmt: disable-start
+    // forgefmt: disable-next-item
     Vm private constant vm = Vm(address(uint160(uint(keccak256("hevm cheat code")))));
-    modifier vmed() {
-        if (block.chainid != 31337) revert("requireVm");
-        _;
-    }
-    // forgefmt: disable-end
-    // ~~~~~~~~~~~~~~~~~~~~~~~
 
     //--------------------------------------------------------------------------
     // Signature Creation
@@ -64,11 +57,8 @@ library SchnorrOffchain {
     /// @dev Note that the actual message being signed is the domain separated
     ///      hash digest of `digest` as specified in [ERC-XXX]. This ensures a
     ///      signed message is never deemed valid in a different context.
-    ///
-    /// @custom:vm signRaw(SecretKey,bytes32)(Signature)
     function sign(SecretKey sk, bytes32 digest)
         internal
-        vmed
         returns (Signature memory)
     {
         bytes32 m = Schnorr.constructMessageHash(digest);
@@ -86,16 +76,12 @@ library SchnorrOffchain {
     ///
     /// @dev Reverts if:
     ///        Secret key invalid
-    ///
-    /// @custom:vm RandomOffchain.readBytes32()(bytes32)
-    /// @custom:vm signRaw(SecretKey,bytes32,bytes32)(Signature)
     function signRaw(SecretKey sk, bytes32 m)
         internal
-        vmed
         returns (Signature memory)
     {
-        // Source 32 bytes of randomness from CSPRNG.
-        bytes32 rand = RandomOffchain.readBytes32();
+        // Source 32 bytes of secure randomness.
+        bytes32 rand = bytes32(CSPRNG.readUint());
 
         return sk.signRaw(m, rand);
     }
@@ -113,11 +99,8 @@ library SchnorrOffchain {
     ///
     /// @dev Reverts if:
     ///        Secret key invalid
-    ///
-    /// @custom:vm Secp256k1Offchain::toPublicKey(SecretKey)(PublicKey)
     function signRaw(SecretKey sk, bytes32 m, bytes32 rand)
         internal
-        vmed
         returns (Signature memory)
     {
         // Note that public key derivation fails if secret key is invalid.
@@ -164,16 +147,12 @@ library SchnorrOffchain {
     // Utils
 
     /// @dev Returns a string representation of signature `sig`.
-    ///
-    /// @custom:vm vm.toString(uint)(string)
-    /// @custom:vm Secp256k1Offchain::toString(PublicKey)(string)
     function toString(Signature memory sig)
         internal
-        view
-        vmed
+        pure
         returns (string memory)
     {
-        string memory str = "Schnorr::Signature({";
+        string memory str = "Schnorr({";
         str = string.concat(str, " s: ", vm.toString(sig.s), ",");
         str = string.concat(str, " r: ", sig.r.toString());
         str = string.concat(str, " })");
@@ -186,8 +165,7 @@ library SchnorrOffchain {
     /// @custom:vm vm.toString(address)(string)
     function toString(SignatureCompressed memory sig)
         internal
-        view
-        vmed
+        pure
         returns (string memory)
     {
         string memory str = "Schnorr::SignatureCompressed({";

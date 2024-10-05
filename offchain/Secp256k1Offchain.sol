@@ -15,12 +15,13 @@ import {Vm} from "forge-std/Vm.sol";
 
 import {CSPRNG} from "./CSPRNG.sol";
 
-import {Secp256k1, SecretKey, PublicKey} from "../src/Secp256k1.sol";
+import {Secp256k1, SecretKey, PublicKey} from "src/Secp256k1.sol";
 import {
-    Secp256k1Arithmetic,
+    PointArithmetic,
     Point,
     ProjectivePoint
-} from "../src/arithmetic/PointArithmetic.sol";
+} from "src/arithmetic/PointArithmetic.sol";
+import {FieldArithmetic, Felt} from "src/arithmetic/FieldArithmetic.sol";
 
 /**
  * @title Secp256k1Offchain
@@ -36,43 +37,32 @@ library Secp256k1Offchain {
     using Secp256k1 for SecretKey;
     using Secp256k1 for PublicKey;
     using Secp256k1 for Point;
-    using Secp256k1Arithmetic for Point;
+    using PointArithmetic for Point;
+    using FieldArithmetic for Felt;
 
-    // ~~~~~~~ Prelude ~~~~~~~
-    // forgefmt: disable-start
+    // forgefmt: disable-next-item
     Vm private constant vm = Vm(address(uint160(uint(keccak256("hevm cheat code")))));
-    modifier vmed() {
-        if (block.chainid != 31337) revert("requireVm");
-        _;
-    }
-    // forgefmt: disable-end
-    // ~~~~~~~~~~~~~~~~~~~~~~~
 
     //--------------------------------------------------------------------------
     // Secret Key
 
     /// @dev Returns a new cryptographically secure secret key.
-    ///
-    /// @custom:vm RandomOffchain::readUint()(uint)
-    function newSecretKey() internal vmed returns (SecretKey) {
-        // Note to not introduce potential bias via bounding operation.
-        uint scalar;
-        do {
-            scalar = CSPRNG.readUint();
-        } while (scalar == 0 || scalar >= Secp256k1Arithmetic.Q);
+    function newSecretKey() internal returns (SecretKey) {
+        SecretKey sk;
+        bool ok;
+        while (!ok) {
+            (sk, ok) = Secp256k1.trySecretKeyFromUint(CSPRNG.readUint());
+        }
 
-        return Secp256k1.secretKeyFromUint(scalar);
+        return sk;
     }
 
     /// @dev Returns the public key of secret key `sk`.
     ///
     /// @dev Reverts if:
     ///        Secret key invalid
-    ///
-    /// @custom:vm vm.createWallet(uint)
     function toPublicKey(SecretKey sk)
         internal
-        vmed
         returns (PublicKey memory)
     {
         if (!sk.isValid()) {
@@ -81,24 +71,25 @@ library Secp256k1Offchain {
 
         // Use vm to compute pk = [sk]G.
         Vm.Wallet memory wallet = vm.createWallet(sk.asUint());
-        return PublicKey(wallet.publicKeyX, wallet.publicKeyY);
+
+        (PublicKey memory pk, bool ok) = Secp256k1.tryPublicKeyFromUints(wallet.publicKeyX, wallet.publicKeyY);
+        assert(ok);
+
+        return pk;
     }
 
     //--------------------------------------------------------------------------
     // Public Key
 
     /// @dev Returns a string representation of public key `pk`.
-    ///
-    /// @custom:vm vm.toString(uint)
     function toString(PublicKey memory pk)
         internal
-        view
-        vmed
+        pure
         returns (string memory)
     {
-        string memory str = "Secp256k1::PublicKey({";
-        str = string.concat(str, " x: ", vm.toString(pk.x), ",");
-        str = string.concat(str, " y: ", vm.toString(pk.y));
+        string memory str = "PublicKey({";
+        str = string.concat(str, " x: ", vm.toString(pk.x.asUint()), ",");
+        str = string.concat(str, " y: ", vm.toString(pk.y.asUint()));
         str = string.concat(str, " })");
         return str;
     }

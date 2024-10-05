@@ -22,14 +22,19 @@ library FieldArithmetic {
     // Optimization Constants
 
     /// @dev Used during modular inversion.
-    uint private constant P_MINUS_2 = addmod(0, P - 2, P);
+    uint private constant _P_MINUS_2 = addmod(0, _P - 2, _P);
+
+    //--------------------------------------------------------------------------
+    // UNDEFINED Constants
+
+    Felt private constant _UNDEFINED_FELT = Felt.wrap(type(uint).max);
 
     //--------------------------------------------------------------------------
     // Private Constants
     //
     // Reimported from Secp256k1.
 
-    uint private constant P = Secp256k1.P;
+    uint private constant _P = Secp256k1.P;
 
     //--------------------------------------------------------------------------
     // Felt Constants
@@ -50,7 +55,7 @@ library FieldArithmetic {
     }
 
     function tryFeltFromUint(uint scalar) internal pure returns (Felt, bool) {
-        if (scalar >= P) {
+        if (scalar >= _P) {
             return (ZERO, false);
         }
 
@@ -66,40 +71,11 @@ library FieldArithmetic {
     }
 
     //--------------------------------------------------------------------------
-    // Comparison Functions
-
-    /*
-    function eq(Felt felt, Felt other) internal pure returns (bool) {
-        return felt.asUint() == other.asUint();
-    }
-
-    function neq(Felt felt, Felt other) internal pure returns (bool) {
-        return felt.asUint() != other.asUint();
-    }
-
-    function gt(Felt felt, Felt other) internal pure returns (bool) {
-        return felt.asUint() > other.asUint();
-    }
-
-    function gte(Felt felt, Felt other) internal pure returns (bool) {
-        return felt.asUint() >= other.asUint();
-    }
-
-    function lt(Felt felt, Felt other) internal pure returns (bool) {
-        return felt.asUint() < other.asUint();
-    }
-
-    function lte(Felt felt, Felt other) internal pure returns (bool) {
-        return felt.asUint() <= other.asUint();
-    }
-    */
-
-    //--------------------------------------------------------------------------
     // Arithmetic Functions
 
     function add(Felt felt, Felt other) internal pure returns (Felt) {
-        uint result = addmod(felt.asUint(), other.asUint(), P);
-        // assert(result < P);
+        uint result = addmod(felt.asUint(), other.asUint(), _P);
+        // assert(result < _P);
 
         return unsafeFeltFromUint(result);
     }
@@ -107,16 +83,16 @@ library FieldArithmetic {
     function sub(Felt felt, Felt other) internal pure returns (Felt) {
         uint result;
         unchecked {
-            result = addmod(felt.asUint(), P - other.asUint(), P);
+            result = addmod(felt.asUint(), _P - other.asUint(), _P);
         }
-        // assert(result < P);
+        // assert(result < _P);
 
         return unsafeFeltFromUint(result);
     }
 
     function mul(Felt felt, Felt other) internal pure returns (Felt) {
-        uint result = mulmod(felt.asUint(), other.asUint(), P);
-        // assert(result < P);
+        uint result = mulmod(felt.asUint(), other.asUint(), _P);
+        // assert(result < _P);
 
         return unsafeFeltFromUint(result);
     }
@@ -126,8 +102,8 @@ library FieldArithmetic {
             revert("DivByZero()");
         }
 
-        uint result = mulmod(felt.asUint(), other.inv().asUint(), P);
-        // assert(result < P);
+        uint result = mulmod(felt.asUint(), other.inv().asUint(), _P);
+        // assert(result < _P);
 
         return unsafeFeltFromUint(result);
     }
@@ -141,14 +117,14 @@ library FieldArithmetic {
             revert("InvOfZero()");
         }
 
-        return exp(felt, unsafeFeltFromUint(P_MINUS_2));
+        return exp(felt, unsafeFeltFromUint(_P_MINUS_2));
     }
 
     function exp(Felt base, Felt exponent) internal view returns (Felt) {
-        // Payload to compute base^{exponent} (mod P).
+        // Payload to compute base^{exponent} (mod _P).
         // Note that the size of each argument is 32 bytes.
         bytes memory payload =
-            abi.encode(32, 32, 32, base.asUint(), exponent.asUint(), P);
+            abi.encode(32, 32, 32, base.asUint(), exponent.asUint(), _P);
 
         // The `modexp` precompile is at address 0x05.
         address target = address(5);
@@ -160,7 +136,7 @@ library FieldArithmetic {
         // Result is empty iff the modexp computation failed due to insufficient
         // gas.
         uint result = abi.decode(data, (uint));
-        // assert(result < P);
+        // assert(result < _P);
 
         return unsafeFeltFromUint(result);
     }
@@ -171,7 +147,7 @@ library FieldArithmetic {
     function isValid(Felt felt) internal pure returns (bool) {
         uint scalar = felt.asUint();
 
-        return scalar < P;
+        return scalar < _P;
     }
 
     function isZero(Felt felt) internal pure returns (bool) {
@@ -180,6 +156,6 @@ library FieldArithmetic {
 
     // TODO: Docs can be used to verify an inverse received as witness is valid.
     function isInv(Felt felt, Felt feltInv) internal pure returns (bool) {
-        return mulmod(felt.asUint(), feltInv.asUint(), P) == 1;
+        return mulmod(felt.asUint(), feltInv.asUint(), _P) == 1;
     }
 }

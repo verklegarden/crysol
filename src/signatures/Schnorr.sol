@@ -66,7 +66,7 @@ library Schnorr {
     /// @dev The context string is used to domain separate hash functions and
     ///      ensures a Schnorr signed message is never deemed valid in a
     ///      different context.
-    string constant CONTEXT = "ETHEREUM-SCHNORR-SECP256K1-KECCAK256";
+    string internal constant CONTEXT = "ETHEREUM-SCHNORR-SECP256K1-KECCAK256";
 
     //--------------------------------------------------------------------------
     // Signature Verification
@@ -131,8 +131,9 @@ library Schnorr {
         // computation, i.e. the subtrahend is guaranteed to be less than Q.
         bytes32 ecrecover_msgHash;
         unchecked {
-            ecrecover_msgHash =
-                bytes32(Secp256k1.Q - mulmod(uint(sig.s), pk.x.asUint(), Secp256k1.Q));
+            ecrecover_msgHash = bytes32(
+                Secp256k1.Q - mulmod(uint(sig.s), pk.x.asUint(), Secp256k1.Q)
+            );
         }
 
         // Compute ecrecover_v = Pkₚ + 27
@@ -154,8 +155,9 @@ library Schnorr {
         // computation, i.e. the subtrahend is guaranteed to be less than Q.
         bytes32 ecrecover_s;
         unchecked {
-            ecrecover_s =
-                bytes32(Secp256k1.Q - mulmod(challenge, pk.x.asUint(), Secp256k1.Q));
+            ecrecover_s = bytes32(
+                Secp256k1.Q - mulmod(challenge, pk.x.asUint(), Secp256k1.Q)
+            );
         }
 
         // Compute ([s]G - [e]Pk)ₑ via ecrecover.
@@ -209,7 +211,12 @@ library Schnorr {
         pure
         returns (bool)
     {
-        if (sig.s == 0 || uint(sig.s) >= Secp256k1.Q || sig.rAddr == address(0))
+        // forgefmt: disable-next-item
+        if (
+            sig.s == 0                 ||
+            uint(sig.s) >= Secp256k1.Q ||
+            sig.rAddr == address(0)
+           )
         {
             return false;
         }
