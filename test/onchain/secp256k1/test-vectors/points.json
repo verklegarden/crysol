@@ -18,7 +18,6 @@
         "expected": true
       },
       {
-        "description": "X == P - 1",
         "P": "02fffffffffffffffffffffffffffffffffffffffffffffffffffffffeeffffc2e",
         "expected": true
       },
@@ -39,102 +38,82 @@
         "expected": true
       },
       {
-        "description": "X == P - 1",
         "P": "04fffffffffffffffffffffffffffffffffffffffffffffffffffffffeeffffc2ea0981151316a5be677beb8ab97d4a15eba3e4638bfdc86038afffe1f445f4496",
         "expected": true
       },
       {
-        "description": "Bad sequence prefix",
         "P": "0100000000000000000000000000000000000000000000000000000000000000010000000000000000000000000000000000000000000000000000000000000001",
         "expected": false
       },
       {
-        "description": "Bad sequence prefix",
         "P": "0200000000000000000000000000000000000000000000000000000000000000010000000000000000000000000000000000000000000000000000000000000001",
         "expected": false
       },
       {
-        "description": "Bad sequence prefix",
         "P": "0300000000000000000000000000000000000000000000000000000000000000010000000000000000000000000000000000000000000000000000000000000001",
         "expected": false
       },
       {
-        "description": "Bad sequence prefix",
         "P": "0500000000000000000000000000000000000000000000000000000000000000010000000000000000000000000000000000000000000000000000000000000001",
         "expected": false
       },
       {
-        "description": "Bad X coordinate (== 0)",
         "P": "0400000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000001",
         "expected": false
       },
       {
-        "description": "Bad Y coordinate (== 0)",
         "P": "0400000000000000000000000000000000000000000000000000000000000000010000000000000000000000000000000000000000000000000000000000000000",
         "expected": false
       },
       {
-        "description": "Bad X/Y coordinate (== 0)",
         "P": "0400000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000",
         "expected": false
       },
       {
-        "description": "Bad X coordinate (== P)",
         "P": "04fffffffffffffffffffffffffffffffffffffffffffffffffffffffefffffc2f0000000000000000000000000000000000000000000000000000000000000001",
         "expected": false
       },
       {
-        "description": "Bad Y coordinate (== P)",
         "P": "040000000000000000000000000000000000000000000000000000000000000001fffffffffffffffffffffffffffffffffffffffffffffffffffffffefffffc2f",
         "expected": false
       },
       {
-        "description": "Bad X coordinate (> P)",
         "P": "04fffffffffffffffffffffffffffffffffffffffffffffffffffffffefffffc300000000000000000000000000000000000000000000000000000000000000001",
         "expected": false
       },
       {
-        "description": "Bad Y coordinate (> P)",
         "P": "040000000000000000000000000000000000000000000000000000000000000001fffffffffffffffffffffffffffffffffffffffffffffffffffffffefffffc30",
         "expected": false
       },
       {
-        "description": "Bad sequence prefix",
         "P": "010000000000000000000000000000000000000000000000000000000000000001",
         "expected": false
       },
       {
-        "description": "Bad sequence prefix",
         "P": "040000000000000000000000000000000000000000000000000000000000000001",
         "expected": false
       },
       {
-        "description": "Bad sequence prefix",
         "P": "050000000000000000000000000000000000000000000000000000000000000001",
         "expected": false
       },
       {
-        "description": "Bad X coordinate (== 0)",
         "P": "020000000000000000000000000000000000000000000000000000000000000000",
         "expected": false
       },
       {
-        "description": "Bad X coordinate (== 0)",
         "P": "030000000000000000000000000000000000000000000000000000000000000000",
         "expected": false
       },
       {
-        "description": "Bad X coordinate (== P)",
         "P": "02fffffffffffffffffffffffffffffffffffffffffffffffffffffffefffffc2f",
         "expected": false
       },
       {
-        "description": "Bad X coordinate (== P)",
         "P": "03fffffffffffffffffffffffffffffffffffffffffffffffffffffffefffffc2f",
         "expected": false
       },
       {
-        "description": "Bad X coordinate (> P)",
         "P": "03fffffffffffffffffffffffffffffffffffffffffffffffffffffffefffffc30",
         "expected": false
       },
