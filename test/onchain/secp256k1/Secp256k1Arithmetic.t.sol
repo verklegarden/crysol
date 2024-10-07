@@ -3,6 +3,7 @@ pragma solidity ^0.8.16;
 
 import {Test} from "forge-std/Test.sol";
 import {console2 as console} from "forge-std/console2.sol";
+import {stdJson} from "forge-std/StdJson.sol";
 
 import {Secp256k1Offchain} from "src/offchain/secp256k1/Secp256k1Offchain.sol";
 import {
@@ -29,6 +30,7 @@ contract Secp256k1ArithmeticTest is Test {
     using Secp256k1 for Point;
     using Secp256k1Arithmetic for Point;
     using Secp256k1Arithmetic for ProjectivePoint;
+    using stdJson for string;
 
     // Uncompressed Generator G.
     // Copied from [SEC-2 v2].
@@ -106,6 +108,54 @@ contract Secp256k1ArithmeticTest is Test {
         point.y ^= yMask;
 
         assertFalse(wrapper.isOnCurve(point));
+    }
+
+    struct IsPointCase {
+        string P;
+        bool expected;
+    }
+
+    function testVectors_Point_isPoint_noble_curves() public {
+        string memory root = vm.projectRoot();
+        string memory path = string.concat(
+            root, "/test/onchain/secp256k1/test-vectors/points.json"
+        );
+        string memory json = vm.readFile(path);
+        bytes memory data = json.parseRaw(".valid.isPoint");
+        IsPointCase[] memory cases = abi.decode(data, (IsPointCase[]));
+        for (uint i; i < cases.length; i++) {
+            IsPointCase memory c = cases[i];
+            bytes memory parsedPoint = vm.parseBytes(c.P);
+            Point memory point;
+            bool expectedOnCurve = c.expected;
+            // Encoded
+            if (parsedPoint[0] == 0x04) {
+                if (expectedOnCurve) {
+                    point = wrapper.pointFromEncoded(parsedPoint);
+                } else {
+                    vm.expectRevert();
+                    wrapper.pointFromEncoded(parsedPoint);
+                    continue;
+                }
+                // CompressedEncoded
+            } else if (parsedPoint[0] == 0x02 || parsedPoint[0] == 0x03) {
+                if (expectedOnCurve) {
+                    point = wrapper.pointFromCompressedEncoded(parsedPoint);
+                } else {
+                    vm.expectRevert();
+                    wrapper.pointFromCompressedEncoded(parsedPoint);
+                    continue;
+                }
+                // Invalid
+            } else {
+                vm.expectRevert();
+                wrapper.pointFromEncoded(parsedPoint);
+                vm.expectRevert();
+                wrapper.pointFromCompressedEncoded(parsedPoint);
+                continue;
+            }
+            assertEq(wrapper.isOnCurve(point), expectedOnCurve);
+        }
     }
 
     // -- yParity
