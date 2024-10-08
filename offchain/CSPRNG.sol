@@ -23,28 +23,14 @@ import {Vm} from "forge-std/Vm.sol";
  * @author verklegarden
  * @custom:repository github.com/verklegarden/crysol
  */
-library RandomOffchain {
-    // ~~~~~~~ Prelude ~~~~~~~
-    // forgefmt: disable-start
+library CSPRNG {
+    // forgefmt: disable-next-item
     Vm private constant vm = Vm(address(uint160(uint(keccak256("hevm cheat code")))));
-    modifier vmed() {
-        if (block.chainid != 31337) revert("requireVm");
-        _;
-    }
-    // forgefmt: disable-end
-    // ~~~~~~~~~~~~~~~~~~~~~~~
-
-    /// @dev Returns 32 bytes of cryptographically sound randomness.
-    ///
-    /// @custom:vm readUint()(uint)
-    function readBytes32() internal vmed returns (bytes32) {
-        return bytes32(readUint());
-    }
 
     /// @dev Returns 256 bit of cryptographically sound randomness.
     ///
     /// @custom:vm ffi `cast wallet new`
-    function readUint() internal vmed returns (uint) {
+    function readUint() internal returns (uint) {
         string[] memory inputs = new string[](3);
         inputs[0] = "cast";
         inputs[1] = "wallet";
@@ -59,3 +45,4 @@ library RandomOffchain {
         return uint(keccak256(result));
     }
 }
+

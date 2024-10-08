@@ -12,6 +12,7 @@
 pragma solidity ^0.8.16;
 
 import {Secp256k1, SecretKey, PublicKey} from "../Secp256k1.sol";
+import {FieldArithmetic, Felt} from "../arithmetic/FieldArithmetic.sol";
 
 /**
  * @notice Signature is an [ERC-XXX] Schnorr signature
@@ -43,6 +44,7 @@ struct SignatureCompressed {
 library Schnorr {
     using Secp256k1 for SecretKey;
     using Secp256k1 for PublicKey;
+    using FieldArithmetic for Felt;
 
     using Schnorr for address;
     using Schnorr for Signature;
@@ -64,7 +66,7 @@ library Schnorr {
     /// @dev The context string is used to domain separate hash functions and
     ///      ensures a Schnorr signed message is never deemed valid in a
     ///      different context.
-    string constant CONTEXT = "ETHEREUM-SCHNORR-SECP256K1-KECCAK256";
+    string internal constant CONTEXT = "ETHEREUM-SCHNORR-SECP256K1-KECCAK256";
 
     //--------------------------------------------------------------------------
     // Signature Verification
@@ -129,8 +131,9 @@ library Schnorr {
         // computation, i.e. the subtrahend is guaranteed to be less than Q.
         bytes32 ecrecover_msgHash;
         unchecked {
-            ecrecover_msgHash =
-                bytes32(Secp256k1.Q - mulmod(uint(sig.s), pk.x, Secp256k1.Q));
+            ecrecover_msgHash = bytes32(
+                Secp256k1.Q - mulmod(uint(sig.s), pk.x.asUint(), Secp256k1.Q)
+            );
         }
 
         // Compute ecrecover_v = Pkₚ + 27
@@ -143,7 +146,7 @@ library Schnorr {
         }
 
         // Set ecrecover_r = Pkₓ
-        bytes32 ecrecover_r = bytes32(pk.x);
+        bytes32 ecrecover_r = bytes32(pk.x.asUint());
 
         // Compute ecrecover_s = Q - (e * Pkₓ) (mod Q)
         //
@@ -152,8 +155,9 @@ library Schnorr {
         // computation, i.e. the subtrahend is guaranteed to be less than Q.
         bytes32 ecrecover_s;
         unchecked {
-            ecrecover_s =
-                bytes32(Secp256k1.Q - mulmod(challenge, pk.x, Secp256k1.Q));
+            ecrecover_s = bytes32(
+                Secp256k1.Q - mulmod(challenge, pk.x.asUint(), Secp256k1.Q)
+            );
         }
 
         // Compute ([s]G - [e]Pk)ₑ via ecrecover.
@@ -186,7 +190,7 @@ library Schnorr {
     ///
     /// @dev A Schnorr signature is deemed insane for any of:
     ///      - Schnorr signature's s value is zero
-    ///      - Schnorr signature's s value is not a field element
+    ///      - Schnorr signature's s value not in [1, Q)
     ///      - Schnorr signature's r value is not a valid public key
     function isSane(Signature memory sig) internal pure returns (bool) {
         if (sig.s == 0 || uint(sig.s) >= Secp256k1.Q || !sig.r.isValid()) {
@@ -200,14 +204,19 @@ library Schnorr {
     ///
     /// @dev A compressed Schnorr signature is deemed insane for any of:
     ///      - Schnorr signature's s value is zero
-    ///      - Schnorr signature's s value is not a field element
+    ///      - Schnorr signature's s value not in [1, Q)
     ///      - Schnorr signature's rAddr value is zero
     function isSane(SignatureCompressed memory sig)
         internal
         pure
         returns (bool)
     {
-        if (sig.s == 0 || uint(sig.s) >= Secp256k1.Q || sig.rAddr == address(0))
+        // forgefmt: disable-next-item
+        if (
+            sig.s == 0                 ||
+            uint(sig.s) >= Secp256k1.Q ||
+            sig.rAddr == address(0)
+           )
         {
             return false;
         }
@@ -282,7 +291,19 @@ library Schnorr {
             ry := mload(add(blob, 0x60))
         }
 
-        Signature memory sig = Signature(s, PublicKey(rx, ry));
+        bool ok;
+        Felt rx_;
+        Felt ry_;
+        (rx_, ok) = FieldArithmetic.tryFeltFromUint(rx);
+        if (!ok) {
+            revert("SignatureInsane()");
+        }
+        (ry_, ok) = FieldArithmetic.tryFeltFromUint(ry);
+        if (!ok) {
+            revert("SignatureInsane()");
+        }
+
+        Signature memory sig = Signature(s, PublicKey(rx_, ry_));
 
         if (!sig.isSane()) {
             revert("SignatureInsane()");
