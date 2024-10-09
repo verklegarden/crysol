@@ -288,6 +288,53 @@ contract Secp256k1ArithmeticTest is Test {
         }
     }
 
+    struct PointAddCase {
+        string P;
+        string Q;
+        string expected;
+    }
+
+    function testVectors_ProjectivePoint_add_noble_curves() public view {
+        string memory root = vm.projectRoot();
+        string memory path = string.concat(
+            root, "/test/onchain/secp256k1/test-vectors/points.json"
+        );
+        string memory json = vm.readFile(path);
+        bytes memory data = json.parseRaw(".valid.pointAdd");
+        PointAddCase[] memory cases = abi.decode(data, (PointAddCase[]));
+        for (uint i; i < cases.length; i++) {
+            PointAddCase memory c = cases[i];
+            bytes memory parsedP = vm.parseBytes(c.P);
+            bytes memory parsedQ = vm.parseBytes(c.Q);
+            bytes memory parsedExpected;
+            try vm.parseBytes(c.expected) returns (bytes memory parsedTry) {
+                parsedExpected = parsedTry;
+            } catch {
+                // "description": "1 + -1 == 0/Infinity",
+                // "P": "0279be667ef9dcbbac55a06295ce870b07029bfcdb2dce28d959f2815b16f81798",
+                // "Q": "0379be667ef9dcbbac55a06295ce870b07029bfcdb2dce28d959f2815b16f81798",
+                // "expected": null
+                assertEq(
+                    parsedP,
+                    hex"0279BE667EF9DCBBAC55A06295CE870B07029BFCDB2DCE28D959F2815B16F81798"
+                );
+                assertEq(
+                    parsedQ,
+                    hex"0379BE667EF9DCBBAC55A06295CE870B07029BFCDB2DCE28D959F2815B16F81798"
+                );
+                parsedExpected = hex"00";
+            }
+            ProjectivePoint memory p =
+                wrapper.pointFromCompressedEncoded(parsedP).toProjectivePoint();
+            ProjectivePoint memory q =
+                wrapper.pointFromCompressedEncoded(parsedQ).toProjectivePoint();
+            Point memory expected =
+                wrapper.pointFromCompressedEncoded(parsedExpected);
+            Point memory got = wrapper.add(p, q).intoPoint();
+            assertTrue(got.eq(expected));
+        }
+    }
+
     function test_ProjectivePoint_add_Identity() public view {
         ProjectivePoint memory g = Secp256k1Arithmetic.G().toProjectivePoint();
         ProjectivePoint memory id = Secp256k1Arithmetic.ProjectiveIdentity();
