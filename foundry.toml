@@ -3,6 +3,8 @@ src = 'src'
 out = 'out'
 libs = ['lib']
 ffi = true
+# Permissions
+fs_permissions = [{ access = "read", path = "./" }]
 
 # Compilation
 evm_version = "shanghai"

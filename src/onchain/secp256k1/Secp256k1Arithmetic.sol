@@ -135,6 +135,10 @@ library Secp256k1Arithmetic {
     ///
     /// @dev Note that the identity is on the curve.
     function isOnCurve(Point memory point) internal pure returns (bool) {
+        if (point.x >= P || point.y >= P) {
+            return false;
+        }
+
         if (point.isIdentity()) {
             return true;
         }
