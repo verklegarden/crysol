@@ -375,6 +375,35 @@ contract Secp256k1ArithmeticTest is Test {
         assertTrue(want.eq(got));
     }
 
+    struct PointMulCase {
+        string P;
+        string d;
+        string description;
+        string expected;
+    }
+
+    function testVectors_ProjectivePoint_mul_noble_curves() public view {
+        string memory root = vm.projectRoot();
+        string memory path = string.concat(
+            root, "/test/onchain/secp256k1/test-vectors/points.json"
+        );
+        string memory json = vm.readFile(path);
+        bytes memory data = json.parseRaw(".valid.pointMultiply");
+        PointMulCase[] memory cases = abi.decode(data, (PointMulCase[]));
+        for (uint i; i < cases.length; i++) {
+            PointMulCase memory c = cases[i];
+            bytes memory parsedP = vm.parseBytes(c.P);
+            uint parsedD = vm.parseUint(c.d);
+            bytes memory parsedExpected = vm.parseBytes(c.expected);
+            Point memory expected =
+                wrapper.pointFromCompressedEncoded(parsedExpected);
+            ProjectivePoint memory p =
+                wrapper.pointFromCompressedEncoded(parsedP).toProjectivePoint();
+            Point memory got = wrapper.mul(p, parsedD).intoPoint();
+            assertTrue(got.eq(expected));
+        }
+    }
+
     function testVectors_ProjectivePoint_mul() public view {
         ProjectivePoint memory g = Secp256k1Arithmetic.G().toProjectivePoint();
 
