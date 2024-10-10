@@ -736,6 +736,34 @@ contract Secp256k1ArithmeticTest is Test {
         //       byte encoding.
     }
 
+    struct InvalidPointCase {
+        string P;
+        bool compress;
+        string description;
+        string exception;
+    }
+
+    function testVectors_Point_invalid_noble_curves() public {
+        string memory root = vm.projectRoot();
+        string memory path = string.concat(
+            root, "/test/onchain/secp256k1/test-vectors/points.json"
+        );
+        string memory json = vm.readFile(path);
+        bytes memory data = json.parseRaw(".invalid.pointCompress");
+        InvalidPointCase[] memory cases = abi.decode(data, (InvalidPointCase[]));
+        for (uint i; i < cases.length; i++) {
+            InvalidPointCase memory c = cases[i];
+            bytes memory parsedP = vm.parseBytes(c.P);
+            if (parsedP.length != 33) {
+                vm.expectRevert();
+                wrapper.pointFromEncoded(parsedP);
+            } else {
+                vm.expectRevert();
+                wrapper.pointFromCompressedEncoded(parsedP);
+            }
+        }
+    }
+
     function test_Point_toCompressedEncoded_IfyParityEven() public view {
         // Some point, ie [2]G.
         Point memory point = Point({
