@@ -92,6 +92,11 @@ contract FieldArithmeticTest is Test {
     }
 
     //--------------------------------------------------------------------------
+    // Predicates
+
+    // TODO: Test Felt predicates.
+
+    //--------------------------------------------------------------------------
     // Arithmetic Functions
 
     // -- add
@@ -204,6 +209,21 @@ contract FieldArithmeticWrapper {
     }
 
     //--------------------------------------------------------------------------
+    // Predicates
+
+    function isValid(Felt felt) public pure returns (bool) {
+        return felt.isValid();
+    }
+
+    function isZero(Felt felt) public pure returns (bool) {
+        return felt.isZero();
+    }
+
+    function isInv(Felt felt, Felt feltInv) public pure returns (bool) {
+        return felt.isInv(feltInv);
+    }
+
+    //--------------------------------------------------------------------------
     // Arithmetic Functions
 
     function add(Felt felt, Felt other) public pure returns (Felt) {
@@ -232,20 +252,5 @@ contract FieldArithmeticWrapper {
 
     function exp(Felt base, Felt exponent) public view returns (Felt) {
         return base.exp(exponent);
-    }
-
-    //--------------------------------------------------------------------------
-    // Predicates
-
-    function isValid(Felt felt) public pure returns (bool) {
-        return felt.isValid();
-    }
-
-    function isZero(Felt felt) public pure returns (bool) {
-        return felt.isZero();
-    }
-
-    function isInv(Felt felt, Felt feltInv) public pure returns (bool) {
-        return felt.isInv(feltInv);
     }
 }

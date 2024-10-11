@@ -11,6 +11,7 @@ import {
     Point,
     ProjectivePoint
 } from "src/arithmetic/PointArithmetic.sol";
+import {FieldArithmetic, Felt} from "src/arithmetic/FieldArithmetic.sol";
 
 /**
  * @notice Secp256k1 Unit Tests
@@ -22,8 +23,8 @@ contract Secp256k1Test is Test {
     using Secp256k1 for Point;
     using PointArithmetic for Point;
     using PointArithmetic for ProjectivePoint;
+    using FieldArithmetic for Felt;
 
-    /*
     // Uncompressed Generator G.
     // Copied from [SEC-2 v2].
     bytes constant GENERATOR_ENCODED =
@@ -49,27 +50,7 @@ contract Secp256k1Test is Test {
     //--------------------------------------------------------------------------
     // Test: Secret Key
 
-    // TODO: Reorder following definitions in lib.
-
-    // -- isValid
-
-    function testFuzz_SecretKey_isValid(uint seed) public view {
-        uint scalar = _bound(seed, 1, Secp256k1.Q - 1);
-
-        assertTrue(wrapper.isValid(Secp256k1.unsafeSecretKeyFromUint(scalar)));
-    }
-
-    function test_SecretKey_isValid_FailsIf_SecretKeyIsZero() public view {
-        assertFalse(wrapper.isValid(Secp256k1.unsafeSecretKeyFromUint(0)));
-    }
-
-    function testFuzz_SecretKey_isValid_FailsIf_SecretKeyGreaterOrEqualToQ(
-        uint seed
-    ) public view {
-        uint scalar = _bound(seed, Secp256k1.Q, type(uint).max);
-
-        assertFalse(wrapper.isValid(Secp256k1.unsafeSecretKeyFromUint(scalar)));
-    }
+    // TODO: Test secretKeyFromUint, etc.
 
     // -- trySecretKeyFromUint
 
@@ -138,6 +119,26 @@ contract Secp256k1Test is Test {
         );
     }
 
+    // -- isValid
+
+    function testFuzz_SecretKey_isValid(uint seed) public view {
+        uint scalar = _bound(seed, 1, Secp256k1.Q - 1);
+
+        assertTrue(wrapper.isValid(Secp256k1.unsafeSecretKeyFromUint(scalar)));
+    }
+
+    function test_SecretKey_isValid_FailsIf_SecretKeyIsZero() public view {
+        assertFalse(wrapper.isValid(Secp256k1.unsafeSecretKeyFromUint(0)));
+    }
+
+    function testFuzz_SecretKey_isValid_FailsIf_SecretKeyGreaterOrEqualToQ(
+        uint seed
+    ) public view {
+        uint scalar = _bound(seed, Secp256k1.Q, type(uint).max);
+
+        assertFalse(wrapper.isValid(Secp256k1.unsafeSecretKeyFromUint(scalar)));
+    }
+
     // -- toAddress
 
     function testFuzz_SecretKey_toAddress(SecretKey sk) public view {
@@ -153,7 +154,7 @@ contract Secp256k1Test is Test {
         public
     {
         vm.expectRevert("SecretKeyInvalid()");
-        wrapper.toAddress(SecretKey.wrap(0));
+        wrapper.toAddress(Secp256k1.unsafeSecretKeyFromUint(0));
     }
 
     function testFuzz_SecretKey_toAddress_RevertsIf_SecretKeyInvalid_SecretKeyGreaterOrEqualToQ(
@@ -162,7 +163,7 @@ contract Secp256k1Test is Test {
         uint scalar = _bound(seed, Secp256k1.Q, type(uint).max);
 
         vm.expectRevert("SecretKeyInvalid()");
-        wrapper.toAddress(SecretKey.wrap(scalar));
+        wrapper.toAddress(Secp256k1.unsafeSecretKeyFromUint(scalar));
     }
 
     //--------------------------------------------------------------------------
@@ -216,8 +217,8 @@ contract Secp256k1Test is Test {
     function test_PublicKey_isValid_FailsIf_PointNotOnCurve() public view {
         PublicKey memory pk;
 
-        pk.x = 1;
-        pk.x = 3;
+        pk.x = FieldArithmetic.unsafeFeltFromUint(1);
+        pk.x = FieldArithmetic.unsafeFeltFromUint(3);
         assertFalse(wrapper.isValid(pk));
     }
 
@@ -226,7 +227,7 @@ contract Secp256k1Test is Test {
     function testFuzz_PublicKey_yParity(uint x, uint y) public view {
         // yParity is 0 if y is even and 1 if y is odd.
         uint want = y % 2 == 0 ? 0 : 1;
-        uint got = wrapper.yParity(PublicKey(x, y));
+        uint got = wrapper.yParity(Secp256k1.unsafePublicKeyFromUints(x, y));
 
         assertEq(want, got);
     }
@@ -237,7 +238,8 @@ contract Secp256k1Test is Test {
         public
         view
     {
-        bool want = pk1.x == pk2.x && pk1.y == pk2.y;
+        bool want =
+            pk1.x.asUint() == pk2.x.asUint() && pk1.y.asUint() == pk2.y.asUint();
         bool got = wrapper.eq(pk1, pk2);
 
         assertEq(want, got);
@@ -251,8 +253,8 @@ contract Secp256k1Test is Test {
     function testFuzz_PublicKey_intoPoint(PublicKey memory pk) public view {
         Point memory point = wrapper.intoPoint(pk);
 
-        assertEq(point.x, pk.x);
-        assertEq(point.y, pk.y);
+        assertEq(point.x.asUint(), pk.x.asUint());
+        assertEq(point.y.asUint(), pk.y.asUint());
     }
 
     // -- Point::intoPublicKey
@@ -260,8 +262,8 @@ contract Secp256k1Test is Test {
     function testFuzz_Point_intoPublicKey(Point memory point) public view {
         PublicKey memory pk = wrapper.intoPublicKey(point);
 
-        assertEq(pk.x, point.x);
-        assertEq(pk.y, point.y);
+        assertEq(point.x.asUint(), pk.x.asUint());
+        assertEq(point.y.asUint(), pk.y.asUint());
     }
 
     // -- toProjectivePoint
@@ -275,9 +277,9 @@ contract Secp256k1Test is Test {
         if (pk.intoPoint().isIdentity()) {
             assertTrue(point.isIdentity());
         } else {
-            assertEq(point.x, pk.x);
-            assertEq(point.y, pk.y);
-            assertEq(point.z, 1);
+            assertEq(point.x.asUint(), pk.x.asUint());
+            assertEq(point.y.asUint(), pk.y.asUint());
+            assertEq(point.z.asUint(), 1);
         }
     }
 
@@ -338,7 +340,7 @@ contract Secp256k1Test is Test {
     function test_SecretKey_toBytes_RevertsIf_SecretKeyInvalid_SecretKeyZero()
         public
     {
-        SecretKey sk = SecretKey.wrap(0);
+        SecretKey sk = Secp256k1.unsafeSecretKeyFromUint(0);
 
         vm.expectRevert("SecretKeyInvalid()");
         wrapper.toBytes(sk);
@@ -348,7 +350,7 @@ contract Secp256k1Test is Test {
         uint seed
     ) public {
         uint scalar = _bound(seed, Secp256k1.Q, type(uint).max);
-        SecretKey sk = SecretKey.wrap(scalar);
+        SecretKey sk = Secp256k1.unsafeSecretKeyFromUint(scalar);
 
         vm.expectRevert("SecretKeyInvalid()");
         wrapper.toBytes(sk);
@@ -411,7 +413,6 @@ contract Secp256k1Test is Test {
         vm.expectRevert("PublicKeyInvalid()");
         wrapper.toBytes(pk);
     }
-    */
 }
 
 /**

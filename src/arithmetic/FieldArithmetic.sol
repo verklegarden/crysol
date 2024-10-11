@@ -114,6 +114,24 @@ library FieldArithmetic {
     }
 
     //--------------------------------------------------------------------------
+    // Predicates
+
+    /// @dev Returns whether felt `felt` is valid.
+    function isValid(Felt felt) internal pure returns (bool) {
+        return felt.asUint() < _P;
+    }
+
+    /// @dev Returns whether felt `felt` is zero.
+    function isZero(Felt felt) internal pure returns (bool) {
+        return felt.asUint() == 0;
+    }
+
+    /// @dev Returns whether felt `feltInv` is the inverse of `felt`.
+    function isInv(Felt felt, Felt feltInv) internal pure returns (bool) {
+        return mulmod(felt.asUint(), feltInv.asUint(), _P) == 1;
+    }
+
+    //--------------------------------------------------------------------------
     // Arithmetic Functions
 
     /// @dev Adds felts `felt` and `other` and returns the result.
@@ -207,23 +225,5 @@ library FieldArithmetic {
         // assert(result < _P);
 
         return unsafeFeltFromUint(result);
-    }
-
-    //--------------------------------------------------------------------------
-    // Predicates
-
-    /// @dev Returns whether felt `felt` is valid.
-    function isValid(Felt felt) internal pure returns (bool) {
-        return felt.asUint() < _P;
-    }
-
-    /// @dev Returns whether felt `felt` is zero.
-    function isZero(Felt felt) internal pure returns (bool) {
-        return felt.asUint() == 0;
-    }
-
-    /// @dev Returns whether felt `feltInv` is the inverse of `felt`.
-    function isInv(Felt felt, Felt feltInv) internal pure returns (bool) {
-        return mulmod(felt.asUint(), feltInv.asUint(), _P) == 1;
     }
 }

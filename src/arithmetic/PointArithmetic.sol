@@ -11,7 +11,7 @@
 // SPDX-License-Identifier: MIT OR Apache-2.0
 pragma solidity ^0.8.16;
 
-import {Secp256k1} from "../Secp256k1.sol";
+import {Secp256k1, PublicKey} from "../Secp256k1.sol";
 import {FieldArithmetic, Felt} from "./FieldArithmetic.sol";
 
 /**
@@ -40,7 +40,7 @@ struct ProjectivePoint {
 }
 
 /**
- * @title Secp256k1Arithmetic
+ * @title PointArithmetic
  *
  * @notice Provides common arithmetic-related functionality for the secp256k1
  *         elliptic curve
@@ -56,6 +56,7 @@ struct ProjectivePoint {
  * @custom:repository github.com/verklegarden/crysol
  */
 library PointArithmetic {
+    using Secp256k1 for PublicKey;
     using FieldArithmetic for Felt;
     using PointArithmetic for Point;
     using PointArithmetic for ProjectivePoint;
@@ -64,13 +65,13 @@ library PointArithmetic {
     // Optimization Constants
 
     /// @dev Used during projective point addition.
-    uint private constant _B3 = mulmod(_B, 3, _P);
+    uint private constant _B3 = mulmod(B, 3, P);
 
     /// @dev Used during compressed point decoding.
     ///
     /// @dev Note that the square root of an secp256k1 field element x can be
     ///      computed via x^{_SQUARE_ROOT_EXPONENT} (mod p).
-    uint private constant _SQUARE_ROOT_EXPONENT = (_P + 1) / 4;
+    uint private constant _SQUARE_ROOT_EXPONENT = (P + 1) / 4;
 
     /// @dev Used as substitute for `Identity().intoPublicKey().toAddress()`.
     address private constant _IDENTITY_ADDRESS =
@@ -82,7 +83,7 @@ library PointArithmetic {
     /// @dev The undefined point instance.
     ///
     ///      This point instantiation is used to indicate undefined behaviour.
-    function _UNDEFINED_POINT() private pure returns (Point memory) {
+    function _UNDEFINEDPOINT() private pure returns (Point memory) {
         return Point(
             FieldArithmetic.unsafeFeltFromUint(type(uint).max),
             FieldArithmetic.unsafeFeltFromUint(type(uint).max)
@@ -94,9 +95,13 @@ library PointArithmetic {
     //
     // Reimported from Secp256k1.
 
-    uint private constant _B = Secp256k1.B;
-    uint private constant _P = Secp256k1.P;
-    uint private constant _Q = Secp256k1.Q;
+    uint internal constant B = Secp256k1.B;
+    uint internal constant P = Secp256k1.P;
+    uint internal constant Q = Secp256k1.Q;
+
+    function G() internal pure returns (Point memory) {
+        return Secp256k1.G().intoPoint();
+    }
 
     //--------------------------------------------------------------------------
     // Point
@@ -117,13 +122,13 @@ library PointArithmetic {
         // Fail if x coordinate not a felt.
         (x_, ok) = FieldArithmetic.tryFeltFromUint(x);
         if (!ok) {
-            return (_UNDEFINED_POINT(), false);
+            return (_UNDEFINEDPOINT(), false);
         }
 
         // Fail if y coordinate not a felt.
         (y_, ok) = FieldArithmetic.tryFeltFromUint(y);
         if (!ok) {
-            return (_UNDEFINED_POINT(), false);
+            return (_UNDEFINEDPOINT(), false);
         }
 
         // Construct point from felt coordinates.
@@ -131,7 +136,7 @@ library PointArithmetic {
 
         // Fail if point not on curve.
         if (!p.isOnCurve()) {
-            return (_UNDEFINED_POINT(), false);
+            return (_UNDEFINEDPOINT(), false);
         }
 
         return (p, true);
@@ -170,6 +175,15 @@ library PointArithmetic {
             FieldArithmetic.unsafeFeltFromUint(x),
             FieldArithmetic.unsafeFeltFromUint(y)
         );
+    }
+
+    // TODO: Docs and tests Points.unsafePointFromFelts
+    function unsafePointFromFelts(Felt x, Felt y)
+        internal
+        pure
+        returns (Point memory)
+    {
+        return Point(x, y);
     }
 
     /// @dev Returns the additive identity.
@@ -211,7 +225,7 @@ library PointArithmetic {
         Felt right = point.x
                         .mul(point.x)
                         .mul(point.x)
-                        .add(FieldArithmetic.unsafeFeltFromUint(_B));
+                        .add(FieldArithmetic.unsafeFeltFromUint(B));
         // forgefmt: disable-end
 
         return left.asUint() == right.asUint();
@@ -248,7 +262,7 @@ library PointArithmetic {
         pure
         returns (address)
     {
-        if (scalar >= _Q) {
+        if (scalar >= Q) {
             revert("ScalarTooBig()");
         }
 
@@ -270,7 +284,7 @@ library PointArithmetic {
             v = uint8(point.yParity() + 27);
         }
         uint r = point.x.asUint();
-        uint s = mulmod(r, scalar, _Q);
+        uint s = mulmod(r, scalar, Q);
 
         return ecrecover(0, v, bytes32(r), bytes32(s));
     }
@@ -300,6 +314,18 @@ library PointArithmetic {
         returns (bool)
     {
         return (point.x.asUint() | point.z.asUint()) == 0;
+    }
+
+    /// @dev DO NOT IMPORT!
+    ///
+    /// @dev This is an internal struct to circumvent stack-too-deep errors in
+    ///      ProjectivePoint::add() during non --via-ir compilation.
+    struct __addTempVars {
+        Felt t0;
+        Felt t1;
+        Felt t2;
+        Felt t3;
+        Felt t4;
     }
 
     /// @dev Returns the sum of projective points `point` and `other` as
@@ -340,46 +366,50 @@ library PointArithmetic {
         Felt b3 = FieldArithmetic.unsafeFeltFromUint(_B3);
 
         // Variables:
-        Felt t0;
-        Felt t1;
-        Felt t2;
-        Felt t3;
-        Felt t4;
+        __addTempVars memory tmp = __addTempVars({
+            t0: FieldArithmetic.ZERO,
+            t1: FieldArithmetic.ZERO,
+            t2: FieldArithmetic.ZERO,
+            t3: FieldArithmetic.ZERO,
+            t4: FieldArithmetic.ZERO
+        });
 
         // Computations:
-        t0 = x1.mul(x2);
-        t1 = y1.mul(y2);
-        t2 = z1.mul(z2);
-        t3 = x1.add(y1);
-        t4 = x2.add(y2);
-        t3 = t3.mul(t4);
-        t4 = t0.add(t1);
-        t3 = t3.sub(t4);
-        t4 = y1.add(z1);
-        x3 = y2.add(z2);
-        t4 = t4.mul(x3);
-        x3 = t1.add(t2);
-        t4 = t4.sub(x3);
-        x3 = x1.add(z1);
-        y3 = x2.add(z1);
-        x3 = x3.mul(y3);
-        y3 = t0.add(t2);
-        y3 = x2.sub(y3);
-        x3 = t0.add(t0);
-        t0 = x3.add(t0);
-        t2 = b3.mul(t2);
-        z3 = t1.add(t2);
-        t1 = t1.sub(t2);
-        y3 = b3.mul(y3);
-        x3 = t4.mul(y3);
-        t2 = t3.mul(t1);
-        x3 = t2.sub(x3);
-        y3 = y3.mul(t0);
-        t1 = t1.mul(z3);
-        y3 = t1.add(y3);
-        t0 = t0.mul(t3);
-        z3 = z3.mul(t4);
-        z3 = z3.add(t0);
+        // forgefmt: disable-start
+        tmp.t0 = x1.mul(x2);
+        tmp.t1 = y1.mul(y2);
+        tmp.t2 = z1.mul(z2);
+        tmp.t3 = x1.add(y1);
+        tmp.t4 = x2.add(y2);
+        tmp.t3 = tmp.t3.mul(tmp.t4);
+        tmp.t4 = tmp.t0.add(tmp.t1);
+        tmp.t3 = tmp.t3.sub(tmp.t4);
+        tmp.t4 = y1.add(z1);
+        x3     = y2.add(z2);
+        tmp.t4 = tmp.t4.mul(x3);
+        x3     = tmp.t1.add(tmp.t2);
+        tmp.t4 = tmp.t4.sub(x3);
+        x3     = x1.add(z1);
+        y3     = x2.add(z2);
+        x3     = x3.mul(y3);
+        y3     = tmp.t0.add(tmp.t2);
+        y3     = x3.sub(y3);
+        x3     = tmp.t0.add(tmp.t0);
+        tmp.t0 = x3.add(tmp.t0);
+        tmp.t2 = b3.mul(tmp.t2);
+        z3     = tmp.t1.add(tmp.t2);
+        tmp.t1 = tmp.t1.sub(tmp.t2);
+        y3     = b3.mul(y3);
+        x3     = tmp.t4.mul(y3);
+        tmp.t2 = tmp.t3.mul(tmp.t1);
+        x3     = tmp.t2.sub(x3);
+        y3     = y3.mul(tmp.t0);
+        tmp.t1 = tmp.t1.mul(z3);
+        y3     = tmp.t1.add(y3);
+        tmp.t0 = tmp.t0.mul(tmp.t3);
+        z3     = z3.mul(tmp.t4);
+        z3     = z3.add(tmp.t0);
+        // forgefmt: disable-end
 
         return ProjectivePoint(x3, y3, z3);
     }
@@ -393,7 +423,7 @@ library PointArithmetic {
         pure
         returns (ProjectivePoint memory)
     {
-        if (scalar >= _Q) {
+        if (scalar >= Q) {
             revert("ScalarTooBig()");
         }
 
@@ -559,22 +589,30 @@ library PointArithmetic {
 
         // Construct coordinates as felts.
         // Note that feltFromUint(scalar) reverts if scalar is not a felt.
-        Felt x = FieldArithmetic.feltFromUint(xRaw);
-        Felt y = FieldArithmetic.feltFromUint(yRaw);
+        bool ok;
+        Felt x;
+        Felt y;
+        (x, ok) = FieldArithmetic.tryFeltFromUint(xRaw);
+        if (!ok) {
+            revert("PointInvalid()");
+        }
+        (y, ok) = FieldArithmetic.tryFeltFromUint(yRaw);
+        if (!ok) {
+            revert("PointInvalid()");
+        }
 
         // Construct point from felt coordinates.
         Point memory point = Point(x, y);
 
         // Revert if identity not 1 byte encoded.
         // TODO: Not explicitly tested.
-        // TODO: Should have own error for identity not 1 byte encoded?
         if (point.isIdentity()) {
-            revert("PointNotOnCurve()");
+            revert("PointInvalid()");
         }
 
         // Revert if point not on curve.
         if (!point.isOnCurve()) {
-            revert("PointNotOnCurve()");
+            revert("PointInvalid()");
         }
 
         return point;
@@ -675,7 +713,7 @@ library PointArithmetic {
         // forgefmt: disable-next-item
         Felt alpha = x.mul(x)
                       .mul(x)
-                      .add(FieldArithmetic.unsafeFeltFromUint(_B));
+                      .add(FieldArithmetic.unsafeFeltFromUint(B));
 
         // Compute β = √α              (mod p)
         //           = α^{(p + 1) / 4} (mod p)
@@ -689,7 +727,7 @@ library PointArithmetic {
         unchecked {
             yRaw = beta.asUint() & 1 == prefix & 1
                 ? beta.asUint()
-                : _P - beta.asUint();
+                : P - beta.asUint();
         }
 
         // Construct y felt.
