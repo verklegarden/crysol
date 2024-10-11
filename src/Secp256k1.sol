@@ -21,7 +21,8 @@ import {FieldArithmetic, Felt} from "./arithmetic/FieldArithmetic.sol";
 /**
  * @notice SecretKey is an secp256k1 secret key
  *
- * @dev Note that a secret key MUST be a field element, ie sk ∊ [1, Q).
+ * @dev Note that a secret key MUST be a valid scalar for secp256k1,
+ *      ie sk ∊ [1, Q).
  *
  * @dev Note that a secret key MUST be created cryptographically sound.
  *      Generally, this means via randomness sourced from an CSPRNG.
@@ -29,8 +30,8 @@ import {FieldArithmetic, Felt} from "./arithmetic/FieldArithmetic.sol";
  * @custom:example Securly generating a random secret key:
  *
  *      ```solidity
- *      import {Secp256k1Offchain} from "crysol-offchain/secp256k1/Secp256k1Offchain.sol";
- *      import {Secp256k1, SecretKey} from "crysol/secp256k1/Secp256k1.sol";
+ *      import {Secp256k1Offchain} from "crysol-offchain/Secp256k1Offchain.sol";
+ *      import {Secp256k1, SecretKey} from "crysol/Secp256k1.sol";
  *      contract Example {
  *          using Secp256k1Offchain for SecretKey;
  *          using Secp256k1 for SecretKey;
@@ -73,7 +74,7 @@ struct PublicKey {
 /**
  * @title Secp256k1
  *
- * @notice Providing common cryptography-related functionality for the secp256k1
+ * @notice Provides common cryptography-related functionality for the secp256k1
  *         elliptic curve
  *
  * @custom:references
@@ -102,9 +103,15 @@ library Secp256k1 {
     //--------------------------------------------------------------------------
     // UNDEFINED Constants
 
+    /// @dev The undefined secret key instance.
+    ///
+    ///      This secret key instance is used to indicate undefined behaviour.
     SecretKey private constant _UNDEFINED_SECRET_KEY =
         SecretKey.wrap(type(uint).max);
 
+    /// @dev The undefined public key instance.
+    ///
+    ///      This public key instance is used to indicate undefined behaviour.
     function _UNDEFINED_PUBLIC_KEY() private pure returns (PublicKey memory) {
         return PublicKey(
             FieldArithmetic.unsafeFeltFromUint(type(uint).max),
@@ -124,13 +131,13 @@ library Secp256k1 {
     uint internal constant P =
         0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFEFFFFFC2F;
 
-    /// @dev The generator G as Point.
+    /// @dev The generator G as PublicKey.
     ///
     /// @dev Note that the generator is also called base point.
-    function G() internal pure returns (Point memory) {
+    function G() internal pure returns (PublicKey memory) {
         // Gₓ = 79be667e f9dcbbac 55a06295 ce870b07 029bfcdb 2dce28d9 59f2815b 16f81798
         // Gᵧ = 483ada77 26a3c465 5da4fbfc 0e1108a8 fd17b448 a6855419 9c47d08f fb10d4b8
-        return Point(
+        return PublicKey(
             FieldArithmetic.unsafeFeltFromUint(
                 0x79be667ef9dcbbac55a06295ce870b07029bfcdb2dce28d959f2815b16f81798
             ),
@@ -150,29 +157,10 @@ library Secp256k1 {
     //--------------------------------------------------------------------------
     // Secret Key
 
-    /// @dev Returns whether secret key `sk` is valid.
+    /// @dev Tries to instantiate a secret key from scalar `scalar`.
     ///
-    /// @dev Note that a secret key MUST be a field element in order to be valid,
-    ///      ie sk ∊ [1, Q).
-    function isValid(SecretKey sk) internal pure returns (bool) {
-        uint scalar = sk.asUint();
-
-        return scalar != 0 && scalar < Q;
-    }
-
-    /// @dev Returns uint `scalar` as secret key.
-    ///
-    /// @dev Reverts if:
-    ///        Scalar not in [1, Q)
-    function secretKeyFromUint(uint scalar) internal pure returns (SecretKey) {
-        (SecretKey sk, bool ok) = trySecretKeyFromUint(scalar);
-        if (!ok) {
-            revert("ScalarInvalid()");
-        }
-
-        return sk;
-    }
-
+    /// @dev Note that returned secret key is undefined if function fails to
+    ///      instantiate secret key.
     function trySecretKeyFromUint(uint scalar)
         internal
         pure
@@ -185,15 +173,48 @@ library Secp256k1 {
         return (SecretKey.wrap(scalar), true);
     }
 
+    /// @dev Instantiates secret key from scalar `scalar`.
+    ///
+    /// @dev Reverts if:
+    ///        Scalar not in [1, Q)
+    function secretKeyFromUint(uint scalar) internal pure returns (SecretKey) {
+        (SecretKey sk, bool ok) = trySecretKeyFromUint(scalar);
+        if (!ok) {
+            revert("ScalarInvalid()");
+        }
+
+        return sk;
+    }
+
+    /// @dev Instantiates secret key from scalar `scalar` without performing
+    ///      safety checks.
+    ///
+    /// @dev This function is unsafe and may lead to undefined behaviour if
+    ///      used incorrectly.
+    function unsafeSecretKeyFromUint(uint scalar)
+        internal
+        pure
+        returns (SecretKey)
+    {
+        return SecretKey.wrap(scalar);
+    }
+
     /// @dev Returns secret key `sk` as uint.
     function asUint(SecretKey sk) internal pure returns (uint) {
         return SecretKey.unwrap(sk);
     }
 
+    /// @dev Returns whether secret key `sk` is valid.
+    function isValid(SecretKey sk) internal pure returns (bool) {
+        uint scalar = sk.asUint();
+
+        return scalar != 0 && scalar < Q;
+    }
+
     /// @dev Returns the address of secret key `sk`.
     ///
-    /// @dev Note that this function is substantially cheaper than computing
-    ///      `sk`'s public key and deriving it's address manually.
+    /// @dev Note that this function is substantially cheaper than first
+    ///      computing `sk`'s public key and deriving it's address manually.
     ///
     /// @dev Reverts if:
     ///        Secret key invalid
@@ -202,12 +223,35 @@ library Secp256k1 {
             revert("SecretKeyInvalid()");
         }
 
-        return G().mulToAddress(sk.asUint());
+        return G().intoPoint().mulToAddress(sk.asUint());
     }
 
     //--------------------------------------------------------------------------
     // Public Key
 
+    /// @dev Tries to instantiate a public key from coordinates `x` and `y`.
+    ///
+    /// @dev Note that returned public key is undefined if function fails to
+    ///      instantiate public key.
+    function tryPublicKeyFromUints(uint x, uint y)
+        internal
+        pure
+        returns (PublicKey memory, bool)
+    {
+        (Point memory p, bool ok) = PointArithmetic.tryPointFromUints(x, y);
+        if (!ok) {
+            return (_UNDEFINED_PUBLIC_KEY(), false);
+        }
+
+        return (p.intoPublicKey(), true);
+    }
+
+    /// @dev Instantiates public key from coordinates `x` and `y`.
+    ///
+    /// @dev Reverts if:
+    ///         Coordinate x not a felt
+    ///       ∨ Coordinate y not a felt
+    ///       ∨ Coordinates not on the curve
     function publicKeyFromUints(uint x, uint y)
         internal
         pure
@@ -221,17 +265,17 @@ library Secp256k1 {
         return pk;
     }
 
-    function tryPublicKeyFromUints(uint x, uint y)
+    /// @dev Instantiates public key from coordinates `x` and `y` without
+    ///      performing safety checks.
+    ///
+    /// @dev This function is unsafe and may lead to undefined behaviour if
+    ///      used incorrectly.
+    function unsafePublicKeyFromUints(uint x, uint y)
         internal
         pure
-        returns (PublicKey memory, bool)
+        returns (PublicKey memory)
     {
-        (Point memory p, bool ok) = PointArithmetic.tryPointFromUints(x, y);
-        if (!ok) {
-            return (_UNDEFINED_PUBLIC_KEY(), false);
-        }
-
-        return (p.intoPublicKey(), true);
+        return PointArithmetic.unsafePointFromUints(x, y).intoPublicKey();
     }
 
     /// @dev Returns the address of public key `pk`.
@@ -399,13 +443,13 @@ library Secp256k1 {
             y := mload(add(blob, 0x40))
         }
 
-        // Try to construct point from coordinates.
-        (Point memory p, bool ok) = PointArithmetic.tryPointFromUints(x, y);
+        // Try to construct public key from coordinates.
+        (PublicKey memory pk, bool ok) = tryPublicKeyFromUints(x, y);
         if (!ok) {
             revert("PublicKeyInvalid()");
         }
 
-        return p.intoPublicKey();
+        return pk;
     }
 
     /// @dev Encodes public key `pk` as ABI-encoded bytes.

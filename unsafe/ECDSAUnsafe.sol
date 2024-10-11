@@ -13,11 +13,9 @@ pragma solidity ^0.8.16;
 
 import {
     ECDSA, Signature
-} from "../../../onchain/secp256k1/signatures/ECDSA.sol";
+} from "src/signatures/ECDSA.sol";
 
-import {Secp256k1} from "../../../onchain/secp256k1/Secp256k1.sol";
-import {Secp256k1Arithmetic} from
-    "../../../onchain/secp256k1/Secp256k1Arithmetic.sol";
+import {Secp256k1} from "src/Secp256k1.sol";
 
 /**
  * @title ECDSAUnsafe

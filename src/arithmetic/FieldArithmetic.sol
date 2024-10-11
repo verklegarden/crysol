@@ -13,8 +13,34 @@ pragma solidity ^0.8.16;
 
 import {Secp256k1} from "../Secp256k1.sol";
 
+/**
+ * @notice Felt is an secp256k1 field element
+ *
+ * @dev An secp256k1 field element is a scalar ∊ [0, P).
+ *
+ * @custom:example Constructing a secp256k1 field element:
+ *
+ *      ```solidity
+ *      import {FieldArithmetic, Felt} from "crysol/arithmetic/FieldArithmetic.sol";
+ *      contract Example {
+ *          (Felt felt, bool ok) = FieldArithmetic.tryFeltFromUint(uint(1));
+ *          assert(ok);
+ *      }
+ *      ```
+ */
 type Felt is uint;
 
+/**
+ * @title FieldArithmetic
+ *
+ * @notice Provides arithmetic functionality within secp256k1's prime field
+ *
+ * @custom:references
+ *      - [Dubois 2023]: https://eprint.iacr.org/2023/939.pdf
+ *
+ * @author verklegarden
+ * @custom:repository github.com/verklegarden/crysol
+ */
 library FieldArithmetic {
     using FieldArithmetic for Felt;
 
@@ -27,6 +53,9 @@ library FieldArithmetic {
     //--------------------------------------------------------------------------
     // UNDEFINED Constants
 
+    /// @dev The undefined felt instance.
+    ///
+    ///      This felt instantitation is used to indicate undefined behaviour.
     Felt private constant _UNDEFINED_FELT = Felt.wrap(type(uint).max);
 
     //--------------------------------------------------------------------------
@@ -45,27 +74,41 @@ library FieldArithmetic {
     //--------------------------------------------------------------------------
     // Type Conversions
 
-    function feltFromUint(uint scalar) internal pure returns (Felt) {
-        (Felt felt, bool ok) = tryFeltFromUint(scalar);
-        if (!ok) {
-            revert("ScalarNotAFelt");
-        }
-
-        return felt;
-    }
-
+    /// @dev Tries to instantiate a felt from scalar `scalar`.
+    ///
+    /// @dev Note that returned felt is undefined if function fails to
+    ///      instantiate felt.
     function tryFeltFromUint(uint scalar) internal pure returns (Felt, bool) {
         if (scalar >= _P) {
-            return (ZERO, false);
+            return (_UNDEFINED_FELT, false);
         }
 
         return (Felt.wrap(scalar), true);
     }
 
+    /// @dev Instantiates felt from scalar `scalar`.
+    ///
+    /// @dev Reverts if:
+    ///        Scalar not a felt
+    function feltFromUint(uint scalar) internal pure returns (Felt) {
+        (Felt felt, bool ok) = tryFeltFromUint(scalar);
+        if (!ok) {
+            revert("ScalarNotAFelt()");
+        }
+
+        return felt;
+    }
+
+    /// @dev Instantiates felt from scalar `scalar` without performing safety
+    ///      checks.
+    ///
+    /// @dev This function is unsafe and may lead to undefined behaviour if
+    ///      used incorrectly.
     function unsafeFeltFromUint(uint scalar) internal pure returns (Felt) {
         return Felt.wrap(scalar);
     }
 
+    /// @dev Returns felt `felt` as uint.
     function asUint(Felt felt) internal pure returns (uint) {
         return Felt.unwrap(felt);
     }
@@ -73,6 +116,7 @@ library FieldArithmetic {
     //--------------------------------------------------------------------------
     // Arithmetic Functions
 
+    /// @dev Adds felts `felt` and `other` and returns the result.
     function add(Felt felt, Felt other) internal pure returns (Felt) {
         uint result = addmod(felt.asUint(), other.asUint(), _P);
         // assert(result < _P);
@@ -80,6 +124,7 @@ library FieldArithmetic {
         return unsafeFeltFromUint(result);
     }
 
+    /// @dev Subtracts felts `other` from `felt` and returns the result.
     function sub(Felt felt, Felt other) internal pure returns (Felt) {
         uint result;
         unchecked {
@@ -90,6 +135,7 @@ library FieldArithmetic {
         return unsafeFeltFromUint(result);
     }
 
+    /// @dev Multiplicates felt `felt` with `other` and returns the result.
     function mul(Felt felt, Felt other) internal pure returns (Felt) {
         uint result = mulmod(felt.asUint(), other.asUint(), _P);
         // assert(result < _P);
@@ -97,6 +143,10 @@ library FieldArithmetic {
         return unsafeFeltFromUint(result);
     }
 
+    /// @dev Divides felt `felt` with `other` and returns the result.
+    ///
+    /// @dev Reverts if:
+    ///        Other is zero
     function div(Felt felt, Felt other) internal view returns (Felt) {
         if (other.isZero()) {
             revert("DivByZero()");
@@ -108,18 +158,36 @@ library FieldArithmetic {
         return unsafeFeltFromUint(result);
     }
 
+    /// @dev Returns the parity of felt `felt` as 0 if even and 1 if odd.
     function parity(Felt felt) internal pure returns (uint) {
         return felt.asUint() & 1;
     }
 
+    /// @dev Returns the inverse of felt `felt`.
+    ///
+    /// @dev Reverts if:
+    ///        Felt is zero
     function inv(Felt felt) internal view returns (Felt) {
         if (felt.isZero()) {
             revert("InvOfZero()");
         }
 
+        // Note that while modular inversion is usually performed using the
+        // extended Euclidean algorithm this function uses modular
+        // exponentiation based on Fermat's little theorem from which follows:
+        //  ∀ p ∊ Uint: ∀ x ∊ [1, p): p.isPrime() → xᵖ⁻² ≡ x⁻¹ (mod p)
+        //
+        // Note that modular exponentiation can be efficiently computed via the
+        // `modexp` precompile. Due to the precompile's price structure the
+        // expected gas usage is lower than using the extended Euclidean
+        // algorithm.
+        //
+        // For further details, see [Dubois 2023].
         return exp(felt, unsafeFeltFromUint(_P_MINUS_2));
     }
 
+    /// @dev Computes the exponentiation of felt `base` with exponent `exponent`
+    ///      and returns the result.
     function exp(Felt base, Felt exponent) internal view returns (Felt) {
         // Payload to compute base^{exponent} (mod _P).
         // Note that the size of each argument is 32 bytes.
@@ -144,17 +212,17 @@ library FieldArithmetic {
     //--------------------------------------------------------------------------
     // Predicates
 
+    /// @dev Returns whether felt `felt` is valid.
     function isValid(Felt felt) internal pure returns (bool) {
-        uint scalar = felt.asUint();
-
-        return scalar < _P;
+        return felt.asUint() < _P;
     }
 
+    /// @dev Returns whether felt `felt` is zero.
     function isZero(Felt felt) internal pure returns (bool) {
         return felt.asUint() == 0;
     }
 
-    // TODO: Docs can be used to verify an inverse received as witness is valid.
+    /// @dev Returns whether felt `feltInv` is the inverse of `felt`.
     function isInv(Felt felt, Felt feltInv) internal pure returns (bool) {
         return mulmod(felt.asUint(), feltInv.asUint(), _P) == 1;
     }

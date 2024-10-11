@@ -13,7 +13,7 @@ pragma solidity ^0.8.16;
 
 import {Vm} from "forge-std/Vm.sol";
 
-import {CSPRNG} from "./CSPRNG.sol";
+import {RandomOffchain} from "./RandomOffchain.sol";
 
 import {Secp256k1, SecretKey, PublicKey} from "src/Secp256k1.sol";
 import {
@@ -51,7 +51,8 @@ library Secp256k1Offchain {
         SecretKey sk;
         bool ok;
         while (!ok) {
-            (sk, ok) = Secp256k1.trySecretKeyFromUint(CSPRNG.readUint());
+            uint rand = RandomOffchain.readUint();
+            (sk, ok) = Secp256k1.trySecretKeyFromUint(rand);
         }
 
         return sk;

@@ -23,7 +23,7 @@ import {Vm} from "forge-std/Vm.sol";
  * @author verklegarden
  * @custom:repository github.com/verklegarden/crysol
  */
-library CSPRNG {
+library RandomOffchain {
     // forgefmt: disable-next-item
     Vm private constant vm = Vm(address(uint160(uint(keccak256("hevm cheat code")))));
 

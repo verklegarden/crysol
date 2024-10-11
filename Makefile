@@ -30,11 +30,9 @@ test-summary: ## Print summary of test suite
 	@forge test --summary --show-progress
 
 .PHONY: coverage
-coverage: ## Update coverage report and open lcov web interface
-	@rm -rf coverage
+coverage: ## Update coverage report and print summary
 	@forge coverage --report lcov
-	@genhtml --branch-coverage --output "coverage" lcov.info
-	@open coverage/index.html
+	@forge coverage --report summary
 
 # Note that ripgrep instead of grep is used.
 # See https://github.com/BurntSushi/ripgrep.
@@ -46,10 +44,10 @@ todos: ## Grep TODO's in src/ and test/
 examples: ## Run examples
 	@echo "########################################"
 	@echo "##"
-	@echo "##   CSPRNG"
+	@echo "##   Random"
 	@echo "##"
 	@echo "########################################"
-	@forge script examples/CSPRNG.sol:CSPRNGExample -v
+	@forge script examples/Random.sol:RandomExample -v
 	@echo "########################################"
 	@echo "##"
 	@echo "##   Secp256k1"
@@ -58,7 +56,7 @@ examples: ## Run examples
 	@forge script examples/Secp256k1.sol:Secp256k1Example -v
 	@echo "########################################"
 	@echo "##"
-	@echo "##   ECDSA on secp56k1"
+	@echo "##   ECDSA"
 	@echo "##"
 	@echo "########################################"
 	@forge script examples/signatures/ECDSA.sol:ECDSAExample -v

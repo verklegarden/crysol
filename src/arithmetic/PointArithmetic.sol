@@ -50,7 +50,6 @@ struct ProjectivePoint {
  *      - [SEC-2 v2]: https://www.secg.org/sec2-v2.pdf
  *      - [Yellow Paper]: https://github.com/ethereum/yellowpaper
  *      - [Renes-Costello-Batina 2015]: https://eprint.iacr.org/2015/1060.pdf
- *      - [Dubois 2023]: https://eprint.iacr.org/2023/939.pdf
  *      - [Vitalik 2018]: https://ethresear.ch/t/you-can-kinda-abuse-ecrecover-to-do-ecmul-in-secp256k1-today/2384
  *
  * @author verklegarden
@@ -80,6 +79,9 @@ library PointArithmetic {
     //--------------------------------------------------------------------------
     // UNDEFINED Constants
 
+    /// @dev The undefined point instance.
+    ///
+    ///      This point instantiation is used to indicate undefined behaviour.
     function _UNDEFINED_POINT() private pure returns (Point memory) {
         return Point(
             FieldArithmetic.unsafeFeltFromUint(type(uint).max),
@@ -99,6 +101,48 @@ library PointArithmetic {
     //--------------------------------------------------------------------------
     // Point
 
+    /// @dev Tries to instantiate a point from coordiantes `x` and `y`.
+    ///
+    /// @dev Note that returned point is undefined if function fails to
+    ///      instantiate point.
+    function tryPointFromUints(uint x, uint y)
+        internal
+        pure
+        returns (Point memory, bool)
+    {
+        bool ok;
+        Felt x_;
+        Felt y_;
+
+        // Fail if x coordinate not a felt.
+        (x_, ok) = FieldArithmetic.tryFeltFromUint(x);
+        if (!ok) {
+            return (_UNDEFINED_POINT(), false);
+        }
+
+        // Fail if y coordinate not a felt.
+        (y_, ok) = FieldArithmetic.tryFeltFromUint(y);
+        if (!ok) {
+            return (_UNDEFINED_POINT(), false);
+        }
+
+        // Construct point from felt coordinates.
+        Point memory p = Point(x_, y_);
+
+        // Fail if point not on curve.
+        if (!p.isOnCurve()) {
+            return (_UNDEFINED_POINT(), false);
+        }
+
+        return (p, true);
+    }
+
+    /// @dev Instantiates point from coordinates `x` and `y`.
+    ///
+    /// @dev Reverts if:
+    ///         Coordinate x not a felt
+    ///       ∨ Coordinate y not a felt
+    ///       ∨ Coordinates not on the curve
     function pointFromUints(uint x, uint y)
         internal
         pure
@@ -112,31 +156,20 @@ library PointArithmetic {
         return p;
     }
 
-    function tryPointFromUints(uint x, uint y)
+    /// @dev Instantiates point from coordinates `x` and `y` without performing
+    ///      safety checks.
+    ///
+    /// @dev This function is unsafe and may lead to undefined behaviour if
+    ///      used incorrectly.
+    function unsafePointFromUints(uint x, uint y)
         internal
         pure
-        returns (Point memory, bool)
+        returns (Point memory)
     {
-        bool ok;
-        Felt x_;
-        Felt y_;
-
-        (x_, ok) = FieldArithmetic.tryFeltFromUint(x);
-        if (!ok) {
-            return (_UNDEFINED_POINT(), false);
-        }
-
-        (y_, ok) = FieldArithmetic.tryFeltFromUint(y);
-        if (!ok) {
-            return (_UNDEFINED_POINT(), false);
-        }
-
-        Point memory p = Point(x_, y_);
-        if (!p.isOnCurve()) {
-            return (_UNDEFINED_POINT(), false);
-        }
-
-        return (p, true);
+        return Point(
+            FieldArithmetic.unsafeFeltFromUint(x),
+            FieldArithmetic.unsafeFeltFromUint(y)
+        );
     }
 
     /// @dev Returns the additive identity.
@@ -524,12 +557,12 @@ library PointArithmetic {
             yRaw := mload(add(blob, 0x41))
         }
 
-        // Construct coordinates to field elements.
-        // Note that function reverts if not a field element.
+        // Construct coordinates as felts.
+        // Note that feltFromUint(scalar) reverts if scalar is not a felt.
         Felt x = FieldArithmetic.feltFromUint(xRaw);
         Felt y = FieldArithmetic.feltFromUint(yRaw);
 
-        // Make point.
+        // Construct point from felt coordinates.
         Point memory point = Point(x, y);
 
         // Revert if identity not 1 byte encoded.
@@ -659,11 +692,11 @@ library PointArithmetic {
                 : _P - beta.asUint();
         }
 
-        // Construct field element.
-        // Note that y coordinate is guaranteed to be a field element.
+        // Construct y felt.
+        // Note that y coordinate is guaranteed to be a valid felt.
         Felt y = FieldArithmetic.unsafeFeltFromUint(yRaw);
 
-        // Make point.
+        // Construct point from felt coordinates.
         Point memory point = Point(x, y);
 
         // Revert if point not on curve.

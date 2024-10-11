@@ -13,7 +13,7 @@ pragma solidity ^0.8.16;
 
 import {Vm} from "forge-std/Vm.sol";
 
-import {CSPRNG} from "offchain/CSPRNG.sol";
+import {RandomOffchain} from "../RandomOffchain.sol";
 
 import {Secp256k1Offchain} from "../Secp256k1Offchain.sol";
 import {Secp256k1, SecretKey, PublicKey} from "src/Secp256k1.sol";
@@ -81,7 +81,7 @@ library SchnorrOffchain {
         returns (Signature memory)
     {
         // Source 32 bytes of secure randomness.
-        bytes32 rand = bytes32(CSPRNG.readUint());
+        bytes32 rand = bytes32(RandomOffchain.readUint());
 
         return sk.signRaw(m, rand);
     }
@@ -168,7 +168,7 @@ library SchnorrOffchain {
         pure
         returns (string memory)
     {
-        string memory str = "Schnorr::SignatureCompressed({";
+        string memory str = "SchnorrCompressed({";
         str = string.concat(str, " s: ", vm.toString(sig.s), ",");
         str = string.concat(str, " rAddr: ", vm.toString(sig.rAddr));
         str = string.concat(str, " })");
