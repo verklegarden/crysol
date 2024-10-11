@@ -17,11 +17,11 @@ import {RandomOffchain} from "./RandomOffchain.sol";
 
 import {Secp256k1, SecretKey, PublicKey} from "src/Secp256k1.sol";
 import {
-    PointArithmetic,
+    Points,
     Point,
     ProjectivePoint
-} from "src/arithmetic/PointArithmetic.sol";
-import {FieldArithmetic, Felt} from "src/arithmetic/FieldArithmetic.sol";
+} from "src/arithmetic/Points.sol";
+import {Fp, Felt} from "src/arithmetic/Fp.sol";
 
 /**
  * @title Secp256k1Offchain
@@ -37,8 +37,8 @@ library Secp256k1Offchain {
     using Secp256k1 for SecretKey;
     using Secp256k1 for PublicKey;
     using Secp256k1 for Point;
-    using PointArithmetic for Point;
-    using FieldArithmetic for Felt;
+    using Points for Point;
+    using Fp for Felt;
 
     // forgefmt: disable-next-item
     Vm private constant vm = Vm(address(uint160(uint(keccak256("hevm cheat code")))));

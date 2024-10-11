@@ -7,10 +7,10 @@ import {console2 as console} from "forge-std/console2.sol";
 import {Secp256k1Offchain} from "offchain/Secp256k1Offchain.sol";
 import {Secp256k1, SecretKey, PublicKey} from "src/Secp256k1.sol";
 import {
-    PointArithmetic,
+    Points,
     Point,
     ProjectivePoint
-} from "src/arithmetic/PointArithmetic.sol";
+} from "src/arithmetic/Points.sol";
 
 /**
  * @title Secp256k1Example
@@ -29,7 +29,7 @@ contract Secp256k1Example is Script {
     using Secp256k1Offchain for PublicKey;
     using Secp256k1 for SecretKey;
     using Secp256k1 for PublicKey;
-    using PointArithmetic for Point;
+    using Points for Point;
 
     function run() public {
         // Create new cryptographically sound secret key.

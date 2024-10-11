@@ -12,7 +12,7 @@
 pragma solidity ^0.8.16;
 
 import {Secp256k1, PublicKey} from "../Secp256k1.sol";
-import {FieldArithmetic, Felt} from "./FieldArithmetic.sol";
+import {Fp, Felt} from "./Fp.sol";
 
 /**
  * @notice Point is a secp256k1 point in affine coordinates
@@ -40,7 +40,7 @@ struct ProjectivePoint {
 }
 
 /**
- * @title PointArithmetic
+ * @title Points
  *
  * @notice Provides common arithmetic-related functionality for the secp256k1
  *         elliptic curve
@@ -55,11 +55,11 @@ struct ProjectivePoint {
  * @author verklegarden
  * @custom:repository github.com/verklegarden/crysol
  */
-library PointArithmetic {
+library Points {
     using Secp256k1 for PublicKey;
-    using FieldArithmetic for Felt;
-    using PointArithmetic for Point;
-    using PointArithmetic for ProjectivePoint;
+    using Fp for Felt;
+    using Points for Point;
+    using Points for ProjectivePoint;
 
     //--------------------------------------------------------------------------
     // Optimization Constants
@@ -85,8 +85,7 @@ library PointArithmetic {
     ///      This point instantiation is used to indicate undefined behaviour.
     function _UNDEFINEDPOINT() private pure returns (Point memory) {
         return Point(
-            FieldArithmetic.unsafeFeltFromUint(type(uint).max),
-            FieldArithmetic.unsafeFeltFromUint(type(uint).max)
+            Fp.unsafeFromUint(type(uint).max), Fp.unsafeFromUint(type(uint).max)
         );
     }
 
@@ -110,7 +109,7 @@ library PointArithmetic {
     ///
     /// @dev Note that returned point is undefined if function fails to
     ///      instantiate point.
-    function tryPointFromUints(uint x, uint y)
+    function tryFromUints(uint x, uint y)
         internal
         pure
         returns (Point memory, bool)
@@ -120,13 +119,13 @@ library PointArithmetic {
         Felt y_;
 
         // Fail if x coordinate not a felt.
-        (x_, ok) = FieldArithmetic.tryFeltFromUint(x);
+        (x_, ok) = Fp.tryFromUint(x);
         if (!ok) {
             return (_UNDEFINEDPOINT(), false);
         }
 
         // Fail if y coordinate not a felt.
-        (y_, ok) = FieldArithmetic.tryFeltFromUint(y);
+        (y_, ok) = Fp.tryFromUint(y);
         if (!ok) {
             return (_UNDEFINEDPOINT(), false);
         }
@@ -148,12 +147,8 @@ library PointArithmetic {
     ///         Coordinate x not a felt
     ///       ∨ Coordinate y not a felt
     ///       ∨ Coordinates not on the curve
-    function pointFromUints(uint x, uint y)
-        internal
-        pure
-        returns (Point memory)
-    {
-        (Point memory p, bool ok) = tryPointFromUints(x, y);
+    function fromUints(uint x, uint y) internal pure returns (Point memory) {
+        (Point memory p, bool ok) = tryFromUints(x, y);
         if (!ok) {
             revert("PointInvalid()");
         }
@@ -166,19 +161,16 @@ library PointArithmetic {
     ///
     /// @dev This function is unsafe and may lead to undefined behaviour if
     ///      used incorrectly.
-    function unsafePointFromUints(uint x, uint y)
+    function unsafeFromUints(uint x, uint y)
         internal
         pure
         returns (Point memory)
     {
-        return Point(
-            FieldArithmetic.unsafeFeltFromUint(x),
-            FieldArithmetic.unsafeFeltFromUint(y)
-        );
+        return Point(Fp.unsafeFromUint(x), Fp.unsafeFromUint(y));
     }
 
-    // TODO: Docs and tests Points.unsafePointFromFelts
-    function unsafePointFromFelts(Felt x, Felt y)
+    // TODO: Docs and tests Points.unsafeFromFelts
+    function unsafeFromFelts(Felt x, Felt y)
         internal
         pure
         returns (Point memory)
@@ -197,7 +189,7 @@ library PointArithmetic {
     ///
     /// @dev Note that the identity is also called point at infinity.
     function Identity() internal pure returns (Point memory) {
-        return Point(FieldArithmetic.ZERO, FieldArithmetic.ZERO);
+        return Point(Fp.ZERO, Fp.ZERO);
     }
 
     /// @dev Returns whether point `point` is the identity.
@@ -225,7 +217,7 @@ library PointArithmetic {
         Felt right = point.x
                         .mul(point.x)
                         .mul(point.x)
-                        .add(FieldArithmetic.unsafeFeltFromUint(B));
+                        .add(Fp.unsafeFromUint(B));
         // forgefmt: disable-end
 
         return left.asUint() == right.asUint();
@@ -300,9 +292,7 @@ library PointArithmetic {
         pure
         returns (ProjectivePoint memory)
     {
-        return ProjectivePoint(
-            FieldArithmetic.ZERO, FieldArithmetic.ONE, FieldArithmetic.ZERO
-        );
+        return ProjectivePoint(Fp.ZERO, Fp.ONE, Fp.ZERO);
     }
 
     /// @dev Returns whether projective point `point` is the identity.
@@ -363,15 +353,15 @@ library PointArithmetic {
         Felt z3;
 
         // Constants:
-        Felt b3 = FieldArithmetic.unsafeFeltFromUint(_B3);
+        Felt b3 = Fp.unsafeFromUint(_B3);
 
         // Variables:
         __addTempVars memory tmp = __addTempVars({
-            t0: FieldArithmetic.ZERO,
-            t1: FieldArithmetic.ZERO,
-            t2: FieldArithmetic.ZERO,
-            t3: FieldArithmetic.ZERO,
-            t4: FieldArithmetic.ZERO
+            t0: Fp.ZERO,
+            t1: Fp.ZERO,
+            t2: Fp.ZERO,
+            t3: Fp.ZERO,
+            t4: Fp.ZERO
         });
 
         // Computations:
@@ -464,7 +454,7 @@ library PointArithmetic {
             return ProjectiveIdentity();
         }
 
-        return ProjectivePoint(point.x, point.y, FieldArithmetic.ONE);
+        return ProjectivePoint(point.x, point.y, Fp.ONE);
     }
 
     //----------------------------------
@@ -480,13 +470,13 @@ library PointArithmetic {
 
         if (point.isIdentity()) {
             // Note to clean dirty p.z memory.
-            point.z = FieldArithmetic.ZERO;
+            point.z = Fp.ZERO;
 
             assembly ("memory-safe") {
                 p := point
             }
-            p.x = FieldArithmetic.ZERO;
-            p.y = FieldArithmetic.ZERO;
+            p.x = Fp.ZERO;
+            p.y = Fp.ZERO;
 
             return p;
         }
@@ -506,7 +496,7 @@ library PointArithmetic {
 
         // Return as Point(point.x, point.y).
         // Note to clean dirty p.z memory.
-        point.z = FieldArithmetic.ZERO;
+        point.z = Fp.ZERO;
         assembly ("memory-safe") {
             p := point
         }
@@ -592,11 +582,11 @@ library PointArithmetic {
         bool ok;
         Felt x;
         Felt y;
-        (x, ok) = FieldArithmetic.tryFeltFromUint(xRaw);
+        (x, ok) = Fp.tryFromUint(xRaw);
         if (!ok) {
             revert("PointInvalid()");
         }
-        (y, ok) = FieldArithmetic.tryFeltFromUint(yRaw);
+        (y, ok) = Fp.tryFromUint(yRaw);
         if (!ok) {
             revert("PointInvalid()");
         }
@@ -706,19 +696,19 @@ library PointArithmetic {
 
         // Construct field element from x coordinate.
         // Note that function reverts if not a field element.
-        Felt x = FieldArithmetic.feltFromUint(xRaw);
+        // TODO: Need cleaner error returning.
+        Felt x = Fp.fromUint(xRaw);
 
         // Compute α = x³ + ax + b (mod p).
         // Note that adding a * x can be waived as ∀x: a * x = 0.
         // forgefmt: disable-next-item
         Felt alpha = x.mul(x)
                       .mul(x)
-                      .add(FieldArithmetic.unsafeFeltFromUint(B));
+                      .add(Fp.unsafeFromUint(B));
 
         // Compute β = √α              (mod p)
         //           = α^{(p + 1) / 4} (mod p)
-        Felt beta =
-            alpha.exp(FieldArithmetic.unsafeFeltFromUint(_SQUARE_ROOT_EXPONENT));
+        Felt beta = alpha.exp(Fp.unsafeFromUint(_SQUARE_ROOT_EXPONENT));
 
         // Compute y coordinate.
         //
@@ -732,7 +722,7 @@ library PointArithmetic {
 
         // Construct y felt.
         // Note that y coordinate is guaranteed to be a valid felt.
-        Felt y = FieldArithmetic.unsafeFeltFromUint(yRaw);
+        Felt y = Fp.unsafeFromUint(yRaw);
 
         // Construct point from felt coordinates.
         Point memory point = Point(x, y);

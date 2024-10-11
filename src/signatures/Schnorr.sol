@@ -12,7 +12,7 @@
 pragma solidity ^0.8.16;
 
 import {Secp256k1, SecretKey, PublicKey} from "../Secp256k1.sol";
-import {FieldArithmetic, Felt} from "../arithmetic/FieldArithmetic.sol";
+import {Fp, Felt} from "../arithmetic/Fp.sol";
 
 /**
  * @notice Signature is an [ERC-XXX] Schnorr signature
@@ -44,7 +44,7 @@ struct SignatureCompressed {
 library Schnorr {
     using Secp256k1 for SecretKey;
     using Secp256k1 for PublicKey;
-    using FieldArithmetic for Felt;
+    using Fp for Felt;
 
     using Schnorr for address;
     using Schnorr for Signature;
@@ -294,11 +294,11 @@ library Schnorr {
         bool ok;
         Felt rx_;
         Felt ry_;
-        (rx_, ok) = FieldArithmetic.tryFeltFromUint(rx);
+        (rx_, ok) = Fp.tryFromUint(rx);
         if (!ok) {
             revert("SignatureInsane()");
         }
-        (ry_, ok) = FieldArithmetic.tryFeltFromUint(ry);
+        (ry_, ok) = Fp.tryFromUint(ry);
         if (!ok) {
             revert("SignatureInsane()");
         }

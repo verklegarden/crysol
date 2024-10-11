@@ -5,13 +5,13 @@ import {Test} from "forge-std/Test.sol";
 import {console2 as console} from "forge-std/console2.sol";
 
 import {Secp256k1} from "src/Secp256k1.sol";
-import {FieldArithmetic, Felt} from "src/arithmetic/FieldArithmetic.sol";
+import {Fp, Felt} from "src/arithmetic/Fp.sol";
 
 /**
- * @notice FieldArithmetic Property Tests
+ * @notice Fp Property Tests
  */
-contract FieldArithmeticPropertiesTest is Test {
-    using FieldArithmetic for Felt;
+contract FpPropertiesTest is Test {
+    using Fp for Felt;
 
     //--------------------------------------------------------------------------
     // Arithmetic Functions

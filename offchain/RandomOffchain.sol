@@ -28,8 +28,6 @@ library RandomOffchain {
     Vm private constant vm = Vm(address(uint160(uint(keccak256("hevm cheat code")))));
 
     /// @dev Returns 256 bit of cryptographically sound randomness.
-    ///
-    /// @custom:vm ffi `cast wallet new`
     function readUint() internal returns (uint) {
         string[] memory inputs = new string[](3);
         inputs[0] = "cast";
@@ -43,6 +41,11 @@ library RandomOffchain {
         //
         // Note that cast is trusted to create cryptographically secure wallets.
         return uint(keccak256(result));
+    }
+
+    /// @dev Returns 256 bit of cryptographically sound randomness.
+    function readBytes32() internal returns (bytes32) {
+        return bytes32(readUint());
     }
 }
 

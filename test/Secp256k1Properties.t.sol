@@ -6,11 +6,7 @@ import {console2 as console} from "forge-std/console2.sol";
 
 import {Secp256k1Offchain} from "offchain/Secp256k1Offchain.sol";
 import {Secp256k1, SecretKey, PublicKey} from "src/Secp256k1.sol";
-import {
-    PointArithmetic,
-    Point,
-    ProjectivePoint
-} from "src/arithmetic/PointArithmetic.sol";
+import {Points, Point, ProjectivePoint} from "src/arithmetic/Points.sol";
 
 /**
  * @notice Secp256k1 Property Tests

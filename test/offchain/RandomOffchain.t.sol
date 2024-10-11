@@ -24,6 +24,15 @@ contract RandomOffchainTest is Test {
         // B: Thats the issue... you can never be sure.
         assertNotEq(a, b);
     }
+
+    function test_readBytes32() public {
+        bytes32 a = wrapper.readBytes32();
+        bytes32 b = wrapper.readBytes32();
+
+        // A: Are you sure these numbers are random?
+        // B: Thats the issue... you can never be sure.
+        assertNotEq(a, b);
+    }
 }
 
 /**
@@ -34,5 +43,9 @@ contract RandomOffchainTest is Test {
 contract RandomOffchainWrapper {
     function readUint() public returns (uint) {
         return RandomOffchain.readUint();
+    }
+
+    function readBytes32() public returns (bytes32) {
+        return RandomOffchain.readBytes32();
     }
 }

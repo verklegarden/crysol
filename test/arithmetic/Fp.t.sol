@@ -5,18 +5,18 @@ import {Test} from "forge-std/Test.sol";
 import {console2 as console} from "forge-std/console2.sol";
 
 import {Secp256k1} from "src/Secp256k1.sol";
-import {FieldArithmetic, Felt} from "src/arithmetic/FieldArithmetic.sol";
+import {Fp, Felt} from "src/arithmetic/Fp.sol";
 
 /**
- * @notice FieldArithmetic Unit Tests
+ * @notice Fp Unit Tests
  */
-contract FieldArithmeticTest is Test {
-    using FieldArithmetic for Felt;
+contract FpTest is Test {
+    using Fp for Felt;
 
-    FieldArithmeticWrapper wrapper;
+    FpWrapper wrapper;
 
     function setUp() public {
-        wrapper = new FieldArithmeticWrapper();
+        wrapper = new FpWrapper();
     }
 
     //--------------------------------------------------------------------------
@@ -33,25 +33,25 @@ contract FieldArithmeticTest is Test {
     //--------------------------------------------------------------------------
     // Type Conversions
 
-    // -- tryFeltFromUint
+    // -- tryFromUint
 
-    function testFuzz_tryFeltFromUint(uint seed) public view {
+    function testFuzz_tryFromUint(uint seed) public view {
         uint scalar = _bound(seed, 0, Secp256k1.P - 1);
 
-        (Felt felt, bool ok) = wrapper.tryFeltFromUint(scalar);
+        (Felt felt, bool ok) = wrapper.tryFromUint(scalar);
         assertTrue(ok);
         assertTrue(felt.isValid());
 
         assertEq(felt.asUint(), scalar);
     }
 
-    function testFuzz_tryFeltFromUint_FailsIf_ScalarGreaterThanP(uint seed)
+    function testFuzz_tryFromUint_FailsIf_ScalarGreaterThanP(uint seed)
         public
         view
     {
         uint scalar = _bound(seed, Secp256k1.P, type(uint).max);
 
-        (, bool ok) = wrapper.tryFeltFromUint(scalar);
+        (, bool ok) = wrapper.tryFromUint(scalar);
         assertFalse(ok);
     }
 
@@ -77,8 +77,8 @@ contract FieldArithmeticTest is Test {
 
     // -- unsafeFeltFromUint
 
-    function testFuzz_unsafeFeltFromUint(uint scalar) public view {
-        Felt felt = wrapper.unsafeFeltFromUint(scalar);
+    function testFuzz_unsafeFromUint(uint scalar) public view {
+        Felt felt = wrapper.unsafeFromUint(scalar);
 
         assertEq(felt.asUint(), scalar);
     }
@@ -86,9 +86,7 @@ contract FieldArithmeticTest is Test {
     // -- asUint
 
     function testFuzz_asUint(uint scalar) public view {
-        assertEq(
-            scalar, wrapper.asUint(FieldArithmetic.unsafeFeltFromUint(scalar))
-        );
+        assertEq(scalar, wrapper.asUint(Fp.unsafeFromUint(scalar)));
     }
 
     //--------------------------------------------------------------------------
@@ -102,8 +100,8 @@ contract FieldArithmeticTest is Test {
     // -- add
 
     function testFuzz_add() public view {
-        Felt a = FieldArithmetic.unsafeFeltFromUint(Secp256k1.P - 1);
-        Felt b = FieldArithmetic.unsafeFeltFromUint(1);
+        Felt a = Fp.unsafeFromUint(Secp256k1.P - 1);
+        Felt b = Fp.unsafeFromUint(1);
 
         Felt result = wrapper.add(a, b);
         assertEq(result.asUint(), 0);
@@ -112,8 +110,8 @@ contract FieldArithmeticTest is Test {
     // -- sub
 
     function test_sub() public view {
-        Felt a = FieldArithmetic.unsafeFeltFromUint(1);
-        Felt b = FieldArithmetic.unsafeFeltFromUint(2);
+        Felt a = Fp.unsafeFromUint(1);
+        Felt b = Fp.unsafeFromUint(2);
 
         Felt result = wrapper.sub(a, b);
         assertEq(result.asUint(), Secp256k1.P - 1);
@@ -122,8 +120,8 @@ contract FieldArithmeticTest is Test {
     // -- mul
 
     function test_mul() public view {
-        Felt a = FieldArithmetic.unsafeFeltFromUint((Secp256k1.P / 2) + 1);
-        Felt b = FieldArithmetic.unsafeFeltFromUint(2);
+        Felt a = Fp.unsafeFromUint((Secp256k1.P / 2) + 1);
+        Felt b = Fp.unsafeFromUint(2);
 
         Felt result = wrapper.mul(a, b);
         assertEq(result.asUint(), 1);
@@ -132,8 +130,8 @@ contract FieldArithmeticTest is Test {
     // -- div
 
     function test_div() public view {
-        Felt a = FieldArithmetic.unsafeFeltFromUint(6);
-        Felt b = FieldArithmetic.unsafeFeltFromUint(2);
+        Felt a = Fp.unsafeFromUint(6);
+        Felt b = Fp.unsafeFromUint(2);
 
         Felt result = wrapper.div(a, b);
         assertEq(result.asUint(), 3);
@@ -143,7 +141,7 @@ contract FieldArithmeticTest is Test {
         vm.assume(a.isValid());
 
         vm.expectRevert("DivByZero()");
-        wrapper.div(a, FieldArithmetic.ZERO);
+        wrapper.div(a, Fp.ZERO);
     }
 
     // -- parity
@@ -175,37 +173,37 @@ contract FieldArithmeticTest is Test {
  *
  * @dev For more info, see https://github.com/foundry-rs/foundry/pull/3128#issuecomment-1241245086.
  */
-contract FieldArithmeticWrapper {
-    using FieldArithmetic for Felt;
+contract FpWrapper {
+    using Fp for Felt;
 
     //--------------------------------------------------------------------------
     // Felt Constants
 
     function ZERO() public pure returns (Felt) {
-        return FieldArithmetic.ZERO;
+        return Fp.ZERO;
     }
 
     function ONE() public pure returns (Felt) {
-        return FieldArithmetic.ONE;
+        return Fp.ONE;
     }
 
     //--------------------------------------------------------------------------
     // Type Conversions
 
-    function tryFeltFromUint(uint scalar) public pure returns (Felt, bool) {
-        return FieldArithmetic.tryFeltFromUint(scalar);
+    function tryFromUint(uint scalar) public pure returns (Felt, bool) {
+        return Fp.tryFromUint(scalar);
     }
 
     function feltFromUint(uint scalar) public pure returns (Felt) {
-        return FieldArithmetic.feltFromUint(scalar);
+        return Fp.fromUint(scalar);
     }
 
-    function unsafeFeltFromUint(uint scalar) public pure returns (Felt) {
-        return FieldArithmetic.unsafeFeltFromUint(scalar);
+    function unsafeFromUint(uint scalar) public pure returns (Felt) {
+        return Fp.unsafeFromUint(scalar);
     }
 
     function asUint(Felt felt) public pure returns (uint) {
-        return FieldArithmetic.asUint(felt);
+        return Fp.asUint(felt);
     }
 
     //--------------------------------------------------------------------------

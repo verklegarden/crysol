@@ -9,24 +9,20 @@ import {console2 as console} from "forge-std/console2.sol";
 
 import {Secp256k1Offchain} from "offchain/Secp256k1Offchain.sol";
 import {Secp256k1, SecretKey, PublicKey} from "src/Secp256k1.sol";
-import {
-    PointArithmetic,
-    Point,
-    ProjectivePoint
-} from "src/arithmetic/PointArithmetic.sol";
-import {FieldArithmetic, Felt} from "src/arithmetic/FieldArithmetic.sol";
+import {Points, Point, ProjectivePoint} from "src/arithmetic/Points.sol";
+import {Fp, Felt} from "src/arithmetic/Fp.sol";
 
 /**
- * @notice PointArithmetic Property Tests
+ * @notice Points Property Tests
  */
-contract PointArithmeticTest is Test {
+contract PointsTest is Test {
     using Secp256k1Offchain for SecretKey;
     using Secp256k1 for SecretKey;
     using Secp256k1 for PublicKey;
     using Secp256k1 for Point;
-    using PointArithmetic for Point;
-    using PointArithmetic for ProjectivePoint;
-    using FieldArithmetic for Felt;
+    using Points for Point;
+    using Points for ProjectivePoint;
+    using Fp for Felt;
 
     //--------------------------------------------------------------------------
     // Test: (De)Serialization

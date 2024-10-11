@@ -11,12 +11,8 @@
 // SPDX-License-Identifier: MIT OR Apache-2.0
 pragma solidity ^0.8.16;
 
-import {
-    PointArithmetic,
-    Point,
-    ProjectivePoint
-} from "./arithmetic/PointArithmetic.sol";
-import {FieldArithmetic, Felt} from "./arithmetic/FieldArithmetic.sol";
+import {Points, Point, ProjectivePoint} from "./arithmetic/Points.sol";
+import {Fp, Felt} from "./arithmetic/Fp.sol";
 
 /**
  * @notice SecretKey is an secp256k1 secret key
@@ -91,8 +87,8 @@ library Secp256k1 {
     using Secp256k1 for PublicKey;
     using Secp256k1 for Point;
 
-    using PointArithmetic for Point;
-    using FieldArithmetic for Felt;
+    using Points for Point;
+    using Fp for Felt;
 
     //--------------------------------------------------------------------------
     // Private Constants
@@ -114,8 +110,7 @@ library Secp256k1 {
     ///      This public key instance is used to indicate undefined behaviour.
     function _UNDEFINED_PUBLIC_KEY() private pure returns (PublicKey memory) {
         return PublicKey(
-            FieldArithmetic.unsafeFeltFromUint(type(uint).max),
-            FieldArithmetic.unsafeFeltFromUint(type(uint).max)
+            Fp.unsafeFromUint(type(uint).max), Fp.unsafeFromUint(type(uint).max)
         );
     }
 
@@ -138,10 +133,10 @@ library Secp256k1 {
         // Gₓ = 79be667e f9dcbbac 55a06295 ce870b07 029bfcdb 2dce28d9 59f2815b 16f81798
         // Gᵧ = 483ada77 26a3c465 5da4fbfc 0e1108a8 fd17b448 a6855419 9c47d08f fb10d4b8
         return PublicKey(
-            FieldArithmetic.unsafeFeltFromUint(
+            Fp.unsafeFromUint(
                 0x79be667ef9dcbbac55a06295ce870b07029bfcdb2dce28d959f2815b16f81798
             ),
-            FieldArithmetic.unsafeFeltFromUint(
+            Fp.unsafeFromUint(
                 0x483ada7726a3c4655da4fbfc0e1108a8fd17b448a68554199c47d08ffb10d4b8
             )
         );
@@ -238,7 +233,7 @@ library Secp256k1 {
         pure
         returns (PublicKey memory, bool)
     {
-        (Point memory p, bool ok) = PointArithmetic.tryPointFromUints(x, y);
+        (Point memory p, bool ok) = Points.tryFromUints(x, y);
         if (!ok) {
             return (_UNDEFINED_PUBLIC_KEY(), false);
         }
@@ -275,7 +270,7 @@ library Secp256k1 {
         pure
         returns (PublicKey memory)
     {
-        return PointArithmetic.unsafePointFromUints(x, y).intoPublicKey();
+        return Points.unsafeFromUints(x, y).intoPublicKey();
     }
 
     /// @dev Returns the address of public key `pk`.

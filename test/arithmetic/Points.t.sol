@@ -6,27 +6,22 @@ import {console2 as console} from "forge-std/console2.sol";
 
 import {Secp256k1Offchain} from "offchain/Secp256k1Offchain.sol";
 import {Secp256k1, SecretKey, PublicKey} from "src/Secp256k1.sol";
-import {
-    PointArithmetic,
-    Point,
-    ProjectivePoint
-} from "src/arithmetic/PointArithmetic.sol";
-import {FieldArithmetic, Felt} from "src/arithmetic/FieldArithmetic.sol";
+import {Points, Point, ProjectivePoint} from "src/arithmetic/Points.sol";
+import {Fp, Felt} from "src/arithmetic/Fp.sol";
 
-import {PointArithmeticTestVectors} from
-    "./test-vectors/PointArithmeticTestVectors.sol";
+import {PointsTestVectors} from "./test-vectors/PointsTestVectors.sol";
 
 /**
- * @notice PointArithmetic Unit Tests
+ * @notice Points Unit Tests
  */
-contract PointArithmeticTest is Test {
+contract PointsTest is Test {
     using Secp256k1Offchain for SecretKey;
     using Secp256k1 for SecretKey;
     using Secp256k1 for PublicKey;
     using Secp256k1 for Point;
-    using PointArithmetic for Point;
-    using PointArithmetic for ProjectivePoint;
-    using FieldArithmetic for Felt;
+    using Points for Point;
+    using Points for ProjectivePoint;
+    using Fp for Felt;
 
     // Uncompressed Generator G.
     // Copied from [SEC-2 v2].
@@ -38,10 +33,10 @@ contract PointArithmeticTest is Test {
     bytes constant GENERATOR_COMPRESSED_ENCODED =
         hex"0279BE667EF9DCBBAC55A06295CE870B07029BFCDB2DCE28D959F2815B16F81798";
 
-    PointArithmeticWrapper wrapper;
+    PointsWrapper wrapper;
 
     function setUp() public {
-        wrapper = new PointArithmeticWrapper();
+        wrapper = new PointsWrapper();
     }
 
     //--------------------------------------------------------------------------
@@ -49,7 +44,7 @@ contract PointArithmeticTest is Test {
 
     function test_G() public view {
         Point memory got = wrapper.G();
-        Point memory want = PointArithmetic.pointFromEncoded(GENERATOR_ENCODED);
+        Point memory want = Points.pointFromEncoded(GENERATOR_ENCODED);
 
         assertEq(got.x.asUint(), want.x.asUint());
         assertEq(got.y.asUint(), want.y.asUint());
@@ -87,7 +82,7 @@ contract PointArithmeticTest is Test {
     }
 
     function test_Point_isOnCurve_Identity() public view {
-        assertTrue(wrapper.isOnCurve(PointArithmetic.Identity()));
+        assertTrue(wrapper.isOnCurve(Points.Identity()));
     }
 
     function testFuzz_Point_isOnCurve_FailsIf_NotOnCurve(
@@ -102,11 +97,9 @@ contract PointArithmeticTest is Test {
 
         // Mutate point.
         bool ok;
-        (point.x, ok) =
-            FieldArithmetic.tryFeltFromUint(point.x.asUint() ^ xMask);
+        (point.x, ok) = Fp.tryFromUint(point.x.asUint() ^ xMask);
         vm.assume(ok);
-        (point.y, ok) =
-            FieldArithmetic.tryFeltFromUint(point.y.asUint() ^ yMask);
+        (point.y, ok) = Fp.tryFromUint(point.y.asUint() ^ yMask);
         vm.assume(ok);
 
         assertFalse(wrapper.isOnCurve(point));
@@ -120,7 +113,7 @@ contract PointArithmeticTest is Test {
 
         // yParity is 0 if y is even and 1 if y is odd.
         uint want = y.asUint() % 2 == 0 ? 0 : 1;
-        uint got = wrapper.yParity(PointArithmetic.unsafePointFromFelts(x, y));
+        uint got = wrapper.yParity(Points.unsafeFromFelts(x, y));
 
         assertEq(want, got);
     }
@@ -149,7 +142,7 @@ contract PointArithmeticTest is Test {
         vm.assume(sk.isValid());
 
         Point memory point = sk.toPublicKey().intoPoint();
-        uint scalar = _bound(scalarSeed, 1, PointArithmetic.Q - 1);
+        uint scalar = _bound(scalarSeed, 1, Points.Q - 1);
 
         address got = wrapper.mulToAddress(point, scalar);
         // forgefmt: disable-next-item
@@ -167,7 +160,7 @@ contract PointArithmeticTest is Test {
     ) public view {
         assertEq(
             wrapper.mulToAddress(point, 0),
-            PointArithmetic.Identity().intoPublicKey().toAddress()
+            Points.Identity().intoPublicKey().toAddress()
         );
     }
 
@@ -175,7 +168,7 @@ contract PointArithmeticTest is Test {
         Point memory point,
         uint scalar
     ) public {
-        vm.assume(scalar >= PointArithmetic.Q);
+        vm.assume(scalar >= Points.Q);
 
         vm.expectRevert("ScalarTooBig()");
         wrapper.mulToAddress(point, scalar);
@@ -232,9 +225,9 @@ contract PointArithmeticTest is Test {
 
     function testVectors_ProjectivePoint_add() public view {
         ProjectivePoint memory g = Secp256k1.G().toProjectivePoint();
-        ProjectivePoint memory p = PointArithmetic.ProjectiveIdentity();
+        ProjectivePoint memory p = Points.ProjectiveIdentity();
 
-        Point[] memory vectors = PointArithmeticTestVectors.addVectors();
+        Point[] memory vectors = PointsTestVectors.addVectors();
 
         for (uint i; i < vectors.length; i++) {
             p = wrapper.add(p, g);
@@ -246,16 +239,16 @@ contract PointArithmeticTest is Test {
     }
 
     function test_ProjectivePoint_add_Identity() public view {
-        ProjectivePoint memory g = PointArithmetic.G().toProjectivePoint();
-        ProjectivePoint memory id = PointArithmetic.ProjectiveIdentity();
+        ProjectivePoint memory g = Points.G().toProjectivePoint();
+        ProjectivePoint memory id = Points.ProjectiveIdentity();
         Point memory got;
 
         // Test id + g.
         got = wrapper.add(id, g).intoPoint();
-        assertTrue(got.eq(PointArithmetic.G()));
+        assertTrue(got.eq(Points.G()));
         // Test g + id.
         got = wrapper.add(g, id).intoPoint();
-        assertTrue(got.eq(PointArithmetic.G()));
+        assertTrue(got.eq(Points.G()));
     }
 
     function test_ProjectivePoint_add_UpToIdentity() public {
@@ -277,7 +270,7 @@ contract PointArithmeticTest is Test {
     function testFuzz_ProjectivePoint_mul(SecretKey sk) public {
         vm.assume(sk.isValid());
 
-        ProjectivePoint memory g = PointArithmetic.G().toProjectivePoint();
+        ProjectivePoint memory g = Points.G().toProjectivePoint();
 
         Point memory got = wrapper.mul(g, sk.asUint()).intoPoint();
         Point memory want = sk.toPublicKey().intoPoint();
@@ -290,7 +283,7 @@ contract PointArithmeticTest is Test {
 
         uint[] memory scalars;
         Point[] memory products;
-        (scalars, products) = PointArithmeticTestVectors.mulVectors();
+        (scalars, products) = PointsTestVectors.mulVectors();
 
         for (uint i; i < scalars.length; i++) {
             Point memory p = wrapper.mul(g, scalars[i]).intoPoint();
@@ -310,7 +303,7 @@ contract PointArithmeticTest is Test {
     ) public view {
         vm.assume(sk.isValid());
 
-        ProjectivePoint memory id = PointArithmetic.ProjectiveIdentity();
+        ProjectivePoint memory id = Points.ProjectiveIdentity();
         assertTrue(wrapper.mul(id, sk.asUint()).isIdentity());
     }
 
@@ -318,7 +311,7 @@ contract PointArithmeticTest is Test {
         ProjectivePoint memory point,
         uint scalar
     ) public {
-        vm.assume(scalar >= PointArithmetic.Q);
+        vm.assume(scalar >= Points.Q);
 
         vm.expectRevert("ScalarTooBig()");
         wrapper.mul(point, scalar);
@@ -342,7 +335,7 @@ contract PointArithmeticTest is Test {
     }
 
     function test_Point_toProjectivePoint_Identity() public view {
-        Point memory identity = PointArithmetic.Identity();
+        Point memory identity = Points.Identity();
 
         assertTrue(wrapper.toProjectivePoint(identity).isIdentity());
     }
@@ -378,7 +371,7 @@ contract PointArithmeticTest is Test {
     }
 
     function test_ProjectivePoint_intoPoint_Identity() public view {
-        ProjectivePoint memory identity = PointArithmetic.ProjectiveIdentity();
+        ProjectivePoint memory identity = Points.ProjectiveIdentity();
 
         assertTrue(wrapper.intoPoint(identity).isIdentity());
     }
@@ -408,7 +401,7 @@ contract PointArithmeticTest is Test {
     }
 
     function test_ProjectivePoint_toPoint_Identity() public view {
-        ProjectivePoint memory identity = PointArithmetic.ProjectiveIdentity();
+        ProjectivePoint memory identity = Points.ProjectiveIdentity();
 
         assertTrue(wrapper.toPoint(identity).isIdentity());
     }
@@ -425,7 +418,7 @@ contract PointArithmeticTest is Test {
         // Generator.
         blob = GENERATOR_ENCODED;
         point = wrapper.pointFromEncoded(blob);
-        assertTrue(point.eq(PointArithmetic.G()));
+        assertTrue(point.eq(Points.G()));
 
         // Some other point, ie [2]G.
         blob =
@@ -435,8 +428,8 @@ contract PointArithmeticTest is Test {
         assertTrue(
             point.eq(
                 Point(
-                    FieldArithmetic.unsafeFeltFromUint(uint(0xC6047F9441ED7D6D3045406E95C07CD85C778E4B8CEF3CA7ABAC09B95C709EE5)),
-                    FieldArithmetic.unsafeFeltFromUint(uint(0x1AE168FEA63DC339A3C58419466CEAEEF7F632653266D0E1236431A950CFE52A))
+                    Fp.unsafeFromUint(uint(0xC6047F9441ED7D6D3045406E95C07CD85C778E4B8CEF3CA7ABAC09B95C709EE5)),
+                    Fp.unsafeFromUint(uint(0x1AE168FEA63DC339A3C58419466CEAEEF7F632653266D0E1236431A950CFE52A))
                 )
             )
         );
@@ -488,15 +481,15 @@ contract PointArithmeticTest is Test {
         bytes memory blob;
 
         // Generator.
-        point = PointArithmetic.G();
+        point = Points.G();
         blob = wrapper.toEncoded(point);
         assertEq(blob, GENERATOR_ENCODED);
 
         // Some other point, ie [2]G.
         // forgefmt: disable-next-item
         point = Point(
-            FieldArithmetic.unsafeFeltFromUint(uint(0xC6047F9441ED7D6D3045406E95C07CD85C778E4B8CEF3CA7ABAC09B95C709EE5)),
-            FieldArithmetic.unsafeFeltFromUint(uint(0x1AE168FEA63DC339A3C58419466CEAEEF7F632653266D0E1236431A950CFE52A))
+            Fp.unsafeFromUint(uint(0xC6047F9441ED7D6D3045406E95C07CD85C778E4B8CEF3CA7ABAC09B95C709EE5)),
+            Fp.unsafeFromUint(uint(0x1AE168FEA63DC339A3C58419466CEAEEF7F632653266D0E1236431A950CFE52A))
         );
         blob = wrapper.toEncoded(point);
         assertEq(
@@ -506,7 +499,7 @@ contract PointArithmeticTest is Test {
     }
 
     function test_Point_toEncoded_Identity() public view {
-        Point memory point = PointArithmetic.Identity();
+        Point memory point = Points.Identity();
         bytes memory blob = wrapper.toEncoded(point);
 
         assertEq(blob, hex"00");
@@ -530,7 +523,7 @@ contract PointArithmeticTest is Test {
         // Generator.
         blob = GENERATOR_COMPRESSED_ENCODED;
         point = wrapper.pointFromCompressedEncoded(blob);
-        assertTrue(point.eq(PointArithmetic.G()));
+        assertTrue(point.eq(Points.G()));
     }
 
     function test_Point_pointFromCompressedEncoded_IfyParityEven() public {
@@ -554,7 +547,7 @@ contract PointArithmeticTest is Test {
     }
 
     function test_Point_pointFromCompressedEncoded_Identity() public view {
-        Point memory id = PointArithmetic.Identity();
+        Point memory id = Points.Identity();
 
         Point memory got =
             wrapper.pointFromCompressedEncoded(id.toCompressedEncoded());
@@ -613,8 +606,8 @@ contract PointArithmeticTest is Test {
         // Some point, ie [2]G.
         // forgefmt: disable-next-item
         Point memory point = Point(
-            FieldArithmetic.unsafeFeltFromUint(uint(0xC6047F9441ED7D6D3045406E95C07CD85C778E4B8CEF3CA7ABAC09B95C709EE5)),
-            FieldArithmetic.unsafeFeltFromUint(uint(0x1AE168FEA63DC339A3C58419466CEAEEF7F632653266D0E1236431A950CFE52A))
+            Fp.unsafeFromUint(uint(0xC6047F9441ED7D6D3045406E95C07CD85C778E4B8CEF3CA7ABAC09B95C709EE5)),
+            Fp.unsafeFromUint(uint(0x1AE168FEA63DC339A3C58419466CEAEEF7F632653266D0E1236431A950CFE52A))
         );
         bytes memory blob = wrapper.toCompressedEncoded(point);
 
@@ -628,8 +621,8 @@ contract PointArithmeticTest is Test {
         // Some point, ie [6]G.
         // forgefmt: disable-next-item
         Point memory point = Point(
-            FieldArithmetic.unsafeFeltFromUint(uint(0xFFF97BD5755EEEA420453A14355235D382F6472F8568A18B2F057A1460297556)),
-            FieldArithmetic.unsafeFeltFromUint(uint(0xAE12777AACFBB620F3BE96017F45C560DE80F0F6518FE4A03C870C36B075F297))
+            Fp.unsafeFromUint(uint(0xFFF97BD5755EEEA420453A14355235D382F6472F8568A18B2F057A1460297556)),
+            Fp.unsafeFromUint(uint(0xAE12777AACFBB620F3BE96017F45C560DE80F0F6518FE4A03C870C36B075F297))
         );
         bytes memory blob = wrapper.toCompressedEncoded(point);
 
@@ -640,7 +633,7 @@ contract PointArithmeticTest is Test {
     }
 
     function test_Point_toCompressedEncoded_Identity() public view {
-        Point memory point = PointArithmetic.Identity();
+        Point memory point = Points.Identity();
         bytes memory blob = wrapper.toCompressedEncoded(point);
 
         assertEq(blob, hex"00");
@@ -661,22 +654,22 @@ contract PointArithmeticTest is Test {
  *
  * @dev For more info, see https://github.com/foundry-rs/foundry/pull/3128#issuecomment-1241245086.
  */
-contract PointArithmeticWrapper {
-    using PointArithmetic for Point;
-    using PointArithmetic for ProjectivePoint;
+contract PointsWrapper {
+    using Points for Point;
+    using Points for ProjectivePoint;
 
     //--------------------------------------------------------------------------
     // Test: Constants
 
     function G() public pure returns (Point memory) {
-        return PointArithmetic.G();
+        return Points.G();
     }
 
     //--------------------------------------------------------------------------
     // Point
 
     function Identity() public pure returns (Point memory) {
-        return PointArithmetic.Identity();
+        return Points.Identity();
     }
 
     function isIdentity(Point memory point) public pure returns (bool) {
@@ -707,7 +700,7 @@ contract PointArithmeticWrapper {
         pure
         returns (ProjectivePoint memory)
     {
-        return PointArithmetic.ProjectiveIdentity();
+        return Points.ProjectiveIdentity();
     }
 
     function isIdentity(ProjectivePoint memory point)
@@ -783,7 +776,7 @@ contract PointArithmeticWrapper {
         pure
         returns (Point memory)
     {
-        return PointArithmetic.pointFromEncoded(blob);
+        return Points.pointFromEncoded(blob);
     }
 
     function toEncoded(Point memory point) public pure returns (bytes memory) {
@@ -795,7 +788,7 @@ contract PointArithmeticWrapper {
         view
         returns (Point memory)
     {
-        return PointArithmetic.pointFromCompressedEncoded(blob);
+        return Points.pointFromCompressedEncoded(blob);
     }
 
     function toCompressedEncoded(Point memory point)

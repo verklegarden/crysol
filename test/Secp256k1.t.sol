@@ -6,12 +6,8 @@ import {console2 as console} from "forge-std/console2.sol";
 
 import {Secp256k1Offchain} from "offchain/Secp256k1Offchain.sol";
 import {Secp256k1, SecretKey, PublicKey} from "src/Secp256k1.sol";
-import {
-    PointArithmetic,
-    Point,
-    ProjectivePoint
-} from "src/arithmetic/PointArithmetic.sol";
-import {FieldArithmetic, Felt} from "src/arithmetic/FieldArithmetic.sol";
+import {Points, Point, ProjectivePoint} from "src/arithmetic/Points.sol";
+import {Fp, Felt} from "src/arithmetic/Fp.sol";
 
 /**
  * @notice Secp256k1 Unit Tests
@@ -21,9 +17,9 @@ contract Secp256k1Test is Test {
     using Secp256k1 for SecretKey;
     using Secp256k1 for PublicKey;
     using Secp256k1 for Point;
-    using PointArithmetic for Point;
-    using PointArithmetic for ProjectivePoint;
-    using FieldArithmetic for Felt;
+    using Points for Point;
+    using Points for ProjectivePoint;
+    using Fp for Felt;
 
     // Uncompressed Generator G.
     // Copied from [SEC-2 v2].
@@ -42,7 +38,7 @@ contract Secp256k1Test is Test {
     function test_G() public view {
         PublicKey memory got = wrapper.G();
         PublicKey memory want =
-            PointArithmetic.pointFromEncoded(GENERATOR_ENCODED).intoPublicKey();
+            Points.pointFromEncoded(GENERATOR_ENCODED).intoPublicKey();
 
         assertTrue(got.eq(want));
     }
@@ -64,14 +60,14 @@ contract Secp256k1Test is Test {
         assertEq(sk.asUint(), scalar);
     }
 
-    function test_trySecretKeyFromUint_FailsIf_ScalarZero() public {
+    function test_trySecretKeyFromUint_FailsIf_ScalarZero() public view {
         (, bool ok) = wrapper.trySecretKeyFromUint(0);
         assertFalse(ok);
     }
 
     function test_trySecretKeyFromUint_FailsIf_ScalarGreaterOrEqualToQ(
         uint seed
-    ) public {
+    ) public view {
         uint scalar = _bound(seed, Secp256k1.Q, type(uint).max);
 
         (, bool ok) = wrapper.trySecretKeyFromUint(scalar);
@@ -209,7 +205,7 @@ contract Secp256k1Test is Test {
     }
 
     function test_PublicKey_isValid_FailsIf_Identity() public view {
-        PublicKey memory pk = PointArithmetic.Identity().intoPublicKey();
+        PublicKey memory pk = Points.Identity().intoPublicKey();
 
         assertFalse(wrapper.isValid(pk));
     }
@@ -217,8 +213,8 @@ contract Secp256k1Test is Test {
     function test_PublicKey_isValid_FailsIf_PointNotOnCurve() public view {
         PublicKey memory pk;
 
-        pk.x = FieldArithmetic.unsafeFeltFromUint(1);
-        pk.x = FieldArithmetic.unsafeFeltFromUint(3);
+        pk.x = Fp.unsafeFromUint(1);
+        pk.x = Fp.unsafeFromUint(3);
         assertFalse(wrapper.isValid(pk));
     }
 
@@ -425,7 +421,7 @@ contract Secp256k1Wrapper {
     using Secp256k1 for PublicKey;
     using Secp256k1 for Point;
 
-    using PointArithmetic for Point;
+    using Points for Point;
 
     //--------------------------------------------------------------------------
     // Constants

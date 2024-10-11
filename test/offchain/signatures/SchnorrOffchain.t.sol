@@ -6,7 +6,7 @@ import {console2 as console} from "forge-std/console2.sol";
 
 import {Secp256k1Offchain} from "offchain/Secp256k1Offchain.sol";
 import {Secp256k1, SecretKey, PublicKey} from "src/Secp256k1.sol";
-import {PointArithmetic, Point} from "src/arithmetic/PointArithmetic.sol";
+import {Points, Point} from "src/arithmetic/Points.sol";
 
 import {SchnorrOffchain} from "offchain/signatures/SchnorrOffchain.sol";
 import {
@@ -106,7 +106,7 @@ contract SchnorrOffchainTest is Test {
     function test_Signature_toString() public view {
         Signature memory sig = Signature({
             s: bytes32(type(uint).max),
-            r: PointArithmetic.Identity().intoPublicKey()
+            r: Points.Identity().intoPublicKey()
         });
 
         string memory got = wrapper.toString(sig);

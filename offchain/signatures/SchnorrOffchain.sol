@@ -81,7 +81,7 @@ library SchnorrOffchain {
         returns (Signature memory)
     {
         // Source 32 bytes of secure randomness.
-        bytes32 rand = bytes32(RandomOffchain.readUint());
+        bytes32 rand = RandomOffchain.readBytes32();
 
         return sk.signRaw(m, rand);
     }

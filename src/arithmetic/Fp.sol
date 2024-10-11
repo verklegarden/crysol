@@ -21,9 +21,9 @@ import {Secp256k1} from "../Secp256k1.sol";
  * @custom:example Constructing a secp256k1 field element:
  *
  *      ```solidity
- *      import {FieldArithmetic, Felt} from "crysol/arithmetic/FieldArithmetic.sol";
+ *      import {Fp, Felt} from "crysol/arithmetic/Fp.sol";
  *      contract Example {
- *          (Felt felt, bool ok) = FieldArithmetic.tryFeltFromUint(uint(1));
+ *          (Felt felt, bool ok) = Fp.tryFeltFromUint(uint(1));
  *          assert(ok);
  *      }
  *      ```
@@ -31,7 +31,7 @@ import {Secp256k1} from "../Secp256k1.sol";
 type Felt is uint;
 
 /**
- * @title FieldArithmetic
+ * @title Fp
  *
  * @notice Provides arithmetic functionality within secp256k1's prime field
  *
@@ -41,8 +41,8 @@ type Felt is uint;
  * @author verklegarden
  * @custom:repository github.com/verklegarden/crysol
  */
-library FieldArithmetic {
-    using FieldArithmetic for Felt;
+library Fp {
+    using Fp for Felt;
 
     //--------------------------------------------------------------------------
     // Optimization Constants
@@ -78,7 +78,7 @@ library FieldArithmetic {
     ///
     /// @dev Note that returned felt is undefined if function fails to
     ///      instantiate felt.
-    function tryFeltFromUint(uint scalar) internal pure returns (Felt, bool) {
+    function tryFromUint(uint scalar) internal pure returns (Felt, bool) {
         if (scalar >= _P) {
             return (_UNDEFINED_FELT, false);
         }
@@ -90,8 +90,8 @@ library FieldArithmetic {
     ///
     /// @dev Reverts if:
     ///        Scalar not a felt
-    function feltFromUint(uint scalar) internal pure returns (Felt) {
-        (Felt felt, bool ok) = tryFeltFromUint(scalar);
+    function fromUint(uint scalar) internal pure returns (Felt) {
+        (Felt felt, bool ok) = tryFromUint(scalar);
         if (!ok) {
             revert("ScalarNotAFelt()");
         }
@@ -104,7 +104,7 @@ library FieldArithmetic {
     ///
     /// @dev This function is unsafe and may lead to undefined behaviour if
     ///      used incorrectly.
-    function unsafeFeltFromUint(uint scalar) internal pure returns (Felt) {
+    function unsafeFromUint(uint scalar) internal pure returns (Felt) {
         return Felt.wrap(scalar);
     }
 
@@ -139,7 +139,7 @@ library FieldArithmetic {
         uint result = addmod(felt.asUint(), other.asUint(), _P);
         // assert(result < _P);
 
-        return unsafeFeltFromUint(result);
+        return unsafeFromUint(result);
     }
 
     /// @dev Subtracts felts `other` from `felt` and returns the result.
@@ -150,7 +150,7 @@ library FieldArithmetic {
         }
         // assert(result < _P);
 
-        return unsafeFeltFromUint(result);
+        return unsafeFromUint(result);
     }
 
     /// @dev Multiplicates felt `felt` with `other` and returns the result.
@@ -158,7 +158,7 @@ library FieldArithmetic {
         uint result = mulmod(felt.asUint(), other.asUint(), _P);
         // assert(result < _P);
 
-        return unsafeFeltFromUint(result);
+        return unsafeFromUint(result);
     }
 
     /// @dev Divides felt `felt` with `other` and returns the result.
@@ -173,7 +173,7 @@ library FieldArithmetic {
         uint result = mulmod(felt.asUint(), other.inv().asUint(), _P);
         // assert(result < _P);
 
-        return unsafeFeltFromUint(result);
+        return unsafeFromUint(result);
     }
 
     /// @dev Returns the parity of felt `felt` as 0 if even and 1 if odd.
@@ -201,7 +201,7 @@ library FieldArithmetic {
         // algorithm.
         //
         // For further details, see [Dubois 2023].
-        return exp(felt, unsafeFeltFromUint(_P_MINUS_2));
+        return exp(felt, unsafeFromUint(_P_MINUS_2));
     }
 
     /// @dev Computes the exponentiation of felt `base` with exponent `exponent`
@@ -224,6 +224,6 @@ library FieldArithmetic {
         uint result = abi.decode(data, (uint));
         // assert(result < _P);
 
-        return unsafeFeltFromUint(result);
+        return unsafeFromUint(result);
     }
 }
