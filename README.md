@@ -8,46 +8,37 @@
 
 </div>
 
-`crysol` is a collection of **pure Solidity** libraries providing **elliptic curve cryptography** for **on- and offchain operations**.
+`crysol` is a _secp256k1_ elliptic curve library for EVM application. It targets security, correctness, simplicity, readability, and reviewability as its primary goals.
+
+Features:
+- Key generation, verification and de/serialization
+- ECDSA and Schnorr signature functionality
+- Point arithmetic based on complete addition formulas and `ecrecover` precompile optimizations
+- Prime field arithmetic
+- Secure, simple and stable interfaces
 
 ## Libraries
 
 ```ml
 src
-├─ onchain
-│  ├─ common
-│  │  ├─ Message - "Functionality for constructing Ethereum Signed Message Hashes"
-│  │  ├─ Nonce - "Deterministic nonce derivation"
-│  │  └─ ModularArithmetic - "Provides modular arithmetic functionality"
-│  ├─ secp256k1
-│  │  ├─ Secp256k1 - "Cryptography-related functionality for the secp256k1 elliptic curve"
-│  │  ├─ Secp256k1Arithmetic — "Arithmetic-related functionality for the secp256k1 elliptic curve"
-│  │  └─ signatures
-│  │     ├─ ECDSA — "ECDSA signature functionality for secp256k1"
-│  │     └─ Schnorr — "Schnorr signature functionality for secp256k1"
-│  └─ secp256r1
-│     ├─ Secp256r1 - "Cryptography-related functionality for the secp256r1 elliptic curve"
-│     └─ Secp256r1Arithmetic — "Arithmetic-related functionality for the secp256r1 elliptic curve"
-├─ offchain
-│  ├─ common
-│  │  └─ RandomOffchain - "Access to cryptographically secure randomness"
-│  └─ secp256k1
-│     ├─ Secp256k1Offchain - "Cryptography-related functionality for the secp256k1 elliptic curve"
-│     └─ signatures
-│        ├─ ECDSAOffchain — "ECDSA signature functionality for secp256k1"
-│        └─ SchnorrOffchain — "Schnorr signature functionality for secp256k1"
-└─ unsafe
-   └─ secp256k1
-      └─ signatures
-         └─ ECDSAUnsafe — "Unsafe ECDSA signature functionality for secp256k1"
-```
+├─ Secp256k1 - "Cryptography functionality for the secp256k1 elliptic curve"
+├─ arithmetic
+│  ├─ Points "Arithmetic functionality for the secp256k1 elliptic curve"
+│  └─ Fp — "Arithmetic functionality within secp256k1's prime field"
+└─ signatures
+   ├─ ECDSA — "ECDSA signature functionality for secp256k1"
+   └─ Schnorr — "Schnorr signature functionality for secp256k1"
 
-## Installation
+offchain
+├─ RandomOffchain - "Access to cryptographically secure randomness"
+├─ Secp256k1Offchain - "Cryptography functionality for the secp256k1 elliptic curve"
+└─ signatures
+   ├─ ECDSAOffchain — "ECDSA signature functionality for secp256k1"
+   └─ SchnorrOffchain — "Schnorr signature functionality for secp256k1"
 
-Install with [Foundry](https://getfoundry.sh/):
-
-```bash
-$ forge install verklegarden/crysol
+unsafe
+└─ signatures
+   └─ ECDSAUnsafe — "Unsafe ECDSA signature functionality for secp256k1"
 ```
 
 ## Examples
@@ -56,6 +47,14 @@ Several examples are provided in [`examples/`](./examples), such as:
 - secure key pair and Ethereum address generation
 - secp256k1 point arithmetic
 - Schnorr and ECDSA signature creation and verification
+
+## Installation
+
+Install with [Foundry](https://getfoundry.sh/):
+
+```bash
+$ forge install verklegarden/crysol
+```
 
 ## Contributing
 
@@ -69,18 +68,27 @@ $ cd crysol/
 $ forge install
 ```
 
-Run tests:
+Note that the [`Makefile`](./Makefile) provides commands for common development operations:
 
-```bash
-$ forge test
-$ forge test -vvvv # Run with full stack traces
-$ FOUNDRY_PROFILE=intense forge test # Run in intense mode
 ```
-
-Lint:
-
-```bash
-$ forge fmt [--check]
+$ make help
+>
+>  ██████ ██████  ██    ██ ███████  ██████  ██
+> ██      ██   ██  ██  ██  ██      ██    ██ ██
+> ██      ██████    ████   ███████ ██    ██ ██
+> ██      ██   ██    ██         ██ ██    ██ ██
+>  ██████ ██   ██    ██    ███████  ██████  ███████
+>
+> build                                              Build project
+> clean                                              Clean build artifacts
+> coverage                                           Update coverage report and print summary
+> examples                                           Run examples
+> fmt                                                Format project
+> help                                               Print list of all commands
+> test-intense                                       Run full test suite with intense fuzzing
+> test-summary                                       Print summary of test suite
+> test                                               Run full test suite
+> todos                                              Grep TODO's in src/ and test/
 ```
 
 ## Safety

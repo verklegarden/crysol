@@ -23,7 +23,7 @@ import {Secp256k1} from "../Secp256k1.sol";
  *      ```solidity
  *      import {Fp, Felt} from "crysol/arithmetic/Fp.sol";
  *      contract Example {
- *          (Felt felt, bool ok) = Fp.tryFeltFromUint(uint(1));
+ *          (Felt felt, bool ok) = Fp.tryFromUint(uint(1));
  *          assert(ok);
  *      }
  *      ```
@@ -48,22 +48,22 @@ library Fp {
     // Optimization Constants
 
     /// @dev Used during modular inversion.
-    uint private constant _P_MINUS_2 = addmod(0, _P - 2, _P);
+    uint private constant _P_MINUS_2 = addmod(0, P - 2, P);
 
     //--------------------------------------------------------------------------
     // UNDEFINED Constants
 
     /// @dev The undefined felt instance.
     ///
-    ///      This felt instantitation is used to indicate undefined behaviour.
+    ///      This felt instantiation is used to indicate undefined behaviour.
     Felt private constant _UNDEFINED_FELT = Felt.wrap(type(uint).max);
 
     //--------------------------------------------------------------------------
-    // Private Constants
+    // Secp256k1 Constants
     //
     // Reimported from Secp256k1.
 
-    uint private constant _P = Secp256k1.P;
+    uint internal constant P = Secp256k1.P;
 
     //--------------------------------------------------------------------------
     // Felt Constants
@@ -79,7 +79,7 @@ library Fp {
     /// @dev Note that returned felt is undefined if function fails to
     ///      instantiate felt.
     function tryFromUint(uint scalar) internal pure returns (Felt, bool) {
-        if (scalar >= _P) {
+        if (scalar >= P) {
             return (_UNDEFINED_FELT, false);
         }
 
@@ -118,7 +118,7 @@ library Fp {
 
     /// @dev Returns whether felt `felt` is valid.
     function isValid(Felt felt) internal pure returns (bool) {
-        return felt.asUint() < _P;
+        return felt.asUint() < P;
     }
 
     /// @dev Returns whether felt `felt` is zero.
@@ -128,7 +128,7 @@ library Fp {
 
     /// @dev Returns whether felt `feltInv` is the inverse of `felt`.
     function isInv(Felt felt, Felt feltInv) internal pure returns (bool) {
-        return mulmod(felt.asUint(), feltInv.asUint(), _P) == 1;
+        return mulmod(felt.asUint(), feltInv.asUint(), P) == 1;
     }
 
     //--------------------------------------------------------------------------
@@ -136,8 +136,8 @@ library Fp {
 
     /// @dev Adds felts `felt` and `other` and returns the result.
     function add(Felt felt, Felt other) internal pure returns (Felt) {
-        uint result = addmod(felt.asUint(), other.asUint(), _P);
-        // assert(result < _P);
+        uint result = addmod(felt.asUint(), other.asUint(), P);
+        // assert(result < P);
 
         return unsafeFromUint(result);
     }
@@ -146,17 +146,17 @@ library Fp {
     function sub(Felt felt, Felt other) internal pure returns (Felt) {
         uint result;
         unchecked {
-            result = addmod(felt.asUint(), _P - other.asUint(), _P);
+            result = addmod(felt.asUint(), P - other.asUint(), P);
         }
-        // assert(result < _P);
+        // assert(result < P);
 
         return unsafeFromUint(result);
     }
 
     /// @dev Multiplicates felt `felt` with `other` and returns the result.
     function mul(Felt felt, Felt other) internal pure returns (Felt) {
-        uint result = mulmod(felt.asUint(), other.asUint(), _P);
-        // assert(result < _P);
+        uint result = mulmod(felt.asUint(), other.asUint(), P);
+        // assert(result < P);
 
         return unsafeFromUint(result);
     }
@@ -170,8 +170,8 @@ library Fp {
             revert("DivByZero()");
         }
 
-        uint result = mulmod(felt.asUint(), other.inv().asUint(), _P);
-        // assert(result < _P);
+        uint result = mulmod(felt.asUint(), other.inv().asUint(), P);
+        // assert(result < P);
 
         return unsafeFromUint(result);
     }
@@ -207,10 +207,10 @@ library Fp {
     /// @dev Computes the exponentiation of felt `base` with exponent `exponent`
     ///      and returns the result.
     function exp(Felt base, Felt exponent) internal view returns (Felt) {
-        // Payload to compute base^{exponent} (mod _P).
+        // Payload to compute base^{exponent} (mod P).
         // Note that the size of each argument is 32 bytes.
         bytes memory payload =
-            abi.encode(32, 32, 32, base.asUint(), exponent.asUint(), _P);
+            abi.encode(32, 32, 32, base.asUint(), exponent.asUint(), P);
 
         // The `modexp` precompile is at address 0x05.
         address target = address(5);
@@ -222,7 +222,7 @@ library Fp {
         // Result is empty iff the modexp computation failed due to insufficient
         // gas.
         uint result = abi.decode(data, (uint));
-        // assert(result < _P);
+        // assert(result < P);
 
         return unsafeFromUint(result);
     }

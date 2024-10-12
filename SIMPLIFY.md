@@ -37,3 +37,9 @@ Audit Greps:
 
 ECDSA and Schnorr are supported
 
+
+TODO: general parsing functions:
+    tryPublicKeyFromBlob(bytes);
+    publicKeyFromBlob(bytes);
+    tryPointFromBlob(bytes);
+    pointFromBlob(bytes);

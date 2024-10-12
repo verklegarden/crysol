@@ -8,7 +8,7 @@ fs_permissions = [{ access = "read", path = "./test" }]
 
 # Compilation
 evm_version = "shanghai"
-solc_version = "0.8.24"
+solc_version = "0.8.28"
 via_ir = false
 optimizer = false
 extra_output_files = ["irOptimized"]
