@@ -8,11 +8,11 @@
 
 </div>
 
-`crysol` is a _secp256k1_ elliptic curve library for EVM application. It targets security, correctness, simplicity, readability, and reviewability as its primary goals.
+`crysol` is a $secp256k1$ elliptic curve library for EVM applications. It targets security, correctness, simplicity, readability, and reviewability as its primary goals.
 
 Features:
 - Key generation, verification and de/serialization
-- ECDSA and Schnorr signature functionality
+- ECDSA and Schnorr signature generation, verification and de/serialization
 - Point arithmetic based on complete addition formulas and `ecrecover` precompile optimizations
 - Prime field arithmetic
 - Secure, simple and stable interfaces
@@ -21,24 +21,24 @@ Features:
 
 ```ml
 src
-├─ Secp256k1 - "Cryptography functionality for the secp256k1 elliptic curve"
+├─ Secp256k1 - "Secp256k1 cryptography library"
 ├─ arithmetic
-│  ├─ Points "Arithmetic functionality for the secp256k1 elliptic curve"
-│  └─ Fp — "Arithmetic functionality within secp256k1's prime field"
+│  ├─ Points "Secp256k1 point arithmetic library"
+│  └─ Fp — "Secp256k1 primt field arithmetic library"
 └─ signatures
-   ├─ ECDSA — "ECDSA signature functionality for secp256k1"
-   └─ Schnorr — "Schnorr signature functionality for secp256k1"
+   ├─ ECDSA — "ECDSA signature library"
+   └─ Schnorr — "Schnorr signature library"
 
 offchain
 ├─ RandomOffchain - "Access to cryptographically secure randomness"
-├─ Secp256k1Offchain - "Cryptography functionality for the secp256k1 elliptic curve"
+├─ Secp256k1Offchain - "Offchain secp256k1 cryptography library"
 └─ signatures
-   ├─ ECDSAOffchain — "ECDSA signature functionality for secp256k1"
-   └─ SchnorrOffchain — "Schnorr signature functionality for secp256k1"
+   ├─ ECDSAOffchain — "Offchain ECDSA signature library"
+   └─ SchnorrOffchain — "Offchain Schnorr signature library"
 
 unsafe
 └─ signatures
-   └─ ECDSAUnsafe — "Unsafe ECDSA signature functionality for secp256k1"
+   └─ ECDSAUnsafe — "Library for unsafe ECDSA signature operations"
 ```
 
 ## Examples
