@@ -2,7 +2,7 @@
 
 <h1>crysol</h1>
 
-<a href="">[![Unit Tests][tests-shield]][tests-shield-url]</a>
+<a href="">[![Tests][tests-shield]][tests-shield-url]</a>
 <a href="">![Apache2/MIT licensed][license-shield]</a>
 <a href="">[![Solidity][solidity-shield]][solidity-shield-url]</a>
 
