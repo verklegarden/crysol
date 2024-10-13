@@ -4,7 +4,7 @@ out = 'out'
 libs = ['lib']
 ffi = true
 # Permissions
-fs_permissions = [{ access = "read", path = "./" }]
+fs_permissions = [{ access = "read", path = "./test" }]
 
 # Compilation
 evm_version = "shanghai"
