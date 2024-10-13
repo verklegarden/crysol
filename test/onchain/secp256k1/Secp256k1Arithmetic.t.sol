@@ -128,33 +128,35 @@ contract Secp256k1ArithmeticTest is Test {
             bytes memory parsedPoint = vm.parseBytes(c.P);
             Point memory point;
             bool expectedOnCurve = c.expected;
-            // Encoded
+            // If normal encoded.
             if (parsedPoint[0] == 0x04) {
                 if (expectedOnCurve) {
                     point = wrapper.pointFromEncoded(parsedPoint);
+                    assertEq(wrapper.isOnCurve(point), expectedOnCurve);
+                    continue;
                 } else {
                     vm.expectRevert();
                     wrapper.pointFromEncoded(parsedPoint);
                     continue;
                 }
-                // CompressedEncoded
-            } else if (parsedPoint[0] == 0x02 || parsedPoint[0] == 0x03) {
+            }
+            // If compressed encoded.
+            if (parsedPoint[0] == 0x02 || parsedPoint[0] == 0x03) {
                 if (expectedOnCurve) {
                     point = wrapper.pointFromCompressedEncoded(parsedPoint);
+                    assertEq(wrapper.isOnCurve(point), expectedOnCurve);
+                    continue;
                 } else {
                     vm.expectRevert();
                     wrapper.pointFromCompressedEncoded(parsedPoint);
                     continue;
                 }
-                // Invalid
-            } else {
-                vm.expectRevert();
-                wrapper.pointFromEncoded(parsedPoint);
-                vm.expectRevert();
-                wrapper.pointFromCompressedEncoded(parsedPoint);
-                continue;
             }
-            assertEq(wrapper.isOnCurve(point), expectedOnCurve);
+            // Otherwise invalid.
+            vm.expectRevert();
+            wrapper.pointFromEncoded(parsedPoint);
+            vm.expectRevert();
+            wrapper.pointFromCompressedEncoded(parsedPoint);
         }
     }
 
