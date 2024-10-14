@@ -115,7 +115,7 @@ contract Secp256k1ArithmeticTest is Test {
         bool expected;
     }
 
-    function testVectors_Point_isPoint_noble_curves() public {
+    function testVectorsNobleCurves_Point_isPoint() public {
         string memory root = vm.projectRoot();
         string memory path = string.concat(
             root, "/test/onchain/secp256k1/test-vectors/points.json"
@@ -296,7 +296,7 @@ contract Secp256k1ArithmeticTest is Test {
         string expected;
     }
 
-    function testVectors_ProjectivePoint_add_noble_curves() public view {
+    function testVectorsNobleCurves_ProjectivePoint_add() public view {
         string memory root = vm.projectRoot();
         string memory path = string.concat(
             root, "/test/onchain/secp256k1/test-vectors/points.json"
@@ -384,7 +384,7 @@ contract Secp256k1ArithmeticTest is Test {
         string expected;
     }
 
-    function testVectors_ProjectivePoint_mul_noble_curves() public view {
+    function testVectorsNobleCurves_ProjectivePoint_mul() public view {
         string memory root = vm.projectRoot();
         string memory path = string.concat(
             root, "/test/onchain/secp256k1/test-vectors/points.json"
@@ -745,7 +745,7 @@ contract Secp256k1ArithmeticTest is Test {
         string exception;
     }
 
-    function testVectors_Point_invalid_noble_curves() public {
+    function testVectorsNobleCurves_Point_invalid() public {
         string memory root = vm.projectRoot();
         string memory path = string.concat(
             root, "/test/onchain/secp256k1/test-vectors/points.json"
