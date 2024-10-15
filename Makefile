@@ -30,11 +30,9 @@ test-summary: ## Print summary of test suite
 	@forge test --summary --show-progress
 
 .PHONY: coverage
-coverage: ## Update coverage report and open lcov web interface
-	@rm -rf coverage
+coverage: ## Update coverage report and print summary
 	@forge coverage --report lcov
-	@genhtml --branch-coverage --output "coverage" lcov.info
-	@open coverage/index.html
+	@forge coverage --report summary
 
 # Note that ripgrep instead of grep is used.
 # See https://github.com/BurntSushi/ripgrep.
@@ -49,31 +47,25 @@ examples: ## Run examples
 	@echo "##   Random"
 	@echo "##"
 	@echo "########################################"
-	@forge script examples/common/Random.sol:RandomExample -v
+	@forge script examples/Random.sol:RandomExample -v
 	@echo "########################################"
 	@echo "##"
 	@echo "##   Secp256k1"
 	@echo "##"
 	@echo "########################################"
-	@forge script examples/secp256k1/Secp256k1.sol:Secp256k1Example -v
+	@forge script examples/Secp256k1.sol:Secp256k1Example -v
 	@echo "########################################"
 	@echo "##"
-	@echo "##   Secp256r1"
+	@echo "##   ECDSA"
 	@echo "##"
 	@echo "########################################"
-	@forge script examples/secp256r1/Secp256r1.sol:Secp256r1Example -v
-	@echo "########################################"
-	@echo "##"
-	@echo "##   ECDSA on secp56k1"
-	@echo "##"
-	@echo "########################################"
-	@forge script examples/secp256k1/signatures/ECDSA.sol:ECDSAExample -v
+	@forge script examples/signatures/ECDSA.sol:ECDSAExample -v
 	@echo "########################################"
 	@echo "##"
 	@echo "##   Schnorr (ERC-XXX)"
 	@echo "##"
 	@echo "########################################"
-	@forge script examples/secp256k1/signatures/Schnorr.sol:SchnorrExample -v
+	@forge script examples/signatures/Schnorr.sol:SchnorrExample -v
 
 .PHONY: fmt
 fmt: ## Format project
