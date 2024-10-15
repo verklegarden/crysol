@@ -83,7 +83,7 @@ library Points {
     /// @dev The undefined point instance.
     ///
     ///      This point instantiation is used to indicate undefined behaviour.
-    function _UNDEFINEDPOINT() private pure returns (Point memory) {
+    function _UNDEFINED_POINT() private pure returns (Point memory) {
         return Point(
             Fp.unsafeFromUint(type(uint).max), Fp.unsafeFromUint(type(uint).max)
         );
@@ -105,7 +105,60 @@ library Points {
     //--------------------------------------------------------------------------
     // Point
 
-    /// @dev Tries to instantiate a point from coordiantes `x` and `y`.
+    /// @dev Tries to instantiate a point from felt coordinates `x` and `y`.
+    ///
+    /// @dev Note that returned point is undefined if function fails to
+    ///      instantiate point.
+    function tryFromFelts(Felt x, Felt y)
+        internal
+        pure
+        returns (Point memory, bool)
+    {
+        if (!x.isValid() || !y.isValid()) {
+            return (_UNDEFINED_POINT(), false);
+        }
+
+        Point memory p = Point(x, y);
+        if (!p.isOnCurve()) {
+            return (_UNDEFINED_POINT(), false);
+        }
+
+        return (p, true);
+    }
+
+    /// @dev Instantiates point from felt coordinates `x` and `y`.
+    ///
+    /// @dev Reverts if:
+    ///         Coordinate x not a valid felt
+    ///       ∨ Coordinate y not a valid felt
+    ///       ∨ Coordinates not on the curve
+    function fromFelts(Felt x, Felt y)
+        internal
+        pure
+        returns (Point memory)
+    {
+        (Point memory p, bool ok) = tryFromFelts(x, y);
+        if (!ok) {
+            revert("PointInvalid()");
+        }
+
+        return p;
+    }
+
+    /// @dev Instantiates point from felt coordinates `x` and `y` without
+    ///      performing safety checks.
+    ///
+    /// @dev This function is unsafe and may lead to undefined behaviour if
+    ///      used incorrectly.
+    function unsafeFromFelts(Felt x, Felt y)
+        internal
+        pure
+        returns (Point memory)
+    {
+        return Point(x, y);
+    }
+
+    /// @dev Tries to instantiate a point from uint coordinates `x` and `y`.
     ///
     /// @dev Note that returned point is undefined if function fails to
     ///      instantiate point.
@@ -121,27 +174,19 @@ library Points {
         // Fail if x coordinate not a felt.
         (x_, ok) = Fp.tryFromUint(x);
         if (!ok) {
-            return (_UNDEFINEDPOINT(), false);
+            return (_UNDEFINED_POINT(), false);
         }
 
         // Fail if y coordinate not a felt.
         (y_, ok) = Fp.tryFromUint(y);
         if (!ok) {
-            return (_UNDEFINEDPOINT(), false);
+            return (_UNDEFINED_POINT(), false);
         }
 
-        // Construct point from felt coordinates.
-        Point memory p = Point(x_, y_);
-
-        // Fail if point not on curve.
-        if (!p.isOnCurve()) {
-            return (_UNDEFINEDPOINT(), false);
-        }
-
-        return (p, true);
+        return tryFromFelts(x_, y_);
     }
 
-    /// @dev Instantiates point from coordinates `x` and `y`.
+    /// @dev Instantiates point from uint coordinates `x` and `y`.
     ///
     /// @dev Reverts if:
     ///         Coordinate x not a felt
@@ -156,8 +201,8 @@ library Points {
         return p;
     }
 
-    /// @dev Instantiates point from coordinates `x` and `y` without performing
-    ///      safety checks.
+    /// @dev Instantiates point from uint coordinates `x` and `y` without
+    ///      performing safety checks.
     ///
     /// @dev This function is unsafe and may lead to undefined behaviour if
     ///      used incorrectly.
@@ -167,15 +212,6 @@ library Points {
         returns (Point memory)
     {
         return Point(Fp.unsafeFromUint(x), Fp.unsafeFromUint(y));
-    }
-
-    // TODO: Docs and tests Points.unsafeFromFelts
-    function unsafeFromFelts(Felt x, Felt y)
-        internal
-        pure
-        returns (Point memory)
-    {
-        return Point(x, y);
     }
 
     /// @dev Returns the additive identity.

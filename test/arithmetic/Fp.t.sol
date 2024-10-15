@@ -55,7 +55,7 @@ contract FpTest is Test {
         assertFalse(ok);
     }
 
-    // -- feltFromUint
+    // -- fromUint
 
     function testFuzz_feltFromUint(uint seed) public view {
         uint scalar = _bound(seed, 0, Secp256k1.P - 1);
@@ -75,7 +75,7 @@ contract FpTest is Test {
         wrapper.feltFromUint(scalar);
     }
 
-    // -- unsafeFeltFromUint
+    // -- unsafeFromUint
 
     function testFuzz_unsafeFromUint(uint scalar) public view {
         Felt felt = wrapper.unsafeFromUint(scalar);
@@ -92,7 +92,29 @@ contract FpTest is Test {
     //--------------------------------------------------------------------------
     // Predicates
 
-    // TODO: Test Felt predicates.
+    function testFuzz_isValid(uint scalar) public view {
+        Felt felt = Fp.unsafeFromUint(scalar);
+
+        if (scalar < Secp256k1.P) {
+            assertTrue(wrapper.isValid(felt));
+        } else {
+            assertFalse(wrapper.isValid(felt));
+        }
+    }
+
+    function testFuzz_isZero(uint scalar) public view {
+        Felt felt = Fp.unsafeFromUint(scalar);
+
+        if (scalar == 0) {
+            assertTrue(wrapper.isZero(felt));
+        } else {
+            assertFalse(wrapper.isZero(felt));
+        }
+    }
+
+    function testFuzz_isInv() public view {
+        // TODO: Test Fp.isInv()
+    }
 
     //--------------------------------------------------------------------------
     // Arithmetic Functions

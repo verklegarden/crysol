@@ -4,7 +4,6 @@
 
 <a href="">[![Tests][tests-shield]][tests-shield-url]</a>
 <a href="">![Apache2/MIT licensed][license-shield]</a>
-<a href="">[![Solidity][solidity-shield]][solidity-shield-url]</a>
 
 </div>
 
@@ -17,6 +16,8 @@ Features:
 - Prime field arithmetic
 - Secure, simple and stable interfaces
 
+For usage examples, see [`examples/`](./examples).
+
 ## Libraries
 
 ```ml
@@ -24,7 +25,7 @@ src
 ├─ Secp256k1 - "Secp256k1 cryptography library"
 ├─ arithmetic
 │  ├─ Points "Secp256k1 point arithmetic library"
-│  └─ Fp — "Secp256k1 primt field arithmetic library"
+│  └─ Fp — "Secp256k1 prime field arithmetic library"
 └─ signatures
    ├─ ECDSA — "ECDSA signature library"
    └─ Schnorr — "Schnorr signature library"
@@ -40,13 +41,6 @@ unsafe
 └─ signatures
    └─ ECDSAUnsafe — "Library for unsafe ECDSA signature operations"
 ```
-
-## Examples
-
-Several examples are provided in [`examples/`](./examples), such as:
-- secure key pair and Ethereum address generation
-- secp256k1 point arithmetic
-- Schnorr and ECDSA signature creation and verification
 
 ## Installation
 
@@ -101,5 +95,3 @@ We **do not give any warranties** and **will not be liable** for any loss incurr
 [tests-shield]: https://github.com/verklegarden/crysol/actions/workflows/ci.yml/badge.svg
 [tests-shield-url]: https://github.com/verklegarden/crysol/actions/workflows/ci.yml
 [license-shield]: https://img.shields.io/badge/license-Apache2.0/MIT-blue.svg
-[solidity-shield]: https://img.shields.io/badge/solidity-%3E=0.8.16%20%3C=0.8.26-aa6746
-[solidity-shield-url]: https://github.com/verklegarden/crysol/actions/workflows/solc-version-tests.yml

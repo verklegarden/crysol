@@ -53,7 +53,96 @@ contract PointsTest is Test {
     //--------------------------------------------------------------------------
     // Test: Point
 
-    // -- TODO: pointFromUint, etc
+    // -- tryFromFelts
+
+    function testFuzz_tryFromFelts(SecretKey sk) public {
+        vm.assume(sk.isValid());
+
+        PublicKey memory pk = sk.toPublicKey();
+
+        Point memory want = pk.intoPoint();
+        (Point memory got, bool ok) = wrapper.tryFromFelts(pk.x, pk.y);
+        assertTrue(ok);
+        assertTrue(want.eq(got));
+    }
+
+    function testFuzz_tryFromFelts_FailsIf_PointInvalid_XCoordinateInvalidFelt(uint xSeed, Felt y) public view {
+        vm.assume(y.isValid());
+
+        Felt x = Fp.unsafeFromUint(_bound(xSeed, Secp256k1.P, type(uint).max));
+
+        (, bool ok) = wrapper.tryFromFelts(x, y);
+        assertFalse(ok);
+    }
+
+    function testFuzz_tryFromFelts_FailsIf_PointInvalid_YCoordinateInvalidFelt(Felt x, uint ySeed) public view {
+        vm.assume(x.isValid());
+
+        Felt y = Fp.unsafeFromUint(_bound(ySeed, Secp256k1.P, type(uint).max));
+
+        (, bool ok) = wrapper.tryFromFelts(x, y);
+        assertFalse(ok);
+    }
+
+    function testFuzz_tryFromFelts_FailsIf_PointInvalid_NotOnCurve(Felt x, Felt y) public view {
+        Point memory p = Point(x, y);
+        vm.assume(!p.isOnCurve());
+
+        (, bool ok) = wrapper.tryFromFelts(x, y);
+        assertFalse(ok);
+    }
+
+    // -- fromFelts
+
+    function testFuzz_fromFelts(SecretKey sk) public {
+        vm.assume(sk.isValid());
+
+        PublicKey memory pk = sk.toPublicKey();
+
+        Point memory want = pk.intoPoint();
+        Point memory got = wrapper.fromFelts(pk.x, pk.y);
+        assertTrue(want.eq(got));
+    }
+
+    function testFuzz_fromFelts_RevertsIf_PointInvalid_XCoordinateInvalidFelt(uint xSeed, Felt y) public {
+        vm.assume(y.isValid());
+
+        Felt x = Fp.unsafeFromUint(_bound(xSeed, Secp256k1.P, type(uint).max));
+
+        vm.expectRevert("PointInvalid()");
+        wrapper.fromFelts(x, y);
+    }
+
+    function testFuzz_fromFelts_RevertsIf_PointInvalid_YCoordinateInvalidFelt(Felt x, uint ySeed) public {
+        vm.assume(x.isValid());
+
+        Felt y = Fp.unsafeFromUint(_bound(ySeed, Secp256k1.P, type(uint).max));
+
+        vm.expectRevert("PointInvalid()");
+        wrapper.fromFelts(x, y);
+    }
+
+    function testFuzz_fromFelts_FailsIf_PointInvalid_NotOnCurve(Felt x, Felt y) public {
+        Point memory p = Point(x, y);
+        vm.assume(!p.isOnCurve());
+
+        vm.expectRevert("PointInvalid()");
+        wrapper.fromFelts(x, y);
+    }
+
+    // -- unsafeFromFelts
+
+    function testFuzz_unsafeFromFelts(Felt x, Felt y) public view {
+        Point memory p = wrapper.unsafeFromFelts(x, y);
+        assertEq(p.x.asUint(), x.asUint());
+        assertEq(p.y.asUint(), y.asUint());
+    }
+
+    // -- TODO: tryFromUints
+
+    // -- TODO: fromUints
+
+    // -- TODO: unsafeFromUints
 
     // -- Identity
 
@@ -667,6 +756,50 @@ contract PointsWrapper {
 
     //--------------------------------------------------------------------------
     // Point
+
+    function tryFromFelts(Felt x, Felt y)
+        public
+        pure
+        returns (Point memory, bool)
+    {
+        return Points.tryFromFelts(x, y);
+    }
+
+    function fromFelts(Felt x, Felt y)
+        public
+        pure
+        returns (Point memory)
+    {
+        return Points.fromFelts(x, y);
+    }
+
+    function unsafeFromFelts(Felt x, Felt y)
+        public
+        pure
+        returns (Point memory)
+    {
+        return Points.unsafeFromFelts(x, y);
+    }
+
+    function tryFromUints(uint x, uint y)
+        public
+        pure
+        returns (Point memory, bool)
+    {
+        return Points.tryFromUints(x, y);
+    }
+
+    function fromUints(uint x, uint y) internal pure returns (Point memory) {
+        return Points.fromUints(x, y);
+    }
+
+    function unsafeFromUints(uint x, uint y)
+        public
+        pure
+        returns (Point memory)
+    {
+        return Points.unsafeFromUints(x, y);
+    }
 
     function Identity() public pure returns (Point memory) {
         return Points.Identity();
