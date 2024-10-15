@@ -188,9 +188,30 @@ contract FpTest is Test {
         assertTrue(felt.isInv(feltInv));
     }
 
+    function test_inv_ReturnsIdentity_IfIdentity() public view {
+        assertEq(wrapper.inv(Fp.ONE).asUint(), 1);
+    }
+
     function test_inv_RevertsIf_FeltIsZero() public {
         vm.expectRevert("InvOfZero()");
         wrapper.inv(Fp.ZERO);
+    }
+
+    // -- exp
+
+    function test_exp() public {
+        // TODO: Implement Fp.exp() tests.
+        vm.skip(true);
+    }
+
+    function testFuzz_exp_RevertsIf_OutOfGas(Felt base, Felt exponent) public {
+        vm.assume(base.isValid());
+        vm.assume(exponent.isValid());
+
+        // Note that modexp's min gas cost is 200.
+        try wrapper.exp{gas: 200}(base, exponent) returns (Felt) {
+            fail();
+        } catch {}
     }
 }
 
