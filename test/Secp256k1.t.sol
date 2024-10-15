@@ -46,8 +46,6 @@ contract Secp256k1Test is Test {
     //--------------------------------------------------------------------------
     // Test: Secret Key
 
-    // TODO: Test secretKeyFromUint, etc.
-
     // -- trySecretKeyFromUint
 
     function testFuzz_trySecretKeyFromUint(uint seed) public view {
@@ -165,11 +163,248 @@ contract Secp256k1Test is Test {
     //--------------------------------------------------------------------------
     // Test: Public Key
 
-    // -- TODO: tryPublicKeyFromUints
+    // -- tryPublicKeyFromFelts
 
-    // -- TODO: publicKeyFromUints
+    function testFuzz_tryPublicKeyFromFelts(SecretKey sk) public {
+        vm.assume(sk.isValid());
 
-    // -- TODO: unsafePublicKeyFromUints
+        PublicKey memory want = sk.toPublicKey();
+        (PublicKey memory got, bool ok) =
+            wrapper.tryPublicKeyFromFelts(want.x, want.y);
+        assertTrue(ok);
+        assertTrue(want.eq(got));
+    }
+
+    function testFuzz_tryPublicKeyFromFelts_FailsIf_PublicKeyInvalid_XCoordinateInvalidFelt(
+        uint xSeed,
+        Felt y
+    ) public view {
+        vm.assume(y.isValid());
+
+        Felt x = Fp.unsafeFromUint(_bound(xSeed, Secp256k1.P, type(uint).max));
+
+        (, bool ok) = wrapper.tryPublicKeyFromFelts(x, y);
+        assertFalse(ok);
+    }
+
+    function testFuzz_tryPublicKeyFromFelts_FailsIf_PublicKeyInvalid_YCoordinateInvalidFelt(
+        Felt x,
+        uint ySeed
+    ) public view {
+        vm.assume(x.isValid());
+
+        Felt y = Fp.unsafeFromUint(_bound(ySeed, Secp256k1.P, type(uint).max));
+
+        (, bool ok) = wrapper.tryPublicKeyFromFelts(x, y);
+        assertFalse(ok);
+    }
+
+    function testFuzz_tryPublicKeyFromFelts_FailsIf_PublicKeyInvalid_NotOnCurve(
+        Felt x,
+        Felt y
+    ) public view {
+        Point memory p = Point(x, y);
+        vm.assume(!p.isOnCurve());
+
+        (, bool ok) = wrapper.tryPublicKeyFromFelts(x, y);
+        assertFalse(ok);
+    }
+
+    function test_tryPublicKeyFromFelts_FailsIf_PublicKeyInvalid_Identity()
+        public
+        view
+    {
+        Point memory id = Points.Identity();
+
+        (, bool ok) = wrapper.tryPublicKeyFromFelts(id.x, id.y);
+        assertFalse(ok);
+    }
+
+    // -- publicKeyFromFelts
+
+    function testFuzz_publicKeyFromFelts(SecretKey sk) public {
+        vm.assume(sk.isValid());
+
+        PublicKey memory want = sk.toPublicKey();
+        PublicKey memory got = wrapper.publicKeyFromFelts(want.x, want.y);
+        assertTrue(want.eq(got));
+    }
+
+    function testFuzz_publicKeyFromFelts_RevertsIf_PublicKeyInvalid_XCoordinateInvalidFelt(
+        uint xSeed,
+        Felt y
+    ) public {
+        vm.assume(y.isValid());
+
+        Felt x = Fp.unsafeFromUint(_bound(xSeed, Secp256k1.P, type(uint).max));
+
+        vm.expectRevert("PublicKeyInvalid()");
+        wrapper.publicKeyFromFelts(x, y);
+    }
+
+    function testFuzz_publicKeyFromFelts_RevertsIf_PublicKeyInvalid_YCoordinateInvalidFelt(
+        Felt x,
+        uint ySeed
+    ) public {
+        vm.assume(x.isValid());
+
+        Felt y = Fp.unsafeFromUint(_bound(ySeed, Secp256k1.P, type(uint).max));
+
+        vm.expectRevert("PublicKeyInvalid()");
+        wrapper.publicKeyFromFelts(x, y);
+    }
+
+    function testFuzz_publicKeyFromFelts_FailsIf_PublicKeyInvalid_NotOnCurve(
+        Felt x,
+        Felt y
+    ) public {
+        Point memory p = Point(x, y);
+        vm.assume(!p.isOnCurve());
+
+        vm.expectRevert("PublicKeyInvalid()");
+        wrapper.publicKeyFromFelts(x, y);
+    }
+
+    function test_publicKeyFromFelts_RevertsIf_PublicKeyInvalid_Identity()
+        public
+    {
+        Point memory id = Points.Identity();
+
+        vm.expectRevert("PublicKeyInvalid()");
+        wrapper.publicKeyFromFelts(id.x, id.y);
+    }
+
+    // -- unsafePublicKeyFromFelts
+
+    function testFuzz_unsafePublicKeyFromFelts(Felt x, Felt y) public view {
+        PublicKey memory pk = wrapper.unsafePublicKeyFromFelts(x, y);
+        assertEq(pk.x.asUint(), x.asUint());
+        assertEq(pk.y.asUint(), y.asUint());
+    }
+
+    // -- tryPublicKeyFromUints
+
+    function testFuzz_tryPublicKeyFromUints(SecretKey sk) public {
+        vm.assume(sk.isValid());
+
+        PublicKey memory pk = sk.toPublicKey();
+        uint x = pk.x.asUint();
+        uint y = pk.y.asUint();
+
+        PublicKey memory want = pk;
+        (PublicKey memory got, bool ok) = wrapper.tryPublicKeyFromUints(x, y);
+        assertTrue(ok);
+        assertTrue(want.eq(got));
+    }
+
+    function testFuzz_tryPublicKeyFromUints_FailsIf_PointInvalid_XCoordinateNotAFelt(
+        uint x,
+        uint y
+    ) public view {
+        vm.assume(x >= Secp256k1.P);
+        vm.assume(y < Secp256k1.P);
+
+        (, bool ok) = wrapper.tryPublicKeyFromUints(x, y);
+        assertFalse(ok);
+    }
+
+    function testFuzz_tryPublicKeyFromUints_FailsIf_PointInvalid_YCoordinateNotAFelt(
+        uint x,
+        uint y
+    ) public view {
+        vm.assume(x < Secp256k1.P);
+        vm.assume(y >= Secp256k1.P);
+
+        (, bool ok) = wrapper.tryPublicKeyFromUints(x, y);
+        assertFalse(ok);
+    }
+
+    function testFuzz_tryPublicKeyFromUints_FailsIf_PointInvalid_NotOnCurve(
+        Felt x,
+        Felt y
+    ) public view {
+        Point memory p = Point(x, y);
+        vm.assume(!p.isOnCurve());
+
+        (, bool ok) = wrapper.tryPublicKeyFromUints(x.asUint(), y.asUint());
+        assertFalse(ok);
+    }
+
+    function test_tryPublicKeyFromUints_FailsIf_PointInvalid_Identity()
+        public
+        view
+    {
+        Point memory id = Points.Identity();
+        uint x = id.x.asUint();
+        uint y = id.y.asUint();
+
+        (, bool ok) = wrapper.tryPublicKeyFromUints(x, y);
+        assertFalse(ok);
+    }
+
+    // -- publicKeyFromUints
+
+    function testFuzz_publicKeyFromUints(SecretKey sk) public {
+        vm.assume(sk.isValid());
+
+        PublicKey memory pk = sk.toPublicKey();
+        uint x = pk.x.asUint();
+        uint y = pk.y.asUint();
+
+        PublicKey memory want = pk;
+        PublicKey memory got = wrapper.publicKeyFromUints(x, y);
+        assertTrue(want.eq(got));
+    }
+
+    function testFuzz_publicKeyFromUints_FailsIf_PointInvalid_XCoordinateNotAFelt(
+        uint x,
+        uint y
+    ) public {
+        vm.assume(x >= Secp256k1.P);
+        vm.assume(y < Secp256k1.P);
+
+        vm.expectRevert("PublicKeyInvalid()");
+        wrapper.publicKeyFromUints(x, y);
+    }
+
+    function testFuzz_publicKeyFromUints_FailsIf_PointInvalid_YCoordinateNotAFelt(
+        uint x,
+        uint y
+    ) public {
+        vm.assume(x < Secp256k1.P);
+        vm.assume(y >= Secp256k1.P);
+
+        vm.expectRevert("PublicKeyInvalid()");
+        wrapper.publicKeyFromUints(x, y);
+    }
+
+    function testFuzz_publicKeyFromUints_FailsIf_PointInvalid_NotOnCurve(
+        Felt x,
+        Felt y
+    ) public {
+        Point memory p = Point(x, y);
+        vm.assume(!p.isOnCurve());
+
+        vm.expectRevert("PublicKeyInvalid()");
+        wrapper.publicKeyFromUints(x.asUint(), y.asUint());
+    }
+
+    function test_publicKeyFromUints_FailsIf_PointInvalid_Identity() public {
+        Point memory id = Points.Identity();
+        uint x = id.x.asUint();
+        uint y = id.y.asUint();
+
+        vm.expectRevert("PublicKeyInvalid()");
+        wrapper.publicKeyFromUints(x, y);
+    }
+
+    // -- unsafePublicKeyFromUints
+
+    function testFuzz_unsafePublicKeyFromUints(uint x, uint y) public view {
+        PublicKey memory pk = wrapper.unsafePublicKeyFromUints(x, y);
+        assertEq(pk.x.asUint(), x);
+        assertEq(pk.y.asUint(), y);
+    }
 
     // -- toAddress
 
@@ -467,6 +702,54 @@ contract Secp256k1Wrapper {
 
     //--------------------------------------------------------------------------
     // Public Key
+
+    function tryPublicKeyFromFelts(Felt x, Felt y)
+        public
+        pure
+        returns (PublicKey memory, bool)
+    {
+        return Secp256k1.tryPublicKeyFromFelts(x, y);
+    }
+
+    function publicKeyFromFelts(Felt x, Felt y)
+        public
+        pure
+        returns (PublicKey memory)
+    {
+        return Secp256k1.publicKeyFromFelts(x, y);
+    }
+
+    function unsafePublicKeyFromFelts(Felt x, Felt y)
+        public
+        pure
+        returns (PublicKey memory)
+    {
+        return Secp256k1.unsafePublicKeyFromFelts(x, y);
+    }
+
+    function tryPublicKeyFromUints(uint x, uint y)
+        public
+        pure
+        returns (PublicKey memory, bool)
+    {
+        return Secp256k1.tryPublicKeyFromUints(x, y);
+    }
+
+    function publicKeyFromUints(uint x, uint y)
+        public
+        pure
+        returns (PublicKey memory)
+    {
+        return Secp256k1.publicKeyFromUints(x, y);
+    }
+
+    function unsafePublicKeyFromUints(uint x, uint y)
+        public
+        pure
+        returns (PublicKey memory)
+    {
+        return Secp256k1.unsafePublicKeyFromUints(x, y);
+    }
 
     function toAddress(PublicKey memory pk) public pure returns (address) {
         return pk.toAddress();

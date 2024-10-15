@@ -182,11 +182,15 @@ contract FpTest is Test {
 
     function testFuzz_inv(Felt felt) public view {
         vm.assume(felt.isValid());
-
         vm.assume(!felt.isZero());
 
         Felt feltInv = wrapper.inv(felt);
         assertTrue(felt.isInv(feltInv));
+    }
+
+    function test_inv_RevertsIf_FeltIsZero() public {
+        vm.expectRevert("InvOfZero()");
+        wrapper.inv(Fp.ZERO);
     }
 }
 

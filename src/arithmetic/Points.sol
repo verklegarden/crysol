@@ -132,11 +132,7 @@ library Points {
     ///         Coordinate x not a valid felt
     ///       ∨ Coordinate y not a valid felt
     ///       ∨ Coordinates not on the curve
-    function fromFelts(Felt x, Felt y)
-        internal
-        pure
-        returns (Point memory)
-    {
+    function fromFelts(Felt x, Felt y) internal pure returns (Point memory) {
         (Point memory p, bool ok) = tryFromFelts(x, y);
         if (!ok) {
             revert("PointInvalid()");
@@ -167,23 +163,7 @@ library Points {
         pure
         returns (Point memory, bool)
     {
-        bool ok;
-        Felt x_;
-        Felt y_;
-
-        // Fail if x coordinate not a felt.
-        (x_, ok) = Fp.tryFromUint(x);
-        if (!ok) {
-            return (_UNDEFINED_POINT(), false);
-        }
-
-        // Fail if y coordinate not a felt.
-        (y_, ok) = Fp.tryFromUint(y);
-        if (!ok) {
-            return (_UNDEFINED_POINT(), false);
-        }
-
-        return tryFromFelts(x_, y_);
+        return tryFromFelts(Fp.unsafeFromUint(x), Fp.unsafeFromUint(y));
     }
 
     /// @dev Instantiates point from uint coordinates `x` and `y`.

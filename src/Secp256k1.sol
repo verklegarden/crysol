@@ -224,6 +224,60 @@ library Secp256k1 {
     //--------------------------------------------------------------------------
     // Public Key
 
+    /// @dev Tries to instantiate a public key from felt coordinates `x` and
+    ///      `y`.
+    ///
+    /// @dev Note that returned public key is undefined if function fails to
+    ///      instantiate point.
+    function tryPublicKeyFromFelts(Felt x, Felt y)
+        internal
+        pure
+        returns (PublicKey memory, bool)
+    {
+        if (!x.isValid() || !y.isValid()) {
+            return (_UNDEFINED_PUBLIC_KEY(), false);
+        }
+
+        PublicKey memory pk = PublicKey(x, y);
+        if (!pk.isValid()) {
+            return (_UNDEFINED_PUBLIC_KEY(), false);
+        }
+
+        return (pk, true);
+    }
+
+    /// @dev Instantiates public key from felt coordinates `x` and `y`.
+    ///
+    /// @dev Reverts if:
+    ///         Coordinate x not a valid felt
+    ///       ∨ Coordinate y not a valid felt
+    ///       ∨ Coordinates not on the curve
+    function publicKeyFromFelts(Felt x, Felt y)
+        internal
+        pure
+        returns (PublicKey memory)
+    {
+        (PublicKey memory pk, bool ok) = tryPublicKeyFromFelts(x, y);
+        if (!ok) {
+            revert("PublicKeyInvalid()");
+        }
+
+        return pk;
+    }
+
+    /// @dev Instantiates public key from felt coordinates `x` and `y` without
+    ///      performing safety checks.
+    ///
+    /// @dev This function is unsafe and may lead to undefined behaviour if
+    ///      used incorrectly.
+    function unsafePublicKeyFromFelts(Felt x, Felt y)
+        internal
+        pure
+        returns (PublicKey memory)
+    {
+        return PublicKey(x, y);
+    }
+
     /// @dev Tries to instantiate a public key from coordinates `x` and `y`.
     ///
     /// @dev Note that returned public key is undefined if function fails to
@@ -233,12 +287,7 @@ library Secp256k1 {
         pure
         returns (PublicKey memory, bool)
     {
-        (Point memory p, bool ok) = Points.tryFromUints(x, y);
-        if (!ok) {
-            return (_UNDEFINED_PUBLIC_KEY(), false);
-        }
-
-        return (p.intoPublicKey(), true);
+        return tryPublicKeyFromFelts(Fp.unsafeFromUint(x), Fp.unsafeFromUint(y));
     }
 
     /// @dev Instantiates public key from coordinates `x` and `y`.
