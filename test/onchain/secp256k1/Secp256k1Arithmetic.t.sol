@@ -3,6 +3,7 @@ pragma solidity ^0.8.16;
 
 import {Test} from "forge-std/Test.sol";
 import {console2 as console} from "forge-std/console2.sol";
+import {stdJson} from "forge-std/StdJson.sol";
 
 import {Secp256k1Offchain} from "src/offchain/secp256k1/Secp256k1Offchain.sol";
 import {
@@ -29,6 +30,7 @@ contract Secp256k1ArithmeticTest is Test {
     using Secp256k1 for Point;
     using Secp256k1Arithmetic for Point;
     using Secp256k1Arithmetic for ProjectivePoint;
+    using stdJson for string;
 
     // Uncompressed Generator G.
     // Copied from [SEC-2 v2].
@@ -106,6 +108,56 @@ contract Secp256k1ArithmeticTest is Test {
         point.y ^= yMask;
 
         assertFalse(wrapper.isOnCurve(point));
+    }
+
+    struct IsPointCase {
+        string P;
+        bool expected;
+    }
+
+    function testVectorsNobleCurves_Point_isPoint() public {
+        string memory root = vm.projectRoot();
+        string memory path = string.concat(
+            root, "/test/onchain/secp256k1/test-vectors/points.json"
+        );
+        string memory json = vm.readFile(path);
+        bytes memory data = json.parseRaw(".valid.isPoint");
+        IsPointCase[] memory cases = abi.decode(data, (IsPointCase[]));
+        for (uint i; i < cases.length; i++) {
+            IsPointCase memory c = cases[i];
+            bytes memory parsedPoint = vm.parseBytes(c.P);
+            Point memory point;
+            bool expectedOnCurve = c.expected;
+            // If normal encoded.
+            if (parsedPoint[0] == 0x04) {
+                if (expectedOnCurve) {
+                    point = wrapper.pointFromEncoded(parsedPoint);
+                    assertEq(wrapper.isOnCurve(point), expectedOnCurve);
+                    continue;
+                } else {
+                    vm.expectRevert();
+                    wrapper.pointFromEncoded(parsedPoint);
+                    continue;
+                }
+            }
+            // If compressed encoded.
+            if (parsedPoint[0] == 0x02 || parsedPoint[0] == 0x03) {
+                if (expectedOnCurve) {
+                    point = wrapper.pointFromCompressedEncoded(parsedPoint);
+                    assertEq(wrapper.isOnCurve(point), expectedOnCurve);
+                    continue;
+                } else {
+                    vm.expectRevert();
+                    wrapper.pointFromCompressedEncoded(parsedPoint);
+                    continue;
+                }
+            }
+            // Otherwise invalid.
+            vm.expectRevert();
+            wrapper.pointFromEncoded(parsedPoint);
+            vm.expectRevert();
+            wrapper.pointFromCompressedEncoded(parsedPoint);
+        }
     }
 
     // -- yParity
@@ -238,6 +290,53 @@ contract Secp256k1ArithmeticTest is Test {
         }
     }
 
+    struct PointAddCase {
+        string P;
+        string Q;
+        string expected;
+    }
+
+    function testVectorsNobleCurves_ProjectivePoint_add() public view {
+        string memory root = vm.projectRoot();
+        string memory path = string.concat(
+            root, "/test/onchain/secp256k1/test-vectors/points.json"
+        );
+        string memory json = vm.readFile(path);
+        bytes memory data = json.parseRaw(".valid.pointAdd");
+        PointAddCase[] memory cases = abi.decode(data, (PointAddCase[]));
+        for (uint i; i < cases.length; i++) {
+            PointAddCase memory c = cases[i];
+            bytes memory parsedP = vm.parseBytes(c.P);
+            bytes memory parsedQ = vm.parseBytes(c.Q);
+            bytes memory parsedExpected;
+            try vm.parseBytes(c.expected) returns (bytes memory parsedTry) {
+                parsedExpected = parsedTry;
+            } catch {
+                // "description": "1 + -1 == 0/Infinity",
+                // "P": "0279be667ef9dcbbac55a06295ce870b07029bfcdb2dce28d959f2815b16f81798",
+                // "Q": "0379be667ef9dcbbac55a06295ce870b07029bfcdb2dce28d959f2815b16f81798",
+                // "expected": null
+                assertEq(
+                    parsedP,
+                    hex"0279BE667EF9DCBBAC55A06295CE870B07029BFCDB2DCE28D959F2815B16F81798"
+                );
+                assertEq(
+                    parsedQ,
+                    hex"0379BE667EF9DCBBAC55A06295CE870B07029BFCDB2DCE28D959F2815B16F81798"
+                );
+                parsedExpected = hex"00";
+            }
+            ProjectivePoint memory p =
+                wrapper.pointFromCompressedEncoded(parsedP).toProjectivePoint();
+            ProjectivePoint memory q =
+                wrapper.pointFromCompressedEncoded(parsedQ).toProjectivePoint();
+            Point memory expected =
+                wrapper.pointFromCompressedEncoded(parsedExpected);
+            Point memory got = wrapper.add(p, q).intoPoint();
+            assertTrue(got.eq(expected));
+        }
+    }
+
     function test_ProjectivePoint_add_Identity() public view {
         ProjectivePoint memory g = Secp256k1Arithmetic.G().toProjectivePoint();
         ProjectivePoint memory id = Secp256k1Arithmetic.ProjectiveIdentity();
@@ -276,6 +375,35 @@ contract Secp256k1ArithmeticTest is Test {
         Point memory want = sk.toPublicKey().intoPoint();
 
         assertTrue(want.eq(got));
+    }
+
+    struct PointMulCase {
+        string P;
+        string d;
+        string description;
+        string expected;
+    }
+
+    function testVectorsNobleCurves_ProjectivePoint_mul() public view {
+        string memory root = vm.projectRoot();
+        string memory path = string.concat(
+            root, "/test/onchain/secp256k1/test-vectors/points.json"
+        );
+        string memory json = vm.readFile(path);
+        bytes memory data = json.parseRaw(".valid.pointMultiply");
+        PointMulCase[] memory cases = abi.decode(data, (PointMulCase[]));
+        for (uint i; i < cases.length; i++) {
+            PointMulCase memory c = cases[i];
+            bytes memory parsedP = vm.parseBytes(c.P);
+            uint parsedD = vm.parseUint(c.d);
+            bytes memory parsedExpected = vm.parseBytes(c.expected);
+            Point memory expected =
+                wrapper.pointFromCompressedEncoded(parsedExpected);
+            ProjectivePoint memory p =
+                wrapper.pointFromCompressedEncoded(parsedP).toProjectivePoint();
+            Point memory got = wrapper.mul(p, parsedD).intoPoint();
+            assertTrue(got.eq(expected));
+        }
     }
 
     function testVectors_ProjectivePoint_mul() public view {
@@ -608,6 +736,34 @@ contract Secp256k1ArithmeticTest is Test {
         vm.skip(true);
         // TODO: Find secp256k1 x coordinates not on the curve for compressed
         //       byte encoding.
+    }
+
+    struct InvalidPointCase {
+        string P;
+        bool compress;
+        string description;
+        string exception;
+    }
+
+    function testVectorsNobleCurves_Point_invalid() public {
+        string memory root = vm.projectRoot();
+        string memory path = string.concat(
+            root, "/test/onchain/secp256k1/test-vectors/points.json"
+        );
+        string memory json = vm.readFile(path);
+        bytes memory data = json.parseRaw(".invalid.pointCompress");
+        InvalidPointCase[] memory cases = abi.decode(data, (InvalidPointCase[]));
+        for (uint i; i < cases.length; i++) {
+            InvalidPointCase memory c = cases[i];
+            bytes memory parsedP = vm.parseBytes(c.P);
+            if (parsedP.length != 33) {
+                vm.expectRevert();
+                wrapper.pointFromEncoded(parsedP);
+            } else {
+                vm.expectRevert();
+                wrapper.pointFromCompressedEncoded(parsedP);
+            }
+        }
     }
 
     function test_Point_toCompressedEncoded_IfyParityEven() public view {
