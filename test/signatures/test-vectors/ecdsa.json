@@ -1,115 +1,96 @@
 {
   "valid": [
     {
-      "description": "Everything should be made as simple as possible, but not simpler.",
       "d": "0000000000000000000000000000000000000000000000000000000000000001",
       "m": "06ef2b193b83b3d701f765f1db34672ab84897e1252343cc2197829af3a30456",
       "signature": "33a69cd2065432a30f3d1ce4eb0d59b8ab58c74f27c41a7fdb5696ad4e6108c96f807982866f785d3f6418d24163ddae117b7db4d5fdf0071de069fa54342262"
     },
     {
-      "description": "Equations are more important to me, because politics is for the present, but an equation is something for eternity.",
       "d": "fffffffffffffffffffffffffffffffebaaedce6af48a03bbfd25e8cd0364140",
       "m": "5e9f0a0d593efdcf78ac923bc3313e4e7d408d574354ee2b3288c0da9fbba6ed",
       "signature": "54c4a33c6423d689378f160a7ff8b61330444abb58fb470f96ea16d99d4a2fed07082304410efa6b2943111b6a4e0aaa7b7db55a07e9861d1fb3cb1f421044a5"
     },
     {
-      "description": "Not only is the Universe stranger than we think, it is stranger than we can think.",
       "d": "fffffffffffffffffffffffffffffffebaaedce6af48a03bbfd25e8cd0364140",
       "m": "4d642665c81dd2d6fc3d386ee018043e1f38c5def0a9925febd766f5b15fdb8d",
       "signature": "ff466a9f1b7b273e2f4c3ffe032eb2e814121ed18ef84665d0f515360dab3dd06fc95f5132e5ecfdc8e5e6e616cc77151455d46ed48f5589b7db7771a332b283"
     },
     {
-      "description": "How wonderful that we have met with a paradox. Now we have some hope of making progress.",
       "d": "0000000000000000000000000000000000000000000000000000000000000001",
       "m": "d507058c2f1472fe0de2ba3b4efe629505677440ab3a7032a9adeaf0ebda74a2",
       "signature": "c0dafec8251f1d5010289d210232220b03202cba34ec11fec58b3e93a85b91d375afdc06b7d6322a590955bf264e7aaa155847f614d80078a90292fe205064d3"
     },
     {
-      "description": "Computer science is no more about computers than astronomy is about telescopes.",
       "d": "69ec59eaa1f4f2e36b639716b7c30ca86d9a5375c7b38d8918bd9c0ebc80ba64",
       "m": "24833a5c2c927c9876d7a77e400577057598e0d7b0c96587ee8a37ea5381bede",
       "signature": "7186363571d65e084e7f02b0b77c3ec44fb1b257dee26274c38c928986fea45d0de0b38e06807e46bda1f1e293f4f6323e854c86d58abdd00c46c16441085df6"
     },
     {
-      "description": "...if you aren't, at any given time, scandalized by code you wrote five or even three years ago, you're not learning anywhere near enough",
       "d": "00000000000000000000000000007246174ab1e92e9149c6e446fe194d072637",
       "m": "1eb6e69ca54e38a9b30d4e80b7f69f9dbb10f81579e635dc49557fc16f21e911",
       "signature": "fbfe5076a15860ba8ed00e75e9bd22e05d230f02a936b653eb55b61c99dda4870e68880ebb0050fe4312b1b1eb0899e1b82da89baa5b895f612619edf34cbd37"
     },
     {
-      "description": "The question of whether computers can think is like the question of whether submarines can swim.",
       "d": "000000000000000000000000000000000000000000056916d0f9b31dc9b637f3",
       "m": "179fd85cbe8797f314f07f732438db0682da502c7a9aa9da87af39cf126aaeb3",
       "signature": "cde1302d83f8dd835d89aef803c74a119f561fbaef3eb9129e45f30de86abbf906ce643f5049ee1f27890467b77a6a8e11ec4661cc38cd8badf90115fbd03cef"
     },
     {
-      "description": "Everything should be made as simple as possible, but not simpler.",
       "d": "9c7fc36bc106fd7df5e1078d03e34b9a045892abdd053ec69bfeb22327529f6c",
       "m": "06ef2b193b83b3d701f765f1db34672ab84897e1252343cc2197829af3a30456",
       "signature": "b4abe4ecdf93a1b8b22958fd70bdb10ef0c05e391fb58ef2b67c8fe38dcf887566eea005e0e32292b0a70280afc20d8341109bce79df004529bcc8598af701c6"
     },
     {
-      "description": "Equations are more important to me, because politics is for the present, but an equation is something for eternity.",
       "d": "85a7464e3d385e445d05a6653686d6e0494f5a040403e33cdfb298f0dfc81b13",
       "m": "5e9f0a0d593efdcf78ac923bc3313e4e7d408d574354ee2b3288c0da9fbba6ed",
       "signature": "539825cf9532fc9ba16e6f71ea0140768621ce908a7a88b6fa2184db14802f81477eb2480cc732370041af5de20818c478e6d0768093d9c12582eb548c1ec7a4"
     },
     {
-      "description": "Not only is the Universe stranger than we think, it is stranger than we can think.",
       "d": "52f9dd5e40e93ac097c7550b1d812cac8cac1dab5d8d471e10952da763ed4edb",
       "m": "4d642665c81dd2d6fc3d386ee018043e1f38c5def0a9925febd766f5b15fdb8d",
       "signature": "f3caed96084874665027847dc5b1f34d8acb375305580be42cf88da3810cd9a040ae93fd80d61b08e9c6dd3a2012ede80b619e92b676aa72f85ccd4156896589"
     },
     {
-      "description": "How wonderful that we have met with a paradox. Now we have some hope of making progress.",
       "d": "aba9ad83795cb662a4ec3214b780c4dbdf8a32f4b3b4967f00257ae81a18f2d9",
       "m": "d507058c2f1472fe0de2ba3b4efe629505677440ab3a7032a9adeaf0ebda74a2",
       "signature": "3121742c83f31bdacf06ab29a4f016365240d98069e9ce8c53dea3caba5694cf42f2af2979209725fb690d9a8d1aedd8808409697da4bbf58c847b6836641c3f"
     },
     {
-      "description": "Computer science is no more about computers than astronomy is about telescopes.",
       "d": "ab51604553e2a35df7e0fd32169a5a3e5dfa1bdf2455667a15aa3eb8696a3d16",
       "m": "24833a5c2c927c9876d7a77e400577057598e0d7b0c96587ee8a37ea5381bede",
       "signature": "06a02f42890eabc89401448debc5525b98f3cafe9f800d34179f1108cdcfcaec225c46d5280244429866d50446b4664c19f72a5f25ccad982fc54b9500a03c3e"
     },
     {
-      "description": "...if you aren't, at any given time, scandalized by code you wrote five or even three years ago, you're not learning anywhere near enough",
       "d": "fab0b9902eb61423df7aea8e532fe409f014dca8b55da1e13d283d3dd58d84c3",
       "m": "1eb6e69ca54e38a9b30d4e80b7f69f9dbb10f81579e635dc49557fc16f21e911",
       "signature": "23fac8b0b25d73c588da91d848d7ecdde1873e140f953db44556f9b83ff25c16635f39f10fff1dd15b4b958de19e1539e344d7861379d5beee98fb00fb5d1012"
     },
     {
-      "description": "The question of whether computers can think is like the question of whether submarines can swim.",
       "d": "3c1384240303d12646b8b7c550524a3bb55c44bd620d379acda1149ebf3b9d4c",
       "m": "179fd85cbe8797f314f07f732438db0682da502c7a9aa9da87af39cf126aaeb3",
       "signature": "beea15563a85842ca72fa8e5fe4a63739f40849aff294d0f1061b1bf28f85cc826e81a26dc398a0619651983f1c9ada2dc93de348dafeba40c27fa4c007d2b8b"
     },
     {
-      "description": "Strange hash",
       "d": "0000000000000000000000000000000000000000000000000000000000000001",
       "m": "0000000000000000000000000000000000000000000000000000000000000000",
       "signature": "a0b37f8fba683cc68f6574cd43b39f0343a50008bf6ccea9d13231d9e7e2e1e411edc8d307254296264aebfc3dc76cd8b668373a072fd64665b50000e9fcce52"
     },
     {
-      "description": "Strange hash",
       "d": "0000000000000000000000000000000000000000000000000000000000000001",
       "m": "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
       "signature": "7cb38cc5712e9e11a767615f6080dbc111c9cdd613eb98999fd92a86bafd45407923ca1f4d03471d2866f776ef8a6d3cac099b427331aeb245aa9dafeddcf115"
     },
     {
-      "description": "Stange hash",
       "d": "fffffffffffffffffffffffffffffffebaaedce6af48a03bbfd25e8cd0364140",
       "m": "0000000000000000000000000000000000000000000000000000000000000000",
       "signature": "919026f3e239ea52cf530eb6d345dc2b56ef0928f1e9ad20d8f360284dc6504814395e7137e2204f15b69239010f3c34fbb3c858a29b0d106b1fa65bc0047263"
     },
     {
-      "description": "Strange hash",
       "d": "fffffffffffffffffffffffffffffffebaaedce6af48a03bbfd25e8cd0364140",
       "m": "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
       "signature": "a7f83b5963eaf5332c633327cc967be8f4166d3f1e0b77f9761d8f4e42211e9a58aae31be1eb1e496923bbe8ca5e843cfb89f4d986d61d4edfd7d6fc3c9cf62c"
     },
     {
-      "description": "Strange hash",
       "d": "fffffffffffffffffffffffffffffffebaaedce6af48a03bbfd25e8cd0364140",
       "m": "fffffffffffffffffffffffffffffffebaaedce6af48a03bbfd25e8cd0364141",
       "signature": "919026f3e239ea52cf530eb6d345dc2b56ef0928f1e9ad20d8f360284dc6504814395e7137e2204f15b69239010f3c34fbb3c858a29b0d106b1fa65bc0047263"
