@@ -3,6 +3,7 @@ pragma solidity ^0.8.16;
 
 import {Test} from "forge-std/Test.sol";
 import {console2 as console} from "forge-std/console2.sol";
+import {stdJson} from "forge-std/StdJson.sol";
 
 import {Secp256k1Offchain} from "offchain/Secp256k1Offchain.sol";
 import {Secp256k1, SecretKey, PublicKey} from "src/Secp256k1.sol";
@@ -11,10 +12,15 @@ import {ECDSAOffchain} from "offchain/signatures/ECDSAOffchain.sol";
 import {ECDSA, Signature} from "src/signatures/ECDSA.sol";
 import {ECDSAUnsafe} from "unsafe/signatures/ECDSAUnsafe.sol";
 
+import {Points, Point} from "src/arithmetic/Points.sol";
+import {PointsWrapper} from "test/arithmetic/Points.t.sol";
+
 /**
  * @notice ECDSA Unit Tests
  */
 contract ECDSATest is Test {
+    using stdJson for string;
+
     using Secp256k1Offchain for SecretKey;
     using Secp256k1 for SecretKey;
     using Secp256k1 for PublicKey;
@@ -27,9 +33,11 @@ contract ECDSATest is Test {
     using ECDSAUnsafe for Signature;
 
     ECDSAWrapper wrapper;
+    PointsWrapper wrapperPoints;
 
     function setUp() public {
         wrapper = new ECDSAWrapper();
+        wrapperPoints = new PointsWrapper();
     }
 
     //--------------------------------------------------------------------------
@@ -99,6 +107,143 @@ contract ECDSATest is Test {
 
         vm.expectRevert("PublicKeyInvalid()");
         wrapper.verify(pk, m, sig);
+    }
+
+    struct ECDSAValidCase {
+        string d;
+        string m;
+        string signature;
+    }
+
+    function testVectorsNobleCurves_verify_WithPublicKey() public {
+        string memory root = vm.projectRoot();
+        string memory path =
+            string.concat(root, "/test/signatures/test-vectors/ecdsa.json");
+        string memory json = vm.readFile(path);
+        bytes memory data = json.parseRaw(".valid");
+        ECDSAValidCase[] memory cases = abi.decode(data, (ECDSAValidCase[]));
+        for (uint i; i < cases.length; i++) {
+            ECDSAValidCase memory c = cases[i];
+            bytes memory parsedD = vm.parseBytes(c.d);
+            bytes32 parsedM = vm.parseBytes32(c.m);
+            if (uint(parsedM) >= Secp256k1.Q) {
+                // Skip test vector if the message is greater than or equal to the curve order.
+                // Foundry uses RustCrypto at tag ecdsa/0.16.9 which do not follow strictly RFC6979
+                // leading to different signatures for the same message compared to noble curves.
+                // For more details see https://github.com/obatirou/RFC6979-implementation-analysis
+                // To be removed when the issue is fixed in ecdsa/0.17.0
+                assertTrue(
+                    parsedM
+                        ==
+                        hex"ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff"
+                        || parsedM
+                            ==
+                            hex"fffffffffffffffffffffffffffffffebaaedce6af48a03bbfd25e8cd0364141"
+                );
+                continue;
+            }
+            // Noble curves signatures do not encode v values.
+            // https://github.com/paulmillr/noble-curves/blob/1db569a52474ea94d6ec06fbe5321d17395ca255/README.md?plain=1#L104
+            // To retrieve the v value, sign the message with the secret key with foundry
+            // and compare the result with the test vector signature.
+            // Signatures should be equal due to following RFC6979.
+            bytes memory parsedSignature = vm.parseBytes(c.signature);
+            (bytes32 r, bytes32 s) =
+                abi.decode(parsedSignature, (bytes32, bytes32));
+            SecretKey sk =
+                Secp256k1.secretKeyFromUint(abi.decode(parsedD, (uint)));
+            Signature memory signed = sk.signRaw(parsedM);
+            assertEq(r, signed.r);
+            assertEq(s, signed.s);
+            // Verify signature
+            PublicKey memory pk = sk.toPublicKey();
+            assertTrue(wrapper.verify(pk, parsedM, signed));
+        }
+    }
+
+    struct ECDSAInvalidVerifyCase {
+        string Q;
+        string description;
+        string m;
+        string signature;
+    }
+
+    function testVectorsNobleCurves_verify_WithPublicKey_FailsIf_Invalid()
+        public
+    {
+        string memory root = vm.projectRoot();
+        string memory path =
+            string.concat(root, "/test/signatures/test-vectors/ecdsa.json");
+        string memory json = vm.readFile(path);
+        bytes memory data = json.parseRaw(".invalid.verify");
+        ECDSAInvalidVerifyCase[] memory cases =
+            abi.decode(data, (ECDSAInvalidVerifyCase[]));
+        for (uint i; i < cases.length; i++) {
+            ECDSAInvalidVerifyCase memory c = cases[i];
+            bytes memory parsedQ = vm.parseBytes(c.Q);
+            bytes32 parsedM = vm.parseBytes32(c.m);
+            bytes memory parsedSignature = vm.parseBytes(c.signature);
+            // Signature does not encode v for noble curves test vectors.
+            // https://github.com/paulmillr/noble-curves/blob/1db569a52474ea94d6ec06fbe5321d17395ca255/README.md?plain=1#L104
+            (bytes32 r, bytes32 s) =
+                abi.decode(parsedSignature, (bytes32, bytes32));
+
+            // 1. Recover a Point from Q.
+            // If normal encoded.
+            Point memory pointQ;
+            if (parsedQ[0] == 0x04) {
+                try wrapperPoints.pointFromEncoded(parsedQ) returns (
+                    Point memory pointDecoded
+                ) {
+                    pointQ = pointDecoded;
+                } catch Error(string memory reason) {
+                    console.log("pointFromEncoded failed");
+                    console.logBytes(parsedQ);
+                    console.log(reason);
+                    console.log(c.description);
+                    continue;
+                }
+            }
+            // If compressed encoded.
+            if (parsedQ[0] == 0x02 || parsedQ[0] == 0x03) {
+                try wrapperPoints.pointFromCompressedEncoded(parsedQ) returns (
+                    Point memory pointDecoded
+                ) {
+                    pointQ = pointDecoded;
+                } catch Error(string memory reason) {
+                    console.log("pointFromCompressedEncoded failed");
+                    console.logBytes(parsedQ);
+                    console.log(reason);
+                    console.log(c.description);
+                    continue;
+                }
+            }
+            // If the point encoding is invalid, it should revert for both encoding types.
+            if (parsedQ[0] != 0x04 && parsedQ[0] != 0x02 && parsedQ[0] != 0x03)
+            {
+                vm.expectRevert();
+                wrapperPoints.pointFromEncoded(parsedQ);
+                vm.expectRevert();
+                wrapperPoints.pointFromCompressedEncoded(parsedQ);
+                continue;
+            }
+
+            // 2. Build the Signature and PublicKey
+            uint parity = Points.yParity(pointQ);
+            Signature memory sig = Signature(uint8(parity), r, s);
+            PublicKey memory pk = Secp256k1.intoPublicKey(pointQ);
+
+            // 3. Verify signature with PublicKey: either it raises or it returns false.
+            try wrapper.verify(pk, parsedM, sig) returns (bool result) {
+                assertFalse(result);
+            } catch Error(string memory reason) {
+                console.log("verify failed");
+                console.logBytes(parsedQ);
+                console.log(reason);
+                console.log(c.description);
+                continue;
+            }
+        }
     }
 
     // -- verify with address
