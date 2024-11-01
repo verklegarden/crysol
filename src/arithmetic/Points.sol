@@ -348,72 +348,70 @@ library Points {
             return point;
         }
 
+        // forgefmt: disable-start
+
+        // Note that for optimization reasons native uint is used instead of Fp.
+
         // Inputs:
         // - P = (x1, y1, z1)
-        Felt x1 = point.x;
-        Felt y1 = point.y;
-        Felt z1 = point.z;
+        uint x1 = point.x.asUint();
+        uint y1 = point.y.asUint();
+        uint z1 = point.z.asUint();
         // - Q = (x2, y2, z2)
-        Felt x2 = other.x;
-        Felt y2 = other.y;
-        Felt z2 = other.z;
+        uint x2 = other.x.asUint();
+        uint y2 = other.y.asUint();
+        uint z2 = other.z.asUint();
 
         // Output:
         // - (x3, y3, z3) = P + Q
-        Felt x3;
-        Felt y3;
-        Felt z3;
+        uint x3; uint y3; uint z3;
 
         // Constants:
-        Felt b3 = Fp.unsafeFromUint(_B3);
+        // - _B3 = mulmod(B, 3, P)
 
         // Variables:
-        __addTempVars memory tmp = __addTempVars({
-            t0: Fp.ZERO,
-            t1: Fp.ZERO,
-            t2: Fp.ZERO,
-            t3: Fp.ZERO,
-            t4: Fp.ZERO
-        });
+        uint t0; uint t1; uint t2; uint t3; uint t4;
 
         // Computations:
-        // forgefmt: disable-start
-        tmp.t0 = x1.mul(x2);
-        tmp.t1 = y1.mul(y2);
-        tmp.t2 = z1.mul(z2);
-        tmp.t3 = x1.add(y1);
-        tmp.t4 = x2.add(y2);
-        tmp.t3 = tmp.t3.mul(tmp.t4);
-        tmp.t4 = tmp.t0.add(tmp.t1);
-        tmp.t3 = tmp.t3.sub(tmp.t4);
-        tmp.t4 = y1.add(z1);
-        x3     = y2.add(z2);
-        tmp.t4 = tmp.t4.mul(x3);
-        x3     = tmp.t1.add(tmp.t2);
-        tmp.t4 = tmp.t4.sub(x3);
-        x3     = x1.add(z1);
-        y3     = x2.add(z2);
-        x3     = x3.mul(y3);
-        y3     = tmp.t0.add(tmp.t2);
-        y3     = x3.sub(y3);
-        x3     = tmp.t0.add(tmp.t0);
-        tmp.t0 = x3.add(tmp.t0);
-        tmp.t2 = b3.mul(tmp.t2);
-        z3     = tmp.t1.add(tmp.t2);
-        tmp.t1 = tmp.t1.sub(tmp.t2);
-        y3     = b3.mul(y3);
-        x3     = tmp.t4.mul(y3);
-        tmp.t2 = tmp.t3.mul(tmp.t1);
-        x3     = tmp.t2.sub(x3);
-        y3     = y3.mul(tmp.t0);
-        tmp.t1 = tmp.t1.mul(z3);
-        y3     = tmp.t1.add(y3);
-        tmp.t0 = tmp.t0.mul(tmp.t3);
-        z3     = z3.mul(tmp.t4);
-        z3     = z3.add(tmp.t0);
+        // Note that x - y = x + (P - y) (mod P)
+        t0 = mulmod(x1, x2, P);
+        t1 = mulmod(y1, y2, P);
+        t2 = mulmod(z1, z2, P);
+        t3 = addmod(x1, y1, P);
+        t4 = addmod(x2, y2, P);
+        t3 = mulmod(t3, t4, P);
+        t4 = addmod(t0, t1, P);
+        unchecked { t3 = addmod(t3, P - t4, P); }
+        t4 = addmod(y1, z1, P);
+        x3 = addmod(y2, z2, P);
+        t4 = mulmod(t4, x3, P);
+        x3 = addmod(t1, t2, P);
+        unchecked { t4 = addmod(t4, P - x3, P); }
+        x3 = addmod(x1, z1, P);
+        y3 = addmod(x2, z2, P);
+        x3 = mulmod(x3, y3, P);
+        y3 = addmod(t0, t2, P);
+        unchecked { y3 = addmod(x3, P - y3, P); }
+        x3 = addmod(t0, t0, P);
+        t0 = addmod(x3, t0, P);
+        t2 = mulmod(_B3, t2, P);
+        z3 = addmod(t1, t2, P);
+        unchecked { t1 = addmod(t1, P - t2, P); }
+        y3 = mulmod(_B3, y3, P);
+        x3 = mulmod(t4, y3, P);
+        t2 = mulmod(t3, t1, P);
+        unchecked { x3 = addmod(t2, P - x3, P); }
+        y3 = mulmod(y3, t0, P);
+        t1 = mulmod(t1, z3, P);
+        y3 = addmod(t1, y3, P);
+        t0 = mulmod(t0, t3, P);
+        z3 = mulmod(z3, t4, P);
+        z3 = addmod(z3, t0, P);
         // forgefmt: disable-end
 
-        return ProjectivePoint(x3, y3, z3);
+        return ProjectivePoint(
+            Fp.unsafeFromUint(x3), Fp.unsafeFromUint(y3), Fp.unsafeFromUint(z3)
+        );
     }
 
     /// @dev Returns the product of projective point `point` and scalar `scalar`
