@@ -3,6 +3,7 @@ pragma solidity ^0.8.16;
 
 import {Test} from "forge-std/Test.sol";
 import {console2 as console} from "forge-std/console2.sol";
+import {stdJson} from "forge-std/StdJson.sol";
 
 import {Secp256k1Offchain} from "offchain/Secp256k1Offchain.sol";
 import {Secp256k1, SecretKey, PublicKey} from "src/Secp256k1.sol";
@@ -11,10 +12,15 @@ import {ECDSAOffchain} from "offchain/signatures/ECDSAOffchain.sol";
 import {ECDSA, Signature} from "src/signatures/ECDSA.sol";
 import {ECDSAUnsafe} from "unsafe/signatures/ECDSAUnsafe.sol";
 
+import {Points, Point} from "src/arithmetic/Points.sol";
+import {PointsWrapper} from "test/arithmetic/Points.t.sol";
+
 /**
  * @notice ECDSA Unit Tests
  */
 contract ECDSATest is Test {
+    using stdJson for string;
+
     using Secp256k1Offchain for SecretKey;
     using Secp256k1 for SecretKey;
     using Secp256k1 for PublicKey;
@@ -27,9 +33,11 @@ contract ECDSATest is Test {
     using ECDSAUnsafe for Signature;
 
     ECDSAWrapper wrapper;
+    PointsWrapper wrapperPoints;
 
     function setUp() public {
         wrapper = new ECDSAWrapper();
+        wrapperPoints = new PointsWrapper();
     }
 
     //--------------------------------------------------------------------------
@@ -99,6 +107,125 @@ contract ECDSATest is Test {
 
         vm.expectRevert("PublicKeyInvalid()");
         wrapper.verify(pk, m, sig);
+    }
+
+    struct ECDSAValidCase {
+        string d;
+        string m;
+        string signature;
+    }
+
+    function testVectorsNobleCurves_verify_WithPublicKey() public {
+        string memory root = vm.projectRoot();
+        string memory path =
+            string.concat(root, "/test/signatures/test-vectors/ecdsa.json");
+        string memory json = vm.readFile(path);
+        bytes memory data = json.parseRaw(".valid");
+        ECDSAValidCase[] memory cases = abi.decode(data, (ECDSAValidCase[]));
+        for (uint i; i < cases.length; i++) {
+            ECDSAValidCase memory c = cases[i];
+            bytes memory parsedD = vm.parseBytes(c.d);
+            bytes32 parsedM = vm.parseBytes32(c.m);
+
+            // FIXME: Remove once foundry updated to new RustCrypto version.
+            //
+            // Skip test vector if the message is greater than or equal to the
+            // curve order. Foundry uses RustCrypto at tag ecdsa/0.16.9 which
+            // does not strictly follow RFC-6979 leading to different signatures
+            // for the same message compared to noble curves.
+            //
+            // For more details see https://github.com/obatirou/RFC6979-implementation-analysis
+            //
+            // Issue: https://github.com/verklegarden/crysol/issues/35
+            if (uint(parsedM) >= Secp256k1.Q) {
+                continue;
+            }
+
+            // Note that signatures do not encode the v value.
+            (bytes32 r, bytes32 s) =
+                abi.decode(vm.parseBytes(c.signature), (bytes32, bytes32));
+
+            SecretKey sk =
+                Secp256k1.secretKeyFromUint(abi.decode(parsedD, (uint)));
+            Signature memory signed = sk.signRaw(parsedM);
+
+            // Expect given signature and own signature to be equal.
+            // Note that signatures are equal due to RFC-6979 usage.
+            assertEq(r, signed.r);
+            assertEq(s, signed.s);
+
+            // Expect signature to be verifiable.
+            PublicKey memory pk = sk.toPublicKey();
+            assertTrue(wrapper.verify(pk, parsedM, signed));
+        }
+    }
+
+    struct ECDSAInvalidVerifyCase {
+        string Q;
+        string description;
+        string m;
+        string signature;
+    }
+
+    function testVectorsNobleCurves_verify_WithPublicKey_FailsIf_Invalid()
+        public
+    {
+        string memory root = vm.projectRoot();
+        string memory path =
+            string.concat(root, "/test/signatures/test-vectors/ecdsa.json");
+        string memory json = vm.readFile(path);
+        bytes memory data = json.parseRaw(".invalid.verify");
+        ECDSAInvalidVerifyCase[] memory cases =
+            abi.decode(data, (ECDSAInvalidVerifyCase[]));
+        for (uint i; i < cases.length; i++) {
+            ECDSAInvalidVerifyCase memory c = cases[i];
+            bytes memory parsedQ = vm.parseBytes(c.Q);
+            bytes32 parsedM = vm.parseBytes32(c.m);
+
+            // Note that signatures do not encode the v value.
+            (bytes32 r, bytes32 s) =
+                abi.decode(vm.parseBytes(c.signature), (bytes32, bytes32));
+
+            // 1. Recover a Point from Q.
+            // If normal encoded.
+            Point memory pointQ;
+            if (parsedQ[0] == 0x04) {
+                try wrapperPoints.pointFromEncoded(parsedQ) returns (
+                    Point memory pointDecoded
+                ) {
+                    pointQ = pointDecoded;
+                } catch {}
+            }
+
+            // If compressed encoded.
+            if (parsedQ[0] == 0x02 || parsedQ[0] == 0x03) {
+                try wrapperPoints.pointFromCompressedEncoded(parsedQ) returns (
+                    Point memory pointDecoded
+                ) {
+                    pointQ = pointDecoded;
+                } catch {}
+            }
+
+            // If the point encoding is invalid, it should revert for both encoding types.
+            if (parsedQ[0] != 0x04 && parsedQ[0] != 0x02 && parsedQ[0] != 0x03)
+            {
+                vm.expectRevert();
+                wrapperPoints.pointFromEncoded(parsedQ);
+                vm.expectRevert();
+                wrapperPoints.pointFromCompressedEncoded(parsedQ);
+                continue;
+            }
+
+            // 2. Build the Signature and PublicKey
+            uint parity = Points.yParity(pointQ);
+            Signature memory sig = Signature(uint8(parity), r, s);
+            PublicKey memory pk = Secp256k1.intoPublicKey(pointQ);
+
+            // 3. Verify signature with PublicKey: either it raises or it returns false.
+            try wrapper.verify(pk, parsedM, sig) returns (bool result) {
+                assertFalse(result);
+            } catch {}
+        }
     }
 
     // -- verify with address

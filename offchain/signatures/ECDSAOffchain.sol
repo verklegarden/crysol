@@ -85,7 +85,7 @@ library ECDSAOffchain {
         (v, r, s) = vm.sign(sk.asUint(), m);
 
         Signature memory sig = Signature(v, r, s);
-        // assert(!sig.isMalleable());
+        // assert(!ECDSA.isMalleable(sig));
 
         return sig;
     }
