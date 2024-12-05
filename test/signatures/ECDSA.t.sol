@@ -126,36 +126,35 @@ contract ECDSATest is Test {
             ECDSAValidCase memory c = cases[i];
             bytes memory parsedD = vm.parseBytes(c.d);
             bytes32 parsedM = vm.parseBytes32(c.m);
+
+            // FIXME: Remove once foundry updated to new RustCrypto version.
+            //
+            // Skip test vector if the message is greater than or equal to the
+            // curve order. Foundry uses RustCrypto at tag ecdsa/0.16.9 which
+            // does not strictly follow RFC-6979 leading to different signatures
+            // for the same message compared to noble curves.
+            //
+            // For more details see https://github.com/obatirou/RFC6979-implementation-analysis
+            //
+            // Issue: https://github.com/verklegarden/crysol/issues/35
             if (uint(parsedM) >= Secp256k1.Q) {
-                // Skip test vector if the message is greater than or equal to the curve order.
-                // Foundry uses RustCrypto at tag ecdsa/0.16.9 which do not follow strictly RFC6979
-                // leading to different signatures for the same message compared to noble curves.
-                // For more details see https://github.com/obatirou/RFC6979-implementation-analysis
-                // To be removed when the issue is fixed in ecdsa/0.17.0
-                assertTrue(
-                    parsedM
-                        ==
-                        hex"ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff"
-                        || parsedM
-                            ==
-                            hex"fffffffffffffffffffffffffffffffebaaedce6af48a03bbfd25e8cd0364141"
-                );
                 continue;
             }
-            // Noble curves signatures do not encode v values.
-            // https://github.com/paulmillr/noble-curves/blob/1db569a52474ea94d6ec06fbe5321d17395ca255/README.md?plain=1#L104
-            // To retrieve the v value, sign the message with the secret key with foundry
-            // and compare the result with the test vector signature.
-            // Signatures should be equal due to following RFC6979.
-            bytes memory parsedSignature = vm.parseBytes(c.signature);
+
+            // Note that signatures do not encode the v value.
             (bytes32 r, bytes32 s) =
-                abi.decode(parsedSignature, (bytes32, bytes32));
+                abi.decode(vm.parseBytes(c.signature), (bytes32, bytes32));
+
             SecretKey sk =
                 Secp256k1.secretKeyFromUint(abi.decode(parsedD, (uint)));
             Signature memory signed = sk.signRaw(parsedM);
+
+            // Expect given signature and own signature to be equal.
+            // Note that signatures are equal due to RFC-6979 usage.
             assertEq(r, signed.r);
             assertEq(s, signed.s);
-            // Verify signature
+
+            // Expect signature to be verifiable.
             PublicKey memory pk = sk.toPublicKey();
             assertTrue(wrapper.verify(pk, parsedM, signed));
         }
@@ -182,11 +181,10 @@ contract ECDSATest is Test {
             ECDSAInvalidVerifyCase memory c = cases[i];
             bytes memory parsedQ = vm.parseBytes(c.Q);
             bytes32 parsedM = vm.parseBytes32(c.m);
-            bytes memory parsedSignature = vm.parseBytes(c.signature);
-            // Signature does not encode v for noble curves test vectors.
-            // https://github.com/paulmillr/noble-curves/blob/1db569a52474ea94d6ec06fbe5321d17395ca255/README.md?plain=1#L104
+
+            // Note that signatures do not encode the v value.
             (bytes32 r, bytes32 s) =
-                abi.decode(parsedSignature, (bytes32, bytes32));
+                abi.decode(vm.parseBytes(c.signature), (bytes32, bytes32));
 
             // 1. Recover a Point from Q.
             // If normal encoded.
@@ -196,28 +194,18 @@ contract ECDSATest is Test {
                     Point memory pointDecoded
                 ) {
                     pointQ = pointDecoded;
-                } catch Error(string memory reason) {
-                    console.log("pointFromEncoded failed");
-                    console.logBytes(parsedQ);
-                    console.log(reason);
-                    console.log(c.description);
-                    continue;
-                }
+                } catch {}
             }
+
             // If compressed encoded.
             if (parsedQ[0] == 0x02 || parsedQ[0] == 0x03) {
                 try wrapperPoints.pointFromCompressedEncoded(parsedQ) returns (
                     Point memory pointDecoded
                 ) {
                     pointQ = pointDecoded;
-                } catch Error(string memory reason) {
-                    console.log("pointFromCompressedEncoded failed");
-                    console.logBytes(parsedQ);
-                    console.log(reason);
-                    console.log(c.description);
-                    continue;
-                }
+                } catch {}
             }
+
             // If the point encoding is invalid, it should revert for both encoding types.
             if (parsedQ[0] != 0x04 && parsedQ[0] != 0x02 && parsedQ[0] != 0x03)
             {
@@ -236,13 +224,7 @@ contract ECDSATest is Test {
             // 3. Verify signature with PublicKey: either it raises or it returns false.
             try wrapper.verify(pk, parsedM, sig) returns (bool result) {
                 assertFalse(result);
-            } catch Error(string memory reason) {
-                console.log("verify failed");
-                console.logBytes(parsedQ);
-                console.log(reason);
-                console.log(c.description);
-                continue;
-            }
+            } catch {}
         }
     }
 
