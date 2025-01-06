@@ -14,6 +14,8 @@ pragma solidity ^0.8.16;
 import {Points, Point, ProjectivePoint} from "./arithmetic/Points.sol";
 import {Fp, Felt} from "./arithmetic/Fp.sol";
 
+import "./Errors.sol" as Errors;
+
 /**
  * @notice SecretKey is an secp256k1 secret key
  *
@@ -175,7 +177,7 @@ library Secp256k1 {
     function secretKeyFromUint(uint scalar) internal pure returns (SecretKey) {
         (SecretKey sk, bool ok) = trySecretKeyFromUint(scalar);
         if (!ok) {
-            revert("ScalarInvalid()");
+            revert Errors.CRYSOL_ScalarMalleable();
         }
 
         return sk;

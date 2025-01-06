@@ -10,6 +10,8 @@ import {Secp256k1, SecretKey, PublicKey} from "src/Secp256k1.sol";
 import {Points, Point, ProjectivePoint} from "src/arithmetic/Points.sol";
 import {Fp, Felt} from "src/arithmetic/Fp.sol";
 
+import "src/Errors.sol" as Errors;
+
 import {PointsTestVectors} from "./test-vectors/PointsTestVectors.sol";
 
 /**
@@ -124,7 +126,7 @@ contract PointsTest is Test {
 
         Felt x = Fp.unsafeFromUint(_bound(xSeed, Secp256k1.P, type(uint).max));
 
-        vm.expectRevert("PointInvalid()");
+        vm.expectRevert(Errors.CRYSOL_PointInvalid.selector);
         wrapper.fromFelts(x, y);
     }
 
@@ -136,7 +138,7 @@ contract PointsTest is Test {
 
         Felt y = Fp.unsafeFromUint(_bound(ySeed, Secp256k1.P, type(uint).max));
 
-        vm.expectRevert("PointInvalid()");
+        vm.expectRevert(Errors.CRYSOL_PointInvalid.selector);
         wrapper.fromFelts(x, y);
     }
 
@@ -147,7 +149,7 @@ contract PointsTest is Test {
         Point memory p = Point(x, y);
         vm.assume(!p.isOnCurve());
 
-        vm.expectRevert("PointInvalid()");
+        vm.expectRevert(Errors.CRYSOL_PointInvalid.selector);
         wrapper.fromFelts(x, y);
     }
 
@@ -228,7 +230,7 @@ contract PointsTest is Test {
         vm.assume(x >= Secp256k1.P);
         vm.assume(y < Secp256k1.P);
 
-        vm.expectRevert("PointInvalid()");
+        vm.expectRevert(Errors.CRYSOL_PointInvalid.selector);
         wrapper.fromUints(x, y);
     }
 
@@ -239,7 +241,7 @@ contract PointsTest is Test {
         vm.assume(x < Secp256k1.P);
         vm.assume(y >= Secp256k1.P);
 
-        vm.expectRevert("PointInvalid()");
+        vm.expectRevert(Errors.CRYSOL_PointInvalid.selector);
         wrapper.fromUints(x, y);
     }
 
@@ -250,7 +252,7 @@ contract PointsTest is Test {
         Point memory p = Point(x, y);
         vm.assume(!p.isOnCurve());
 
-        vm.expectRevert("PointInvalid()");
+        vm.expectRevert(Errors.CRYSOL_PointInvalid.selector);
         wrapper.fromUints(x.asUint(), y.asUint());
     }
 
@@ -423,13 +425,13 @@ contract PointsTest is Test {
         );
     }
 
-    function testFuzz_Point_mulToAddress_RevertsIf_ScalarTooBig(
+    function testFuzz_Point_mulToAddress_RevertsIf_ScalarMalleable(
         Point memory point,
         uint scalar
     ) public {
         vm.assume(scalar >= Points.Q);
 
-        vm.expectRevert("ScalarTooBig()");
+        vm.expectRevert(Errors.CRYSOL_ScalarMalleable.selector);
         wrapper.mulToAddress(point, scalar);
     }
 
@@ -640,13 +642,13 @@ contract PointsTest is Test {
         assertTrue(wrapper.mul(id, sk.asUint()).isIdentity());
     }
 
-    function testFuzz_ProjectivePoint_mul_RevertsIf_ScalarTooBig(
+    function testFuzz_ProjectivePoint_mul_RevertsIf_ScalarMalleable(
         ProjectivePoint memory point,
         uint scalar
     ) public {
         vm.assume(scalar >= Points.Q);
 
-        vm.expectRevert("ScalarTooBig()");
+        vm.expectRevert(Errors.CRYSOL_ScalarMalleable.selector);
         wrapper.mul(point, scalar);
     }
 
@@ -678,7 +680,7 @@ contract PointsTest is Test {
 
     // -- intoPoint
 
-    // TODO: Test no new memory allocation.
+    // TODO: Test into conversion(s) performs no memory allocation(s).
     function testFuzz_ProjectivePoint_intoPoint(SecretKey a, SecretKey b)
         public
     {
@@ -782,7 +784,7 @@ contract PointsTest is Test {
         vm.assume(blob.length != 65);
         vm.assume(blob.length != 1 && bytes1(blob) != bytes1(0x00));
 
-        vm.expectRevert("LengthInvalid()");
+        vm.expectRevert(Errors.CRYSOL_LengthInvalid.selector);
         wrapper.pointFromEncoded(blob);
     }
 
@@ -794,7 +796,7 @@ contract PointsTest is Test {
 
         bytes memory blob = abi.encodePacked(prefix, point.x, point.y);
 
-        vm.expectRevert("PrefixInvalid()");
+        vm.expectRevert(Errors.CRYSOL_PrefixInvalid.selector);
         wrapper.pointFromEncoded(blob);
     }
 
@@ -805,7 +807,7 @@ contract PointsTest is Test {
 
         bytes memory blob = abi.encodePacked(bytes1(0x04), point.x, point.y);
 
-        vm.expectRevert("PointInvalid()");
+        vm.expectRevert(Errors.CRYSOL_PointInvalid.selector);
         wrapper.pointFromEncoded(blob);
     }
 
@@ -843,7 +845,7 @@ contract PointsTest is Test {
     ) public {
         vm.assume(!point.isOnCurve());
 
-        vm.expectRevert("PointNotOnCurve()");
+        vm.expectRevert(Errors.CRYSOL_PointNotOnCurve.selector);
         wrapper.toEncoded(point);
     }
 
@@ -887,28 +889,13 @@ contract PointsTest is Test {
         assertTrue(got.isIdentity());
     }
 
-    function test_Point_pointFromCompressedEncoded_RevertsIf_IdentityNot1ByteEncoded(
-    ) public {
-        bytes memory blob;
-
-        // Using 0x02 prefix.
-        blob = abi.encodePacked(bytes1(0x02), uint(0));
-        vm.expectRevert("PointNotOnCurve()");
-        wrapper.pointFromCompressedEncoded(blob);
-
-        // Using 0x03 prefix.
-        blob = abi.encodePacked(bytes1(0x03), uint(0));
-        vm.expectRevert("PointNotOnCurve()");
-        wrapper.pointFromCompressedEncoded(blob);
-    }
-
     function test_Point_pointFromCompressedEncoded_RevertsIf_LengthInvalid(
         bytes memory blob
     ) public {
         vm.assume(blob.length != 1 || bytes1(blob) != bytes1(0x00));
         vm.assume(blob.length != 33);
 
-        vm.expectRevert("LengthInvalid()");
+        vm.expectRevert(Errors.CRYSOL_LengthInvalid.selector);
         wrapper.pointFromCompressedEncoded(blob);
     }
 
@@ -921,18 +908,49 @@ contract PointsTest is Test {
 
         bytes memory blob = abi.encodePacked(prefix, x);
 
-        vm.expectRevert("PrefixInvalid()");
+        vm.expectRevert(Errors.CRYSOL_PrefixInvalid.selector);
         wrapper.pointFromCompressedEncoded(blob);
     }
 
-    function testFuzz_Point_pointFromCompressedEncoded_RevertsIf_PointNotOnCurve(
+    function test_Point_pointFromCompressedEncoded_RevertsIf_IdentityNot1ByteEncoded(
+    ) public {
+        bytes memory blob;
+
+        // Using 0x02 prefix.
+        blob = abi.encodePacked(bytes1(0x02), uint(0));
+        vm.expectRevert(Errors.CRYSOL_PointNotOnCurve.selector);
+        wrapper.pointFromCompressedEncoded(blob);
+
+        // Using 0x03 prefix.
+        blob = abi.encodePacked(bytes1(0x03), uint(0));
+        vm.expectRevert(Errors.CRYSOL_PointNotOnCurve.selector);
+        wrapper.pointFromCompressedEncoded(blob);
+    }
+
+    function testFuzz_Point_pointFromCompressedEncoded_RevertsIf_XCoordinateTooBig(
+        uint x
     )
-        /*Point memory point*/
         public
     {
-        vm.skip(true);
+        vm.assume(x >= Secp256k1.Q);
+
+        bytes memory blob;
+
+        // Using 0x02 prefix.
+        blob = abi.encodePacked(bytes1(0x02), uint(0));
+        vm.expectRevert(Errors.CRYSOL_PointNotOnCurve.selector);
+        wrapper.pointFromCompressedEncoded(blob);
+
+        // Using 0x03 prefix.
+        blob = abi.encodePacked(bytes1(0x03), uint(0));
+        vm.expectRevert(Errors.CRYSOL_PointNotOnCurve.selector);
+        wrapper.pointFromCompressedEncoded(blob);
+    }
+
+    function testFuzz_Point_pointFromCompressedEncoded_RevertsIf_PointNotOnCurve() public {
         // TODO: Find secp256k1 x coordinates not on the curve for compressed
-        //       byte encoding.
+        //       byte encoding test.
+        vm.skip(true);
     }
 
     function test_Point_toCompressedEncoded_IfyParityEven() public view {
@@ -977,7 +995,7 @@ contract PointsTest is Test {
     ) public {
         vm.assume(!point.isOnCurve());
 
-        vm.expectRevert("PointNotOnCurve()");
+        vm.expectRevert(Errors.CRYSOL_PointNotOnCurve.selector);
         wrapper.toCompressedEncoded(point);
     }
 }

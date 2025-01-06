@@ -13,6 +13,8 @@ pragma solidity ^0.8.16;
 
 import {Secp256k1} from "../Secp256k1.sol";
 
+import "src/Errors.sol" as Errors;
+
 /**
  * @notice Felt is an secp256k1 field element
  *
@@ -93,7 +95,7 @@ library Fp {
     function fromUint(uint scalar) internal pure returns (Felt) {
         (Felt felt, bool ok) = tryFromUint(scalar);
         if (!ok) {
-            revert("ScalarNotAFelt()");
+            revert Errors.CRYSOL_ScalarNotAFelt();
         }
 
         return felt;
@@ -126,7 +128,7 @@ library Fp {
         return felt.asUint() == 0;
     }
 
-    /// @dev Returns whether felt `feltInv` is the inverse of `felt`.
+    /// @dev Returns whether felt `felt` is the inverse of `feltInv`.
     function isInv(Felt felt, Felt feltInv) internal pure returns (bool) {
         return mulmod(felt.asUint(), feltInv.asUint(), P) == 1;
     }
@@ -167,7 +169,7 @@ library Fp {
     ///        Other is zero
     function div(Felt felt, Felt other) internal view returns (Felt) {
         if (other.isZero()) {
-            revert("DivByZero()");
+            revert Errors.CRYSOL_DivByZero();
         }
 
         uint result = mulmod(felt.asUint(), other.inv().asUint(), P);
@@ -187,7 +189,7 @@ library Fp {
     ///        Felt is zero
     function inv(Felt felt) internal view returns (Felt) {
         if (felt.isZero()) {
-            revert("InvOfZero()");
+            revert Errors.CRYSOL_InvOfZero();
         }
 
         // Note that while modular inversion is usually performed using the

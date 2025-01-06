@@ -14,6 +14,8 @@ pragma solidity ^0.8.16;
 import {Secp256k1, PublicKey} from "../Secp256k1.sol";
 import {Fp, Felt} from "./Fp.sol";
 
+import "../Errors.sol" as Errors;
+
 /**
  * @notice Point is a secp256k1 point in affine coordinates
  *
@@ -135,7 +137,7 @@ library Points {
     function fromFelts(Felt x, Felt y) internal pure returns (Point memory) {
         (Point memory p, bool ok) = tryFromFelts(x, y);
         if (!ok) {
-            revert("PointInvalid()");
+            revert Errors.CRYSOL_PointInvalid();
         }
 
         return p;
@@ -175,7 +177,7 @@ library Points {
     function fromUints(uint x, uint y) internal pure returns (Point memory) {
         (Point memory p, bool ok) = tryFromUints(x, y);
         if (!ok) {
-            revert("PointInvalid()");
+            revert Errors.CRYSOL_PointInvalid();
         }
 
         return p;
@@ -224,12 +226,12 @@ library Points {
         // Verify whether y² ≡ x³ + ax + b (mod p).
         // Note that adding a * x can be waived as ∀x: a * x = 0.
         // forgefmt: disable-start
-        Felt left = point.y
-                        .mul(point.y);
+        Felt left  = point.y
+                          .mul(point.y);
         Felt right = point.x
-                        .mul(point.x)
-                        .mul(point.x)
-                        .add(Fp.unsafeFromUint(B));
+                          .mul(point.x)
+                          .mul(point.x)
+                          .add(Fp.unsafeFromUint(B));
         // forgefmt: disable-end
 
         return left.asUint() == right.asUint();
@@ -267,7 +269,7 @@ library Points {
         returns (address)
     {
         if (scalar >= Q) {
-            revert("ScalarTooBig()");
+            revert Errors.CRYSOL_ScalarMalleable();
         }
 
         if (scalar == 0 || point.isIdentity()) {
@@ -424,7 +426,7 @@ library Points {
         returns (ProjectivePoint memory)
     {
         if (scalar >= Q) {
-            revert("ScalarTooBig()");
+            revert Errors.CRYSOL_ScalarMalleable();
         }
 
         if (scalar == 0) {
@@ -565,7 +567,7 @@ library Points {
 
         // Revert if length not 65.
         if (blob.length != 65) {
-            revert("LengthInvalid()");
+            revert Errors.CRYSOL_LengthInvalid();
         }
 
         // Read prefix byte.
@@ -576,7 +578,7 @@ library Points {
 
         // Revert if prefix not 0x04.
         if (prefix != 0x04) {
-            revert("PrefixInvalid()");
+            revert Errors.CRYSOL_PrefixInvalid();
         }
 
         // Read x and y coordinates.
@@ -588,31 +590,31 @@ library Points {
         }
 
         // Construct coordinates as felts.
-        // Note that feltFromUint(scalar) reverts if scalar is not a felt.
         bool ok;
         Felt x;
         Felt y;
         (x, ok) = Fp.tryFromUint(xRaw);
         if (!ok) {
-            revert("PointInvalid()");
+            revert Errors.CRYSOL_PointInvalid();
         }
         (y, ok) = Fp.tryFromUint(yRaw);
         if (!ok) {
-            revert("PointInvalid()");
+            revert Errors.CRYSOL_PointInvalid();
         }
 
-        // Construct point from felt coordinates.
+        // Construct point from coordinates.
         Point memory point = Point(x, y);
 
         // Revert if identity not 1 byte encoded.
         // TODO: Not explicitly tested.
         if (point.isIdentity()) {
-            revert("PointInvalid()");
+            // TODO: Need different error type.
+            revert Errors.CRYSOL_PointInvalid();
         }
 
         // Revert if point not on curve.
         if (!point.isOnCurve()) {
-            revert("PointInvalid()");
+            revert Errors.CRYSOL_PointInvalid();
         }
 
         return point;
@@ -636,7 +638,7 @@ library Points {
         returns (bytes memory blob)
     {
         if (!point.isOnCurve()) {
-            revert("PointNotOnCurve()");
+            revert Errors.CRYSOL_PointNotOnCurve();
         }
 
         // Note to catch special encoding for identity.
@@ -675,7 +677,7 @@ library Points {
 
         // Revert if length not 33.
         if (blob.length != 33) {
-            revert("LengthInvalid()");
+            revert Errors.CRYSOL_LengthInvalid();
         }
 
         // Read prefix byte.
@@ -686,7 +688,7 @@ library Points {
 
         // Revert if prefix not 0x02 or 0x03.
         if (prefix != 0x02 && prefix != 0x03) {
-            revert("PrefixInvalid()");
+            revert Errors.CRYSOL_PrefixInvalid();
         }
 
         // Read x coordinate.
@@ -701,13 +703,16 @@ library Points {
         // Note that identity is explicitly enforced to be 1 byte encoded,
         // eventhough for x = 0 the resulting point is not on the curve anyway.
         if (xRaw == 0) {
-            revert("PointNotOnCurve()");
+            revert Errors.CRYSOL_PointNotOnCurve();
         }
 
-        // Construct field element from x coordinate.
-        // Note that function reverts if not a field element.
-        // TODO: Need cleaner error returning.
-        Felt x = Fp.fromUint(xRaw);
+        // Construct x coordinate as felt.
+        bool ok;
+        Felt x;
+        (x, ok) = Fp.tryFromUint(xRaw);
+        if (!ok) {
+            revert Errors.CRYSOL_PointNotOnCurve();
+        }
 
         // Compute α = x³ + ax + b (mod p).
         // Note that adding a * x can be waived as ∀x: a * x = 0.
@@ -730,7 +735,7 @@ library Points {
                 : P - beta.asUint();
         }
 
-        // Construct y felt.
+        // Construct y coordiante as felt.
         // Note that y coordinate is guaranteed to be a valid felt.
         Felt y = Fp.unsafeFromUint(yRaw);
 
@@ -740,7 +745,7 @@ library Points {
         // Revert if point not on curve.
         // TODO: Find vectors for x coordinates not on the curve.
         if (!point.isOnCurve()) {
-            revert("PointNotOnCurve()");
+            revert Errors.CRYSOL_PointNotOnCurve();
         }
 
         return point;
@@ -764,7 +769,7 @@ library Points {
         returns (bytes memory blob)
     {
         if (!point.isOnCurve()) {
-            revert("PointNotOnCurve()");
+            revert Errors.CRYSOL_PointNotOnCurve();
         }
 
         // Note to catch special encoding for identity.
