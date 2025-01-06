@@ -115,6 +115,7 @@ library Schnorr {
                 abi.encodePacked(
                     CONTEXT,
                     "challenge",
+                    // TODO: Must ensure pk.x < Q. See Scribe issue.
                     pk.x,
                     uint8(pk.yParity()),
                     m,
@@ -239,7 +240,7 @@ library Schnorr {
         // assert(rAddr != address(0));
 
         assembly ("memory-safe") {
-            // Store r's address in r's x coordinate slot.
+            // Store r's address in it's x coordinate slot.
             // Note to clean dirty upper bits and r's y coordinate slot.
             mstore(add(sig, 0x20), and(rAddr, _ADDRESS_MASK))
             mstore(add(sig, 0x40), 0x00)
@@ -291,6 +292,7 @@ library Schnorr {
             ry := mload(add(blob, 0x60))
         }
 
+        // TODO: Reduce branches using bool acculumator.
         bool ok;
         Felt rx_;
         Felt ry_;

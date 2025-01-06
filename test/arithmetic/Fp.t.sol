@@ -7,6 +7,8 @@ import {console2 as console} from "forge-std/console2.sol";
 import {Secp256k1} from "src/Secp256k1.sol";
 import {Fp, Felt} from "src/arithmetic/Fp.sol";
 
+import "src/Errors.sol" as Errors;
+
 /**
  * @notice Fp Unit Tests
  */
@@ -66,12 +68,12 @@ contract FpTest is Test {
         assertEq(felt.asUint(), scalar);
     }
 
-    function testFuzz_feltFromUint_RevertsIf_ScalarGreaterThanP(uint seed)
+    function testFuzz_feltFromUint_RevertsIf_ScalarNotAFelt(uint seed)
         public
     {
         uint scalar = _bound(seed, Secp256k1.P, type(uint).max);
 
-        vm.expectRevert("ScalarNotAFelt()");
+        vm.expectRevert(Errors.CRYSOL_ScalarNotAFelt.selector);
         wrapper.feltFromUint(scalar);
     }
 
@@ -112,8 +114,9 @@ contract FpTest is Test {
         }
     }
 
-    function testFuzz_isInv() public view {
-        // TODO: Test Fp.isInv()
+    function testFuzz_isInv() public {
+        // TODO: Test Fp.isInv() via vectors
+        vm.skip(true);
     }
 
     //--------------------------------------------------------------------------
@@ -159,10 +162,10 @@ contract FpTest is Test {
         assertEq(result.asUint(), 3);
     }
 
-    function testFuzz_div_RevertsIf_DivisorIsZero(Felt a) public {
+    function testFuzz_div_RevertsIf_DivByZero(Felt a) public {
         vm.assume(a.isValid());
 
-        vm.expectRevert("DivByZero()");
+        vm.expectRevert(Errors.CRYSOL_DivByZero.selector);
         wrapper.div(a, Fp.ZERO);
     }
 
@@ -192,15 +195,15 @@ contract FpTest is Test {
         assertEq(wrapper.inv(Fp.ONE).asUint(), 1);
     }
 
-    function test_inv_RevertsIf_FeltIsZero() public {
-        vm.expectRevert("InvOfZero()");
+    function test_inv_RevertsIf_InvOfZero() public {
+        vm.expectRevert(Errors.CRYSOL_InvOfZero.selector);
         wrapper.inv(Fp.ZERO);
     }
 
     // -- exp
 
     function test_exp() public {
-        // TODO: Implement Fp.exp() tests.
+        // TODO: Test Fp.exp() via vectors
         vm.skip(true);
     }
 
