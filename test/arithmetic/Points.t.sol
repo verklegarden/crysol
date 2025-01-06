@@ -929,9 +929,7 @@ contract PointsTest is Test {
 
     function testFuzz_Point_pointFromCompressedEncoded_RevertsIf_XCoordinateTooBig(
         uint x
-    )
-        public
-    {
+    ) public {
         vm.assume(x >= Secp256k1.Q);
 
         bytes memory blob;
@@ -947,7 +945,8 @@ contract PointsTest is Test {
         wrapper.pointFromCompressedEncoded(blob);
     }
 
-    function testFuzz_Point_pointFromCompressedEncoded_RevertsIf_PointNotOnCurve() public {
+    function testFuzz_Point_pointFromCompressedEncoded_RevertsIf_PointNotOnCurve(
+    ) public {
         // TODO: Find secp256k1 x coordinates not on the curve for compressed
         //       byte encoding test.
         vm.skip(true);
