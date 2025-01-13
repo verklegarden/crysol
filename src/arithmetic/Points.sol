@@ -257,6 +257,7 @@ library Points {
             && point.y.asUint() == other.y.asUint();
     }
 
+    // TODO: Misses revert documentation?
     /// @dev Returns the product of point `point` and scalar `scalar` as
     ///      address.
     ///
@@ -289,6 +290,8 @@ library Points {
         unchecked {
             v = uint8(point.yParity() + 27);
         }
+        // TODO BUG: Need to reduce % Q ?
+        //uint r = point.x.asUint() % Q;
         uint r = point.x.asUint();
         uint s = mulmod(r, scalar, Q);
 
@@ -416,6 +419,7 @@ library Points {
         );
     }
 
+    // TODO: Misses revert documentation?
     /// @dev Returns the product of projective point `point` and scalar `scalar`
     ///      as projective point.
     ///

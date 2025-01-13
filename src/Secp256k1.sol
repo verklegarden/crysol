@@ -177,7 +177,7 @@ library Secp256k1 {
     function secretKeyFromUint(uint scalar) internal pure returns (SecretKey) {
         (SecretKey sk, bool ok) = trySecretKeyFromUint(scalar);
         if (!ok) {
-            revert Errors.CRYSOL_ScalarMalleable();
+            revert Errors.CRYSOL_ScalarInvalid();
         }
 
         return sk;
@@ -217,7 +217,7 @@ library Secp256k1 {
     ///        Secret key invalid
     function toAddress(SecretKey sk) internal pure returns (address) {
         if (!sk.isValid()) {
-            revert("SecretKeyInvalid()");
+            revert Errors.CRYSOL_SecretKeyInvalid();
         }
 
         return G().intoPoint().mulToAddress(sk.asUint());
@@ -261,7 +261,7 @@ library Secp256k1 {
     {
         (PublicKey memory pk, bool ok) = tryPublicKeyFromFelts(x, y);
         if (!ok) {
-            revert("PublicKeyInvalid()");
+            revert Errors.CRYSOL_PublicKeyInvalid();
         }
 
         return pk;
@@ -305,7 +305,7 @@ library Secp256k1 {
     {
         (PublicKey memory pk, bool ok) = tryPublicKeyFromUints(x, y);
         if (!ok) {
-            revert("PublicKeyInvalid()");
+            revert Errors.CRYSOL_PublicKeyInvalid();
         }
 
         return pk;
@@ -431,7 +431,7 @@ library Secp256k1 {
         returns (SecretKey)
     {
         if (blob.length != 32) {
-            revert("LengthInvalid()");
+            revert Errors.CRYSOL_LengthInvalid();
         }
 
         uint scalar;
@@ -442,7 +442,7 @@ library Secp256k1 {
         // Try to make secret key.
         (SecretKey sk, bool ok) = trySecretKeyFromUint(scalar);
         if (!ok) {
-            revert("SecretKeyInvalid()");
+            revert Errors.CRYSOL_SecretKeyInvalid();
         }
 
         return sk;
@@ -454,7 +454,7 @@ library Secp256k1 {
     ///        Secret key invalid
     function toBytes(SecretKey sk) internal pure returns (bytes memory) {
         if (!sk.isValid()) {
-            revert("SecretKeyInvalid()");
+            revert Errors.CRYSOL_SecretKeyInvalid();
         }
 
         return abi.encodePacked(sk.asUint());
@@ -478,7 +478,7 @@ library Secp256k1 {
     {
         // Revert if length not 64.
         if (blob.length != 64) {
-            revert("LengthInvalid()");
+            revert Errors.CRYSOL_LengthInvalid();
         }
 
         // Read x and y coordinates of public key.
@@ -492,7 +492,7 @@ library Secp256k1 {
         // Try to construct public key from coordinates.
         (PublicKey memory pk, bool ok) = tryPublicKeyFromUints(x, y);
         if (!ok) {
-            revert("PublicKeyInvalid()");
+            revert Errors.CRYSOL_PublicKeyInvalid();
         }
 
         return pk;
@@ -511,7 +511,7 @@ library Secp256k1 {
         returns (bytes memory)
     {
         if (!pk.isValid()) {
-            revert("PublicKeyInvalid()");
+            revert Errors.CRYSOL_PublicKeyInvalid();
         }
 
         return abi.encodePacked(pk.x.asUint(), pk.y.asUint());

@@ -10,6 +10,8 @@ import {Secp256k1, SecretKey, PublicKey} from "src/Secp256k1.sol";
 import {ECDSAOffchain} from "offchain/signatures/ECDSAOffchain.sol";
 import {ECDSA, Signature} from "src/signatures/ECDSA.sol";
 
+import "src/Errors.sol" as Errors;
+
 /**
  * @notice ECDSAOffchain Unit Tests
  */
@@ -46,7 +48,7 @@ contract ECDSAOffchainTest is Test {
     ) public {
         vm.assume(!sk.isValid());
 
-        vm.expectRevert("SecretKeyInvalid()");
+        vm.expectRevert(Errors.CRYSOL_SecretKeyInvalid.selector);
         wrapper.sign(sk, digest);
     }
 
@@ -66,7 +68,7 @@ contract ECDSAOffchainTest is Test {
     ) public {
         vm.assume(!sk.isValid());
 
-        vm.expectRevert("SecretKeyInvalid()");
+        vm.expectRevert(Errors.CRYSOL_SecretKeyInvalid.selector);
         wrapper.signRaw(sk, m);
     }
 

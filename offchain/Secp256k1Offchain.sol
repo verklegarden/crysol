@@ -23,6 +23,8 @@ import {
 } from "src/arithmetic/Points.sol";
 import {Fp, Felt} from "src/arithmetic/Fp.sol";
 
+import "src/Errors.sol" as Errors;
+
 /**
  * @title Secp256k1Offchain
  *
@@ -67,7 +69,7 @@ library Secp256k1Offchain {
         returns (PublicKey memory)
     {
         if (!sk.isValid()) {
-            revert("SecretKeyInvalid()");
+            revert Errors.CRYSOL_SecretKeyInvalid();
         }
 
         // Use vm to compute pk = [sk]G.

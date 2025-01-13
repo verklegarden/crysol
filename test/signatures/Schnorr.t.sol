@@ -12,6 +12,8 @@ import {
     Schnorr, Signature, SignatureCompressed
 } from "src/signatures/Schnorr.sol";
 
+import "src/Errors.sol" as Errors;
+
 /**
  * @notice Schnorr Unit Tests
  */
@@ -92,7 +94,7 @@ contract SchnorrTest is Test {
     ) public {
         vm.assume(!pk.isValid());
 
-        vm.expectRevert("PublicKeyInvalid()");
+        vm.expectRevert(Errors.CRYSOL_PublicKeyInvalid.selector);
         wrapper.verify(pk, m, sig);
     }
 
@@ -107,7 +109,7 @@ contract SchnorrTest is Test {
 
         PublicKey memory pk = sk.toPublicKey();
 
-        vm.expectRevert("SignatureInsane()");
+        vm.expectRevert(Errors.CRYSOL_SignatureInsane.selector);
         wrapper.verify(pk, m, sig);
     }
 
@@ -122,7 +124,7 @@ contract SchnorrTest is Test {
 
         PublicKey memory pk = sk.toPublicKey();
 
-        vm.expectRevert("SignatureInsane()");
+        vm.expectRevert(Errors.CRYSOL_SignatureInsane.selector);
         wrapper.verify(pk, m, sig);
     }
 
@@ -169,7 +171,7 @@ contract SchnorrTest is Test {
     ) public {
         vm.assume(!pk.isValid());
 
-        vm.expectRevert("PublicKeyInvalid()");
+        vm.expectRevert(Errors.CRYSOL_PublicKeyInvalid.selector);
         wrapper.verify(pk, m, sig);
     }
 
@@ -184,7 +186,7 @@ contract SchnorrTest is Test {
 
         PublicKey memory pk = sk.toPublicKey();
 
-        vm.expectRevert("SignatureInsane()");
+        vm.expectRevert(Errors.CRYSOL_SignatureInsane.selector);
         wrapper.verify(pk, m, sig);
     }
 
@@ -199,7 +201,7 @@ contract SchnorrTest is Test {
 
         PublicKey memory pk = sk.toPublicKey();
 
-        vm.expectRevert("SignatureInsane()");
+        vm.expectRevert(Errors.CRYSOL_SignatureInsane.selector);
         wrapper.verify(pk, m, sig);
     }
 
@@ -214,7 +216,7 @@ contract SchnorrTest is Test {
 
         PublicKey memory pk = sk.toPublicKey();
 
-        vm.expectRevert("SignatureInsane()");
+        vm.expectRevert(Errors.CRYSOL_SignatureInsane.selector);
         wrapper.verify(pk, m, sig);
     }
 
@@ -358,7 +360,7 @@ contract SchnorrTest is Test {
     ) public {
         vm.assume(blob.length != 96);
 
-        vm.expectRevert("LengthInvalid()");
+        vm.expectRevert(Errors.CRYSOL_LengthInvalid.selector);
         wrapper.signatureFromEncoded(blob);
     }
 
@@ -370,7 +372,7 @@ contract SchnorrTest is Test {
 
         bytes memory blob = abi.encodePacked(s, r.x, r.y);
 
-        vm.expectRevert("SignatureInsane()");
+        vm.expectRevert(Errors.CRYSOL_SignatureInsane.selector);
         wrapper.signatureFromEncoded(blob);
     }
 
@@ -396,7 +398,7 @@ contract SchnorrTest is Test {
 
         Signature memory sig = Signature(bytes32(s), r);
 
-        vm.expectRevert("SignatureInsane()");
+        vm.expectRevert(Errors.CRYSOL_SignatureInsane.selector);
         wrapper.toEncoded(sig);
     }
 
@@ -423,7 +425,7 @@ contract SchnorrTest is Test {
 
         Signature memory sig = Signature(bytes32(s), r);
 
-        vm.expectRevert("SignatureInsane()");
+        vm.expectRevert(Errors.CRYSOL_SignatureInsane.selector);
         wrapper.toCompressedEncoded(sig);
     }
 
@@ -449,7 +451,7 @@ contract SchnorrTest is Test {
     ) public {
         vm.assume(blob.length != 52);
 
-        vm.expectRevert("LengthInvalid()");
+        vm.expectRevert(Errors.CRYSOL_LengthInvalid.selector);
         wrapper.signatureFromCompressedEncoded(blob);
     }
 
@@ -461,7 +463,7 @@ contract SchnorrTest is Test {
 
         bytes memory blob = abi.encodePacked(s, rAddr);
 
-        vm.expectRevert("SignatureInsane()");
+        vm.expectRevert(Errors.CRYSOL_SignatureInsane.selector);
         wrapper.signatureFromCompressedEncoded(blob);
     }
 
@@ -486,7 +488,7 @@ contract SchnorrTest is Test {
 
         SignatureCompressed memory sig = SignatureCompressed(bytes32(s), rAddr);
 
-        vm.expectRevert("SignatureInsane()");
+        vm.expectRevert(Errors.CRYSOL_SignatureInsane.selector);
         wrapper.toCompressedEncoded(sig);
     }
 }

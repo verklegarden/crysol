@@ -13,6 +13,8 @@ import {
     Schnorr, Signature, SignatureCompressed
 } from "src/signatures/Schnorr.sol";
 
+import "src/Errors.sol" as Errors;
+
 /**
  * @notice SchnorrOffchain Unit Tests
  */
@@ -51,7 +53,7 @@ contract SchnorrOffchainTest is Test {
     ) public {
         vm.assume(!sk.isValid());
 
-        vm.expectRevert("SecretKeyInvalid()");
+        vm.expectRevert(Errors.CRYSOL_SecretKeyInvalid.selector);
         wrapper.sign(sk, digest);
     }
 
@@ -71,7 +73,7 @@ contract SchnorrOffchainTest is Test {
     ) public {
         vm.assume(!sk.isValid());
 
-        vm.expectRevert("SecretKeyInvalid()");
+        vm.expectRevert(Errors.CRYSOL_SecretKeyInvalid.selector);
         wrapper.signRaw(sk, m);
     }
 
@@ -94,7 +96,7 @@ contract SchnorrOffchainTest is Test {
     ) public {
         vm.assume(!sk.isValid());
 
-        vm.expectRevert("SecretKeyInvalid()");
+        vm.expectRevert(Errors.CRYSOL_SecretKeyInvalid.selector);
         wrapper.signRaw(sk, m, rand);
     }
 
