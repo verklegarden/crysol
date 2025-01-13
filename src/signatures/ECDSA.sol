@@ -13,6 +13,8 @@ pragma solidity ^0.8.16;
 
 import {Secp256k1, SecretKey, PublicKey} from "../Secp256k1.sol";
 
+import "../Errors.sol" as Errors;
+
 /**
  * @notice Signature is an ECDSA signature
  */
@@ -97,7 +99,7 @@ library ECDSA {
         returns (bool)
     {
         if (!pk.isValid()) {
-            revert("PublicKeyInvalid()");
+            revert Errors.CRYSOL_PublicKeyInvalid();
         }
 
         return pk.toAddress().verify(m, sig);
@@ -115,11 +117,11 @@ library ECDSA {
         returns (bool)
     {
         if (signer == address(0)) {
-            revert("SignerZeroAddress()");
+            revert Errors.CRYSOL_SignerZeroAddress();
         }
 
         if (sig.isMalleable()) {
-            revert("SignatureMalleable()");
+            revert Errors.CRYSOL_SignatureMalleable();
         }
 
         // Note that checking whether v ∊ {27, 28} is waived.
@@ -173,7 +175,7 @@ library ECDSA {
         returns (Signature memory)
     {
         if (blob.length != 65) {
-            revert("LengthInvalid()");
+            revert Errors.CRYSOL_LengthInvalid();
         }
 
         // Read (v, r, s) triplet.
@@ -191,7 +193,7 @@ library ECDSA {
 
         // Revert if signature malleable.
         if (sig.isMalleable()) {
-            revert("SignatureMalleable()");
+            revert Errors.CRYSOL_SignatureMalleable();
         }
 
         return sig;
@@ -210,7 +212,7 @@ library ECDSA {
         returns (bytes memory)
     {
         if (sig.isMalleable()) {
-            revert("SignatureMalleable()");
+            revert Errors.CRYSOL_SignatureMalleable();
         }
 
         return abi.encodePacked(sig.r, sig.s, sig.v);
@@ -233,7 +235,7 @@ library ECDSA {
         returns (Signature memory)
     {
         if (blob.length != 64) {
-            revert("LengthInvalid()");
+            revert Errors.CRYSOL_LengthInvalid();
         }
 
         // Read (v, r, s) triplet.
@@ -259,7 +261,7 @@ library ECDSA {
 
         // Revert if signature malleable.
         if (sig.isMalleable()) {
-            revert("SignatureMalleable()");
+            revert Errors.CRYSOL_SignatureMalleable();
         }
 
         return sig;
@@ -280,7 +282,7 @@ library ECDSA {
         returns (bytes memory)
     {
         if (sig.isMalleable()) {
-            revert("SignatureMalleable()");
+            revert Errors.CRYSOL_SignatureMalleable();
         }
 
         bytes memory blob;

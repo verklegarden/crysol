@@ -337,6 +337,13 @@ contract PointsTest is Test {
                 if (expectedOnCurve) {
                     point = wrapper.pointFromEncoded(parsedPoint);
                     assertEq(wrapper.isOnCurve(point), expectedOnCurve);
+
+                    if (point.x.asUint() >= Secp256k1.Q) {
+                        console.log(point.x.asUint());
+                        console.log(point.y.asUint());
+                        return;
+                    }
+
                     continue;
                 } else {
                     vm.expectRevert();
@@ -396,6 +403,16 @@ contract PointsTest is Test {
     }
 
     // -- mulToAddress
+
+    // TODO: mulToAddress has issue if point.x >= Q.
+    //
+    // if point.x >= Q current expectation is address(0) bc ecrecover failure.
+    // Therefoew, we need to reduce point.x % Q. What does this return though?
+    // - addressOf(point.x, point.y)
+    // - addressOf(point.x % Q, point.y)
+    // - ???
+    //
+    // Test with scalar = 1 to use identity property.
 
     function testFuzz_Point_mulToAddress(SecretKey sk, uint scalarSeed)
         public

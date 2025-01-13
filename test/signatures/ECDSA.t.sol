@@ -15,6 +15,8 @@ import {ECDSAUnsafe} from "unsafe/signatures/ECDSAUnsafe.sol";
 import {Points, Point} from "src/arithmetic/Points.sol";
 import {PointsWrapper} from "test/arithmetic/Points.t.sol";
 
+import "src/Errors.sol" as Errors;
+
 /**
  * @notice ECDSA Unit Tests
  */
@@ -94,7 +96,7 @@ contract ECDSATest is Test {
         bytes32 m = ECDSA.constructMessageHash(digest);
         PublicKey memory pk = sk.toPublicKey();
 
-        vm.expectRevert("SignatureMalleable()");
+        vm.expectRevert(Errors.CRYSOL_SignatureMalleable.selector);
         wrapper.verify(pk, m, sig);
     }
 
@@ -105,7 +107,7 @@ contract ECDSATest is Test {
     ) public {
         vm.assume(!pk.isValid());
 
-        vm.expectRevert("PublicKeyInvalid()");
+        vm.expectRevert(Errors.CRYSOL_PublicKeyInvalid.selector);
         wrapper.verify(pk, m, sig);
     }
 
@@ -277,7 +279,7 @@ contract ECDSATest is Test {
         bytes32 m = ECDSA.constructMessageHash(digest);
         address addr = sk.toPublicKey().toAddress();
 
-        vm.expectRevert("SignatureMalleable()");
+        vm.expectRevert(Errors.CRYSOL_SignatureMalleable.selector);
         wrapper.verify(addr, m, sig);
     }
 
@@ -285,7 +287,7 @@ contract ECDSATest is Test {
         bytes32 m,
         Signature memory sig
     ) public {
-        vm.expectRevert("SignerZeroAddress()");
+        vm.expectRevert(Errors.CRYSOL_SignerZeroAddress.selector);
         wrapper.verify(address(0), m, sig);
     }
 
@@ -359,7 +361,7 @@ contract ECDSATest is Test {
     ) public {
         vm.assume(blob.length != 65);
 
-        vm.expectRevert("LengthInvalid()");
+        vm.expectRevert(Errors.CRYSOL_LengthInvalid.selector);
         wrapper.signatureFromEncoded(blob);
     }
 
@@ -373,7 +375,7 @@ contract ECDSATest is Test {
 
         bytes memory blob = abi.encodePacked(sig.r, sig.s, sig.v);
 
-        vm.expectRevert("SignatureMalleable()");
+        vm.expectRevert(Errors.CRYSOL_SignatureMalleable.selector);
         wrapper.signatureFromEncoded(blob);
     }
 
@@ -396,7 +398,7 @@ contract ECDSATest is Test {
     ) public {
         vm.assume(sig.isMalleable());
 
-        vm.expectRevert("SignatureMalleable()");
+        vm.expectRevert(Errors.CRYSOL_SignatureMalleable.selector);
         wrapper.toEncoded(sig);
     }
 
@@ -441,7 +443,7 @@ contract ECDSATest is Test {
     ) public {
         vm.assume(blob.length != 64);
 
-        vm.expectRevert("LengthInvalid()");
+        vm.expectRevert(Errors.CRYSOL_LengthInvalid.selector);
         wrapper.signatureFromCompactEncoded(blob);
     }
 
@@ -450,7 +452,7 @@ contract ECDSATest is Test {
     {
         bytes memory blob = abi.encodePacked(type(uint).max, type(uint).max);
 
-        vm.expectRevert("SignatureMalleable()");
+        vm.expectRevert(Errors.CRYSOL_SignatureMalleable.selector);
         wrapper.signatureFromCompactEncoded(blob);
     }
 
@@ -489,7 +491,7 @@ contract ECDSATest is Test {
     ) public {
         vm.assume(sig.isMalleable());
 
-        vm.expectRevert("SignatureMalleable()");
+        vm.expectRevert(Errors.CRYSOL_SignatureMalleable.selector);
         wrapper.toCompactEncoded(sig);
     }
 }

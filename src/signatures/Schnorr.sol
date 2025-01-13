@@ -14,6 +14,8 @@ pragma solidity ^0.8.16;
 import {Secp256k1, SecretKey, PublicKey} from "../Secp256k1.sol";
 import {Fp, Felt} from "../arithmetic/Fp.sol";
 
+import "../Errors.sol" as Errors;
+
 /**
  * @notice Signature is an [ERC-XXX] Schnorr signature
  */
@@ -102,11 +104,11 @@ library Schnorr {
         SignatureCompressed memory sig
     ) internal pure returns (bool) {
         if (!pk.isValid()) {
-            revert("PublicKeyInvalid()");
+            revert Errors.CRYSOL_PublicKeyInvalid();
         }
 
         if (!sig.isSane()) {
-            revert("SignatureInsane()");
+            revert Errors.CRYSOL_SignatureInsane();
         }
 
         // Construct challenge = H₂(Pkₓ ‖ Pkₚ ‖ m ‖ Rₑ) (mod Q)
@@ -280,7 +282,7 @@ library Schnorr {
         returns (Signature memory)
     {
         if (blob.length != 96) {
-            revert("LengthInvalid()");
+            revert Errors.CRYSOL_LengthInvalid();
         }
 
         bytes32 s;
@@ -298,17 +300,17 @@ library Schnorr {
         Felt ry_;
         (rx_, ok) = Fp.tryFromUint(rx);
         if (!ok) {
-            revert("SignatureInsane()");
+            revert Errors.CRYSOL_SignatureInsane();
         }
         (ry_, ok) = Fp.tryFromUint(ry);
         if (!ok) {
-            revert("SignatureInsane()");
+            revert Errors.CRYSOL_SignatureInsane();
         }
 
         Signature memory sig = Signature(s, PublicKey(rx_, ry_));
 
         if (!sig.isSane()) {
-            revert("SignatureInsane()");
+            revert Errors.CRYSOL_SignatureInsane();
         }
 
         return sig;
@@ -327,7 +329,7 @@ library Schnorr {
         returns (bytes memory)
     {
         if (!sig.isSane()) {
-            revert("SignatureInsane()");
+            revert Errors.CRYSOL_SignatureInsane();
         }
 
         return abi.encodePacked(sig.s, sig.r.x, sig.r.y);
@@ -367,7 +369,7 @@ library Schnorr {
         returns (SignatureCompressed memory)
     {
         if (blob.length != 52) {
-            revert("LengthInvalid()");
+            revert Errors.CRYSOL_LengthInvalid();
         }
 
         bytes32 s;
@@ -380,7 +382,7 @@ library Schnorr {
         SignatureCompressed memory sig = SignatureCompressed(s, rAddr);
 
         if (!sig.isSane()) {
-            revert("SignatureInsane()");
+            revert Errors.CRYSOL_SignatureInsane();
         }
 
         return sig;
@@ -402,7 +404,7 @@ library Schnorr {
         returns (bytes memory)
     {
         if (!sig.isSane()) {
-            revert("SignatureInsane()");
+            revert Errors.CRYSOL_SignatureInsane();
         }
 
         return abi.encodePacked(sig.s, sig.rAddr);

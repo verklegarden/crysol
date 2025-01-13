@@ -18,6 +18,8 @@ import {Secp256k1, SecretKey, PublicKey} from "src/Secp256k1.sol";
 
 import {ECDSA, Signature} from "src/signatures/ECDSA.sol";
 
+import "src/Errors.sol" as Errors;
+
 /**
  * @title ECDSAOffchain
  *
@@ -74,7 +76,7 @@ library ECDSAOffchain {
         returns (Signature memory)
     {
         if (!sk.isValid()) {
-            revert("SecretKeyInvalid()");
+            revert Errors.CRYSOL_SecretKeyInvalid();
         }
 
         // Note that foundry's vm uses RFC-6979 for nonce derivation, ie

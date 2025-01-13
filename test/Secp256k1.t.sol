@@ -9,6 +9,8 @@ import {Secp256k1, SecretKey, PublicKey} from "src/Secp256k1.sol";
 import {Points, Point, ProjectivePoint} from "src/arithmetic/Points.sol";
 import {Fp, Felt} from "src/arithmetic/Fp.sol";
 
+import "src/Errors.sol" as Errors;
+
 /**
  * @notice Secp256k1 Unit Tests
  */
@@ -84,7 +86,7 @@ contract Secp256k1Test is Test {
     }
 
     function test_secretKeyFromUint_RevertsIf_ScalarZero() public {
-        vm.expectRevert("ScalarInvalid()");
+        vm.expectRevert(Errors.CRYSOL_ScalarInvalid.selector);
         wrapper.secretKeyFromUint(0);
     }
 
@@ -93,7 +95,7 @@ contract Secp256k1Test is Test {
     {
         uint scalar = _bound(seed, Secp256k1.Q, type(uint).max);
 
-        vm.expectRevert("ScalarInvalid()");
+        vm.expectRevert(Errors.CRYSOL_ScalarInvalid.selector);
         wrapper.secretKeyFromUint(scalar);
     }
 
@@ -147,7 +149,7 @@ contract Secp256k1Test is Test {
     function test_SecretKey_toAddress_RevertsIf_SecretKeyInvalid_SecretKeyZero()
         public
     {
-        vm.expectRevert("SecretKeyInvalid()");
+        vm.expectRevert(Errors.CRYSOL_SecretKeyInvalid.selector);
         wrapper.toAddress(Secp256k1.unsafeSecretKeyFromUint(0));
     }
 
@@ -156,7 +158,7 @@ contract Secp256k1Test is Test {
     ) public {
         uint scalar = _bound(seed, Secp256k1.Q, type(uint).max);
 
-        vm.expectRevert("SecretKeyInvalid()");
+        vm.expectRevert(Errors.CRYSOL_SecretKeyInvalid.selector);
         wrapper.toAddress(Secp256k1.unsafeSecretKeyFromUint(scalar));
     }
 
@@ -238,7 +240,7 @@ contract Secp256k1Test is Test {
 
         Felt x = Fp.unsafeFromUint(_bound(xSeed, Secp256k1.P, type(uint).max));
 
-        vm.expectRevert("PublicKeyInvalid()");
+        vm.expectRevert(Errors.CRYSOL_PublicKeyInvalid.selector);
         wrapper.publicKeyFromFelts(x, y);
     }
 
@@ -250,7 +252,7 @@ contract Secp256k1Test is Test {
 
         Felt y = Fp.unsafeFromUint(_bound(ySeed, Secp256k1.P, type(uint).max));
 
-        vm.expectRevert("PublicKeyInvalid()");
+        vm.expectRevert(Errors.CRYSOL_PublicKeyInvalid.selector);
         wrapper.publicKeyFromFelts(x, y);
     }
 
@@ -261,7 +263,7 @@ contract Secp256k1Test is Test {
         Point memory p = Point(x, y);
         vm.assume(!p.isOnCurve());
 
-        vm.expectRevert("PublicKeyInvalid()");
+        vm.expectRevert(Errors.CRYSOL_PublicKeyInvalid.selector);
         wrapper.publicKeyFromFelts(x, y);
     }
 
@@ -270,7 +272,7 @@ contract Secp256k1Test is Test {
     {
         Point memory id = Points.Identity();
 
-        vm.expectRevert("PublicKeyInvalid()");
+        vm.expectRevert(Errors.CRYSOL_PublicKeyInvalid.selector);
         wrapper.publicKeyFromFelts(id.x, id.y);
     }
 
@@ -363,7 +365,7 @@ contract Secp256k1Test is Test {
         vm.assume(x >= Secp256k1.P);
         vm.assume(y < Secp256k1.P);
 
-        vm.expectRevert("PublicKeyInvalid()");
+        vm.expectRevert(Errors.CRYSOL_PublicKeyInvalid.selector);
         wrapper.publicKeyFromUints(x, y);
     }
 
@@ -374,7 +376,7 @@ contract Secp256k1Test is Test {
         vm.assume(x < Secp256k1.P);
         vm.assume(y >= Secp256k1.P);
 
-        vm.expectRevert("PublicKeyInvalid()");
+        vm.expectRevert(Errors.CRYSOL_PublicKeyInvalid.selector);
         wrapper.publicKeyFromUints(x, y);
     }
 
@@ -385,7 +387,7 @@ contract Secp256k1Test is Test {
         Point memory p = Point(x, y);
         vm.assume(!p.isOnCurve());
 
-        vm.expectRevert("PublicKeyInvalid()");
+        vm.expectRevert(Errors.CRYSOL_PublicKeyInvalid.selector);
         wrapper.publicKeyFromUints(x.asUint(), y.asUint());
     }
 
@@ -394,7 +396,7 @@ contract Secp256k1Test is Test {
         uint x = id.x.asUint();
         uint y = id.y.asUint();
 
-        vm.expectRevert("PublicKeyInvalid()");
+        vm.expectRevert(Errors.CRYSOL_PublicKeyInvalid.selector);
         wrapper.publicKeyFromUints(x, y);
     }
 
@@ -537,7 +539,7 @@ contract Secp256k1Test is Test {
     ) public {
         vm.assume(blob.length != 32);
 
-        vm.expectRevert("LengthInvalid()");
+        vm.expectRevert(Errors.CRYSOL_LengthInvalid.selector);
         wrapper.secretKeyFromBytes(blob);
     }
 
@@ -545,7 +547,7 @@ contract Secp256k1Test is Test {
     ) public {
         bytes memory blob = abi.encodePacked(uint(0));
 
-        vm.expectRevert("SecretKeyInvalid()");
+        vm.expectRevert(Errors.CRYSOL_SecretKeyInvalid.selector);
         wrapper.secretKeyFromBytes(blob);
     }
 
@@ -556,7 +558,7 @@ contract Secp256k1Test is Test {
 
         bytes memory blob = abi.encodePacked(scalar);
 
-        vm.expectRevert("SecretKeyInvalid()");
+        vm.expectRevert(Errors.CRYSOL_SecretKeyInvalid.selector);
         wrapper.secretKeyFromBytes(blob);
     }
 
@@ -573,7 +575,7 @@ contract Secp256k1Test is Test {
     {
         SecretKey sk = Secp256k1.unsafeSecretKeyFromUint(0);
 
-        vm.expectRevert("SecretKeyInvalid()");
+        vm.expectRevert(Errors.CRYSOL_SecretKeyInvalid.selector);
         wrapper.toBytes(sk);
     }
 
@@ -583,7 +585,7 @@ contract Secp256k1Test is Test {
         uint scalar = _bound(seed, Secp256k1.Q, type(uint).max);
         SecretKey sk = Secp256k1.unsafeSecretKeyFromUint(scalar);
 
-        vm.expectRevert("SecretKeyInvalid()");
+        vm.expectRevert(Errors.CRYSOL_SecretKeyInvalid.selector);
         wrapper.toBytes(sk);
     }
 
@@ -609,7 +611,7 @@ contract Secp256k1Test is Test {
     ) public {
         vm.assume(blob.length != 64);
 
-        vm.expectRevert("LengthInvalid()");
+        vm.expectRevert(Errors.CRYSOL_LengthInvalid.selector);
         wrapper.publicKeyFromBytes(blob);
     }
 
@@ -620,7 +622,7 @@ contract Secp256k1Test is Test {
 
         bytes memory blob = abi.encodePacked(pk.x, pk.y);
 
-        vm.expectRevert("PublicKeyInvalid()");
+        vm.expectRevert(Errors.CRYSOL_PublicKeyInvalid.selector);
         wrapper.publicKeyFromBytes(blob);
     }
 
@@ -641,7 +643,7 @@ contract Secp256k1Test is Test {
     ) public {
         vm.assume(!pk.isValid());
 
-        vm.expectRevert("PublicKeyInvalid()");
+        vm.expectRevert(Errors.CRYSOL_PublicKeyInvalid.selector);
         wrapper.toBytes(pk);
     }
 }
