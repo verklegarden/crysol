@@ -95,7 +95,7 @@ library Fp {
     function fromUint(uint scalar) internal pure returns (Felt) {
         (Felt felt, bool ok) = tryFromUint(scalar);
         if (!ok) {
-            revert Errors.CRYSOL_ScalarNotAFelt();
+            revert Errors.CRYSOL_ScalarInvalid();
         }
 
         return felt;

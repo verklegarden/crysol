@@ -71,7 +71,7 @@ contract FpTest is Test {
     function testFuzz_feltFromUint_RevertsIf_ScalarNotAFelt(uint seed) public {
         uint scalar = _bound(seed, Secp256k1.P, type(uint).max);
 
-        vm.expectRevert(Errors.CRYSOL_ScalarNotAFelt.selector);
+        vm.expectRevert(Errors.CRYSOL_ScalarInvalid.selector);
         wrapper.feltFromUint(scalar);
     }
 

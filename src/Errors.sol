@@ -11,32 +11,36 @@
 // SPDX-License-Identifier: MIT OR Apache-2.0
 pragma solidity ^0.8.16;
 
-// Scalars
-error CRYSOL_ScalarNotAFelt();
+/// @dev Prime field error thrown when scalar is invalid for attempted
+///      operation.
 error CRYSOL_ScalarInvalid();
-error CRYSOL_ScalarMalleable();
 
-// Math
+/// @dev Prime field error thrown if division by zero is attempted.
 error CRYSOL_DivByZero();
+
+/// @dev Prime field error thrown if computing the inversion of zero is attempted.
 error CRYSOL_InvOfZero();
 
-// (De)Encoding
+/// @dev De/Serialization error thrown if input's length invalid.
 error CRYSOL_LengthInvalid();
+
+/// @dev De/Serialization error thrown if input's prefix invalid.
 error CRYSOL_PrefixInvalid();
 
-// Point
+/// @dev Point error thrown if point invalid.
 error CRYSOL_PointInvalid();
-error CRYSOL_PointNotOnCurve();
 
-// SecretKey
+/// @dev Cryptographic error thrown if secret key invalid.
 error CRYSOL_SecretKeyInvalid();
 
-// PublicKey
+/// @dev Cryptographic error thrown if public key invalid.
 error CRYSOL_PublicKeyInvalid();
 
-// ECDSA
+/// @dev ECDSA signature error thrown if signer is zero address.
 error CRYSOL_SignerZeroAddress();
+
+/// @dev ECDSA signature error thrown if signature is malleable.
 error CRYSOL_SignatureMalleable();
 
-// Schnorr
+/// @dev Schnorr signature error thrown if Schnorr signature insane.
 error CRYSOL_SignatureInsane();

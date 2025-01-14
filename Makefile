@@ -37,8 +37,8 @@ coverage: ## Update coverage report and print summary
 # Note that ripgrep instead of grep is used.
 # See https://github.com/BurntSushi/ripgrep.
 .PHONY: todos
-todos: ## Grep TODO's in src/ and test/
-	@rg -rn "TODO" src/ test/
+todos: ## Grep TODO's in src/, test/, offchain/ and unsafe/
+	@rg -rn "TODO" src/ test/ offchain/ unsafe/
 
 .PHONY: examples
 examples: ## Run examples
