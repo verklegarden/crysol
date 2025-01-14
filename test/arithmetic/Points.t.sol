@@ -448,7 +448,7 @@ contract PointsTest is Test {
     ) public {
         vm.assume(scalar >= Points.Q);
 
-        vm.expectRevert(Errors.CRYSOL_ScalarMalleable.selector);
+        vm.expectRevert(Errors.CRYSOL_ScalarInvalid.selector);
         wrapper.mulToAddress(point, scalar);
     }
 
@@ -665,7 +665,7 @@ contract PointsTest is Test {
     ) public {
         vm.assume(scalar >= Points.Q);
 
-        vm.expectRevert(Errors.CRYSOL_ScalarMalleable.selector);
+        vm.expectRevert(Errors.CRYSOL_ScalarInvalid.selector);
         wrapper.mul(point, scalar);
     }
 
@@ -709,8 +709,11 @@ contract PointsTest is Test {
 
         // Compute [a+b]G.
         uint scalar = addmod(a.asUint(), b.asUint(), Secp256k1.Q);
-        Point memory want =
-            Secp256k1.secretKeyFromUint(scalar).toPublicKey().intoPoint();
+        vm.assume(scalar != 0);
+        // forgefmt: disable-next-item
+        Point memory want = Secp256k1.secretKeyFromUint(scalar)
+                                     .toPublicKey()
+                                     .intoPoint();
 
         // Compute [a]G + [b]G via ProjectivePoints.
         // forgefmt: disable-next-item
@@ -739,8 +742,11 @@ contract PointsTest is Test {
 
         // Compute [a+b]G.
         uint scalar = addmod(a.asUint(), b.asUint(), Secp256k1.Q);
-        Point memory want =
-            Secp256k1.secretKeyFromUint(scalar).toPublicKey().intoPoint();
+        vm.assume(scalar != 0);
+        // forgefmt: disable-next-item
+        Point memory want = Secp256k1.secretKeyFromUint(scalar)
+                                     .toPublicKey()
+                                     .intoPoint();
 
         // Compute [a]G + [b]G via ProjectivePoints.
         // forgefmt: disable-next-item
@@ -862,7 +868,7 @@ contract PointsTest is Test {
     ) public {
         vm.assume(!point.isOnCurve());
 
-        vm.expectRevert(Errors.CRYSOL_PointNotOnCurve.selector);
+        vm.expectRevert(Errors.CRYSOL_PointInvalid.selector);
         wrapper.toEncoded(point);
     }
 
@@ -935,12 +941,12 @@ contract PointsTest is Test {
 
         // Using 0x02 prefix.
         blob = abi.encodePacked(bytes1(0x02), uint(0));
-        vm.expectRevert(Errors.CRYSOL_PointNotOnCurve.selector);
+        vm.expectRevert(Errors.CRYSOL_PointInvalid.selector);
         wrapper.pointFromCompressedEncoded(blob);
 
         // Using 0x03 prefix.
         blob = abi.encodePacked(bytes1(0x03), uint(0));
-        vm.expectRevert(Errors.CRYSOL_PointNotOnCurve.selector);
+        vm.expectRevert(Errors.CRYSOL_PointInvalid.selector);
         wrapper.pointFromCompressedEncoded(blob);
     }
 
@@ -953,12 +959,12 @@ contract PointsTest is Test {
 
         // Using 0x02 prefix.
         blob = abi.encodePacked(bytes1(0x02), uint(0));
-        vm.expectRevert(Errors.CRYSOL_PointNotOnCurve.selector);
+        vm.expectRevert(Errors.CRYSOL_PointInvalid.selector);
         wrapper.pointFromCompressedEncoded(blob);
 
         // Using 0x03 prefix.
         blob = abi.encodePacked(bytes1(0x03), uint(0));
-        vm.expectRevert(Errors.CRYSOL_PointNotOnCurve.selector);
+        vm.expectRevert(Errors.CRYSOL_PointInvalid.selector);
         wrapper.pointFromCompressedEncoded(blob);
     }
 
@@ -1011,7 +1017,7 @@ contract PointsTest is Test {
     ) public {
         vm.assume(!point.isOnCurve());
 
-        vm.expectRevert(Errors.CRYSOL_PointNotOnCurve.selector);
+        vm.expectRevert(Errors.CRYSOL_PointInvalid.selector);
         wrapper.toCompressedEncoded(point);
     }
 }

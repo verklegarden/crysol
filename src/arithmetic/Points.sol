@@ -257,9 +257,11 @@ library Points {
             && point.y.asUint() == other.y.asUint();
     }
 
-    // TODO: Misses revert documentation?
     /// @dev Returns the product of point `point` and scalar `scalar` as
     ///      address.
+    ///
+    /// @dev Reverts if:
+    ///         Scalar malleable
     ///
     /// @dev Note that this function is substantially cheaper than
     ///      `mul(ProjectivePoint,uint)(ProjectivePoint)` with the caveat that
@@ -270,7 +272,7 @@ library Points {
         returns (address)
     {
         if (scalar >= Q) {
-            revert Errors.CRYSOL_ScalarMalleable();
+            revert Errors.CRYSOL_ScalarInvalid();
         }
 
         if (scalar == 0 || point.isIdentity()) {
@@ -419,9 +421,11 @@ library Points {
         );
     }
 
-    // TODO: Misses revert documentation?
     /// @dev Returns the product of projective point `point` and scalar `scalar`
     ///      as projective point.
+    ///
+    /// @dev Reverts if:
+    ///         Scalar malleable
     ///
     /// @dev Uses the repeated add-and-double algorithm.
     function mul(ProjectivePoint memory point, uint scalar)
@@ -430,7 +434,7 @@ library Points {
         returns (ProjectivePoint memory)
     {
         if (scalar >= Q) {
-            revert Errors.CRYSOL_ScalarMalleable();
+            revert Errors.CRYSOL_ScalarInvalid();
         }
 
         if (scalar == 0) {
@@ -440,9 +444,6 @@ library Points {
         ProjectivePoint memory copy = point;
         ProjectivePoint memory result = ProjectiveIdentity();
 
-        // TODO: Can endomorphism be used?
-        //       See Faster Point Multiplication on Elliptic Curves with
-        //       Efficient Endomorphism from GLV.
         while (scalar != 0) {
             if (scalar & 1 == 1) {
                 result = result.add(copy);
@@ -612,7 +613,6 @@ library Points {
         // Revert if identity not 1 byte encoded.
         // TODO: Not explicitly tested.
         if (point.isIdentity()) {
-            // TODO: Need different error type.
             revert Errors.CRYSOL_PointInvalid();
         }
 
@@ -642,7 +642,7 @@ library Points {
         returns (bytes memory blob)
     {
         if (!point.isOnCurve()) {
-            revert Errors.CRYSOL_PointNotOnCurve();
+            revert Errors.CRYSOL_PointInvalid();
         }
 
         // Note to catch special encoding for identity.
@@ -702,12 +702,11 @@ library Points {
         }
 
         // Revert if identity not 1 byte encoded.
-        // TODO: Should have own error for identity not 1 byte encoded?
         //
         // Note that identity is explicitly enforced to be 1 byte encoded,
         // eventhough for x = 0 the resulting point is not on the curve anyway.
         if (xRaw == 0) {
-            revert Errors.CRYSOL_PointNotOnCurve();
+            revert Errors.CRYSOL_PointInvalid();
         }
 
         // Construct x coordinate as felt.
@@ -715,7 +714,7 @@ library Points {
         Felt x;
         (x, ok) = Fp.tryFromUint(xRaw);
         if (!ok) {
-            revert Errors.CRYSOL_PointNotOnCurve();
+            revert Errors.CRYSOL_PointInvalid();
         }
 
         // Compute α = x³ + ax + b (mod p).
@@ -749,7 +748,7 @@ library Points {
         // Revert if point not on curve.
         // TODO: Find vectors for x coordinates not on the curve.
         if (!point.isOnCurve()) {
-            revert Errors.CRYSOL_PointNotOnCurve();
+            revert Errors.CRYSOL_PointInvalid();
         }
 
         return point;
@@ -773,7 +772,7 @@ library Points {
         returns (bytes memory blob)
     {
         if (!point.isOnCurve()) {
-            revert Errors.CRYSOL_PointNotOnCurve();
+            revert Errors.CRYSOL_PointInvalid();
         }
 
         // Note to catch special encoding for identity.
