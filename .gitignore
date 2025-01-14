@@ -1,8 +1,9 @@
-Issues.md
-
 # Compiler files
 cache/
 out/
+
+# Note to not ignore fuzz corpus.
+!cache/fuzz/failures
 
 # Ignore broadcast logs
 broadcast/
