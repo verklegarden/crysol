@@ -325,18 +325,6 @@ library Points {
         return (point.x.asUint() | point.z.asUint()) == 0;
     }
 
-    /// @dev DO NOT IMPORT!
-    ///
-    /// @dev This is an internal struct to circumvent stack-too-deep errors in
-    ///      ProjectivePoint::add() during non --via-ir compilation.
-    struct __addTempVars {
-        Felt t0;
-        Felt t1;
-        Felt t2;
-        Felt t3;
-        Felt t4;
-    }
-
     /// @dev Returns the sum of projective points `point` and `other` as
     ///      projective point.
     ///
