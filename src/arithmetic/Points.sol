@@ -409,6 +409,68 @@ library Points {
         );
     }
 
+    /// @dev Returns the double of projective point `point`
+    ///      as projective point.
+    ///
+    /// @dev Uses algorithm 9 from [Renes-Costello-Batina 2015] based on a
+    ///      point doubling formula Weierstrass curves with a = 0.
+    function double(ProjectivePoint memory point)
+        internal
+        pure
+        returns (ProjectivePoint memory)
+    {
+        // Return early if addition with identity.
+        if (point.isIdentity()) {
+            return point;
+        }
+
+        // forgefmt: disable-start
+
+        // Note that for optimization reasons native uint is used instead of Fp.
+
+        // Inputs:
+        // - P = (x, y, z)
+        uint x = point.x.asUint();
+        uint y = point.y.asUint();
+        uint z = point.z.asUint();
+
+        // Output:
+        // - (x3, y3, z3) = 2P
+        uint x3; uint y3; uint z3;
+
+        // Constants:
+        // - _B3 = mulmod(B, 3, P)
+
+        // Variables:
+        uint t0; uint t1; uint t2;
+
+        // Computations:
+        // Note that x - y = x + (P - y) (mod P)
+        t0 = mulmod(y, y, P);
+        z3 = addmod(t0, t0, P);
+        z3 = addmod(z3, z3, P);
+        z3 = addmod(z3, z3, P);
+        t1 = mulmod(y, z, P);
+        t2 = mulmod(z, z, P);
+        t2 = mulmod(_B3, t2, P);
+        x3 = mulmod(t2, z3, P);
+        y3 = addmod(t0, t2, P);
+        z3 = mulmod(t1, z3, P);
+        t1 = addmod(t2, t2, P);
+        t2 = addmod(t1, t2, P);
+        unchecked { t0 = addmod(t0, P - t2, P); }
+        y3 = mulmod(t0, y3, P);
+        y3 = addmod(x3, y3, P);
+        t1 = mulmod(x, y, P);
+        x3 = mulmod(t0, t1, P);
+        x3 = addmod(x3, x3, P);
+        // forgefmt: disable-end
+
+        return ProjectivePoint(
+            Fp.unsafeFromUint(x3), Fp.unsafeFromUint(y3), Fp.unsafeFromUint(z3)
+        );
+    }
+
     /// @dev Returns the product of projective point `point` and scalar `scalar`
     ///      as projective point.
     ///
@@ -437,7 +499,7 @@ library Points {
                 result = result.add(copy);
             }
             scalar >>= 1;
-            copy = copy.add(copy);
+            copy = copy.double();
         }
 
         return result;
