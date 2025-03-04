@@ -409,13 +409,13 @@ library Points {
         );
     }
 
-    /// @dev Returns the double of projective point `point`
+    /// @dev Returns the doubled of projective point `point`
     ///      as projective point.
     ///
     /// @dev Uses algorithm 9 from [Renes-Costello-Batina 2015] based on a
     ///      point doubling formula Weierstrass curves with a = 0.
-    function double(ProjectivePoint memory point)
-        internal
+    function _double(ProjectivePoint memory point)
+        private
         pure
         returns (ProjectivePoint memory)
     {
@@ -499,7 +499,7 @@ library Points {
                 result = result.add(copy);
             }
             scalar >>= 1;
-            copy = copy.double();
+            copy = _double(copy);
         }
 
         return result;
