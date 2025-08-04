@@ -25,10 +25,9 @@ contract ECDSAUnsafeTest is Test {
         wrapper = new ECDSAUnsafeWrapper();
     }
 
-    function testFuzz_Signature_malleability_Loop(
-        SecretKey sk,
-        bytes32 digest
-    ) public {
+    function testFuzz_Signature_malleability_Loop(SecretKey sk, bytes32 digest)
+        public
+    {
         vm.assume(sk.isValid());
 
         Signature memory start = sk.sign(digest);
