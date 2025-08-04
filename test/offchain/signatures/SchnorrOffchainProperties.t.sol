@@ -10,7 +10,7 @@ import {Points, Point} from "src/arithmetic/Points.sol";
 
 import {SchnorrOffchain} from "offchain/signatures/SchnorrOffchain.sol";
 import {
-    Schnorr, Signature, SignatureCompressed
+    Schnorr, Signature
 } from "src/signatures/Schnorr.sol";
 
 /**

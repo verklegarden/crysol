@@ -17,7 +17,7 @@ import {Fp, Felt} from "../arithmetic/Fp.sol";
 import "../Errors.sol" as Errors;
 
 /**
- * @notice Signature is an [ERC-XXX] Schnorr signature
+ * @notice Signature is a Schnorr signature
  */
 struct Signature {
     bytes32 s;
@@ -25,7 +25,7 @@ struct Signature {
 }
 
 /**
- * @notice SignatureCompressed is an [ERC-XXX] compressed Schnorr signature
+ * @notice SignatureCompressed is a compressed Schnorr signature
  */
 struct SignatureCompressed {
     bytes32 s;
@@ -35,10 +35,12 @@ struct SignatureCompressed {
 /**
  * @title Schnorr
  *
- * @notice Provides [ERC-XXX] compatible Schnorr signature functionality
+ * @notice Provides Schnorr signature functionality
+ *
+ * @dev The Schnorr signature scheme is defined in [schnorr-on-evm]
  *
  * @custom:references
- *      - [ERC-XXX]: ...
+ *      - [schnorr-on-evm]: https://github.com/verklegarden/schnorr-on-evm/blob/main/ERC.md
  *
  * @author verklegarden
  * @custom:repository github.com/verklegarden/crysol
@@ -61,7 +63,7 @@ library Schnorr {
         0x000000000000000000000000FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF;
 
     //--------------------------------------------------------------------------
-    // ERC-XXX Constants
+    // Constants
 
     /// @dev The context string containing the scheme and ciphersuite.
     ///
@@ -179,8 +181,7 @@ library Schnorr {
     //--------------------------------------------------------------------------
     // Utils
 
-    /// @dev Returns an [ERC-XXX] compatible Schnorr message hash from digest
-    ///      `digest`.
+    /// @dev Returns a Schnorr message hash from digest `digest`.
     function constructMessageHash(bytes32 digest)
         internal
         pure
@@ -268,7 +269,7 @@ library Schnorr {
     //--------------------------------------------------------------------------
     // (De)Serialization
 
-    /// @dev Decodes signature from [ERC-XXX] encoded bytes `blob`.
+    /// @dev Decodes signature from encoded bytes `blob`.
     ///
     /// @dev Reverts if:
     ///        Length not 96 bytes
@@ -276,6 +277,8 @@ library Schnorr {
     ///
     /// @dev Expects 96 bytes encoding:
     ///         [32 bytes s value][64 bytes r public key]
+    ///
+    ///      See [schnorr-on-evm].
     function signatureFromEncoded(bytes memory blob)
         internal
         pure
@@ -316,13 +319,15 @@ library Schnorr {
         return sig;
     }
 
-    /// @dev Encodes Schnorr signature `sig` as [ERC-XXX] encoded bytes.
+    /// @dev Encodes Schnorr signature `sig` as encoded bytes.
     ///
     /// @dev Reverts if:
     ///        Schnorr signature insane
     ///
     /// @dev Provides 96 bytes encoding:
     ///         [32 bytes s value][64 bytes r public key]
+    ///
+    ///      See [schnorr-on-evm].
     function toEncoded(Signature memory sig)
         internal
         pure
@@ -335,8 +340,7 @@ library Schnorr {
         return abi.encodePacked(sig.s, sig.r.x, sig.r.y);
     }
 
-    /// @dev Encodes Schnorr signature `sig` as [ERC-XXX] compressed encoded
-    ///      bytes.
+    /// @dev Encodes Schnorr signature `sig` as compressed encoded bytes.
     ///
     /// @dev Reverts if:
     ///        Schnorr signature insane
@@ -344,7 +348,7 @@ library Schnorr {
     /// @dev Provides 52 bytes encoding:
     ///         [32 bytes s value][20 bytes r's address]
     ///
-    ///      See [ERC-XXX].
+    ///      See [schnorr-on-evm].
     function toCompressedEncoded(Signature memory sig)
         internal
         pure
@@ -353,8 +357,8 @@ library Schnorr {
         return sig.toCompressed().toCompressedEncoded();
     }
 
-    /// @dev Decodes compressed Schnorr signature from [ERC-XXX] compressed
-    ///      encoded bytes `blob`.
+    /// @dev Decodes compressed Schnorr signature from compressed encoded bytes
+    ///      `blob`.
     ///
     /// @dev Reverts if:
     ///        Deserialized Schnorr signature insane
@@ -362,7 +366,7 @@ library Schnorr {
     /// @dev Provides 52 bytes encoding:
     ///         [32 bytes s value][20 bytes r's address]
     ///
-    ///      See [ERC-XXX].
+    ///      See [schnorr-on-evm].
     function signatureFromCompressedEncoded(bytes memory blob)
         internal
         pure
@@ -388,8 +392,7 @@ library Schnorr {
         return sig;
     }
 
-    /// @dev Encodes compact Schnorr signature `sig` as [ERC-XXX] compact
-    ///      encoded bytes.
+    /// @dev Encodes compact Schnorr signature `sig` as compact encoded bytes.
     ///
     /// @dev Reverts if:
     ///         Schnorr signature insane
@@ -397,7 +400,7 @@ library Schnorr {
     /// @dev Provides 52 bytes encoding:
     ///         [32 bytes s value][20 bytes r's address]
     ///
-    ///      See [ERC-XXX].
+    ///      See [schnorr-on-evm].
     function toCompressedEncoded(SignatureCompressed memory sig)
         internal
         pure
