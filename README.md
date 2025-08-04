@@ -10,7 +10,7 @@
 `crysol` is a $secp256k1$ elliptic curve library for EVM applications. It targets security, correctness, simplicity, readability, and reviewability as its primary goals.
 
 Features:
-- Key generation, verification and de/serialization
+- Key construction, verification and de/serialization
 - ECDSA and Schnorr signature generation, verification and de/serialization
 - Point arithmetic based on complete addition formulas and `ecrecover` precompile optimizations
 - Prime field arithmetic
