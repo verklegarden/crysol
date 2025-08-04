@@ -17,6 +17,10 @@ build: ## Build project
 clean: ## Clean build artifacts
 	@forge clean
 
+.PHONY: lint
+lint: ## Run linter
+	@forge lint
+
 .PHONY: test
 test: ## Run full test suite
 	@forge test --show-progress

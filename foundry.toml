@@ -7,7 +7,7 @@ ffi = true
 fs_permissions = [{ access = "read", path = "./test" }]
 
 # Compilation
-evm_version = "shanghai"
+evm_version = "cancun"
 solc_version = "0.8.28"
 via_ir = false
 optimizer = false
@@ -17,6 +17,9 @@ extra_output_files = ["irOptimized"]
 line_length = 80
 int_types = "short"
 number_underscore = "preserve"
+
+[lint]
+exclude_lints = ["mixed-case-function", "mixed-case-variable", "pascal-case-struct"]
 
 [doc]
 out = "docs_generated" # Note to not overwrite own docs

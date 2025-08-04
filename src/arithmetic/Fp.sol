@@ -217,6 +217,7 @@ library Fp {
         // The `modexp` precompile is at address 0x05.
         address target = address(5);
 
+        // forge-lint: disable-next-line(unchecked-call)
         ( /*bool ok*/ , bytes memory data) = target.staticcall(payload);
         // assert(ok); // Precompile calls do not fail.
 
