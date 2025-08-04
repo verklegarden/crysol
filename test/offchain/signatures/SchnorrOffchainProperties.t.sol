@@ -9,9 +9,7 @@ import {Secp256k1, SecretKey, PublicKey} from "src/Secp256k1.sol";
 import {Points, Point} from "src/arithmetic/Points.sol";
 
 import {SchnorrOffchain} from "offchain/signatures/SchnorrOffchain.sol";
-import {
-    Schnorr, Signature
-} from "src/signatures/Schnorr.sol";
+import {Schnorr, Signature} from "src/signatures/Schnorr.sol";
 
 /**
  * @notice SchnorrOffchain Property Tests
