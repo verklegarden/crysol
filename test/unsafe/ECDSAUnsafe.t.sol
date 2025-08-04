@@ -26,6 +26,7 @@ contract ECDSAUnsafeTest is Test {
 
     function testFuzz_Signature_malleability_Loop(SecretKey sk, bytes32 digest)
         public
+        view
     {
         vm.assume(sk.isValid());
 

@@ -119,7 +119,6 @@ library Schnorr {
                 abi.encodePacked(
                     CONTEXT,
                     "challenge",
-                    // TODO: Must ensure pk.x < Q. See Scribe issue.
                     pk.x,
                     uint8(pk.yParity()),
                     m,

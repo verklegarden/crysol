@@ -292,8 +292,6 @@ library Points {
         unchecked {
             v = uint8(point.yParity() + 27);
         }
-        // TODO BUG: Need to reduce % Q ?
-        //uint r = point.x.asUint() % Q;
         uint r = point.x.asUint();
         uint s = mulmod(r, scalar, Q);
 
