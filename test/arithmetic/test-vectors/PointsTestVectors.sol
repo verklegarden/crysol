@@ -2,7 +2,7 @@
 pragma solidity ^0.8.16;
 
 import {Point} from "src/arithmetic/Points.sol";
-import {Fp, Felt} from "src/arithmetic/Fp.sol";
+import {Fp} from "src/arithmetic/Fp.sol";
 
 library PointsTestVectors {
     /// @dev Returns a list of points being the result of repeated additions
