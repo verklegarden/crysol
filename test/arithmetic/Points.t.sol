@@ -404,16 +404,6 @@ contract PointsTest is Test {
 
     // -- mulToAddress
 
-    // TODO: mulToAddress has issue if point.x >= Q.
-    //
-    // if point.x >= Q current expectation is address(0) bc ecrecover failure.
-    // Therefoew, we need to reduce point.x % Q. What does this return though?
-    // - addressOf(point.x, point.y)
-    // - addressOf(point.x % Q, point.y)
-    // - ???
-    //
-    // Test with scalar = 1 to use identity property.
-
     function testFuzz_Point_mulToAddress(SecretKey sk, uint scalarSeed)
         public
     {
