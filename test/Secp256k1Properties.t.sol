@@ -5,7 +5,6 @@ import {Test} from "forge-std/Test.sol";
 
 import {Secp256k1Offchain} from "offchain/Secp256k1Offchain.sol";
 import {Secp256k1, SecretKey, PublicKey} from "src/Secp256k1.sol";
-import {Points, Point, ProjectivePoint} from "src/arithmetic/Points.sol";
 
 /**
  * @notice Secp256k1 Property Tests
@@ -14,7 +13,6 @@ contract Secp256k1PropertiesTest is Test {
     using Secp256k1Offchain for SecretKey;
     using Secp256k1 for SecretKey;
     using Secp256k1 for PublicKey;
-    using Secp256k1 for Point;
 
     //--------------------------------------------------------------------------
     // Test: (De)Serialization

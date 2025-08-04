@@ -2,7 +2,6 @@
 pragma solidity ^0.8.16;
 
 import {Test} from "forge-std/Test.sol";
-import {console2 as console} from "forge-std/console2.sol";
 
 import {Secp256k1Offchain} from "offchain/Secp256k1Offchain.sol";
 import {Secp256k1, SecretKey, PublicKey} from "src/Secp256k1.sol";
